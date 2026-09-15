@@ -76,6 +76,15 @@ async function initializeDatabase(database: SQLite.SQLiteDatabase) {
     );
   `);
 
+  try {
+    await database.execAsync(`
+      ALTER TABLE user_settings
+      ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 0;
+    `);
+  } catch {
+    // A coluna já existe.
+  }
+
   await seedCategories(database);
 }
 
