@@ -22,6 +22,13 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
+        name="accounts"
+        options={{
+          title: 'Contas',
+        }}
+      />
+
+      <Tabs.Screen
         name="goals"
         options={{
           title: 'Metas',
@@ -37,3 +44,11 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+<Tabs.Screen
+  name="accounts"
+  options={{
+    title: 'Contas',
+  }}
+/>
+

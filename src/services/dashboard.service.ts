@@ -1,43 +1,143 @@
-import { getDatabase } from "../database/database";
+import { getDatabase } from '../database/database';
+
+export interface DashboardAccount {
+  id: number;
+  name: string;
+  type: string;
+  balance: number;
+}
 
 export interface DashboardSummary {
   totalIncome: number;
   totalExpenses: number;
   balance: number;
   transactionCount: number;
+  accounts: DashboardAccount[];
+  monthIncome: number;
+  monthExpenses: number;
+  monthBalance: number;
+  monthTransactionCount: number;
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   const database = await getDatabase();
 
-  const result = await database.getFirstAsync<{
-    totalIncome: number | null;
-    totalExpenses: number | null;
-    transactionCount: number;
-  }>(`
-    SELECT
-      COALESCE(
-        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END),
-        0
-      ) AS totalIncome,
+  const transactions =
+    await database.getFirstAsync<{
+      totalIncome: number | null;
+      totalExpenses: number | null;
+      transactionCount: number;
 
-      COALESCE(
-        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END),
-        0
-      ) AS totalExpenses,
+      monthIncome: number | null;
+      monthExpenses: number | null;
+      monthTransactionCount: number;
+    }>(`
+      SELECT
+        COALESCE(
+          SUM(
+            CASE
+              WHEN type = 'income'
+              THEN amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS totalIncome,
 
-      COUNT(*) AS transactionCount
+        COALESCE(
+          SUM(
+            CASE
+              WHEN type = 'expense'
+              THEN amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS totalExpenses,
 
-    FROM transactions
-  `);
+        COUNT(*) AS transactionCount,
 
-  const totalIncome = result?.totalIncome ?? 0;
-  const totalExpenses = result?.totalExpenses ?? 0;
+        COALESCE(
+          SUM(
+            CASE
+              WHEN type = 'income'
+              AND strftime('%Y-%m', date)
+                = strftime('%Y-%m', 'now')
+              THEN amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS monthIncome,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN type = 'expense'
+              AND strftime('%Y-%m', date)
+                = strftime('%Y-%m', 'now')
+              THEN amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS monthExpenses,
+
+        COUNT(
+          CASE
+            WHEN strftime('%Y-%m', date)
+              = strftime('%Y-%m', 'now')
+            THEN 1
+          END
+        ) AS monthTransactionCount
+
+      FROM transactions
+    `);
+
+  const accounts =
+    await database.getAllAsync<DashboardAccount>(`
+      SELECT
+        id,
+        name,
+        type,
+        balance
+      FROM accounts
+      ORDER BY name ASC
+    `);
+
+  const totalIncome =
+    transactions?.totalIncome ?? 0;
+
+  const totalExpenses =
+    transactions?.totalExpenses ?? 0;
+
+  const monthIncome =
+    transactions?.monthIncome ?? 0;
+
+  const monthExpenses =
+    transactions?.monthExpenses ?? 0;
+
+  const balance = accounts.reduce(
+    (total, account) =>
+      total + account.balance,
+    0
+  );
 
   return {
     totalIncome,
     totalExpenses,
-    balance: totalIncome - totalExpenses,
-    transactionCount: result?.transactionCount ?? 0,
+    balance,
+    transactionCount:
+      transactions?.transactionCount ?? 0,
+
+    accounts,
+
+    monthIncome,
+    monthExpenses,
+    monthBalance:
+      monthIncome - monthExpenses,
+
+    monthTransactionCount:
+      transactions?.monthTransactionCount ?? 0,
   };
 }

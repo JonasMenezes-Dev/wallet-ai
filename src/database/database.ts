@@ -1,22 +1,36 @@
-import * as SQLite from "expo-sqlite";
+import * as SQLite from 'expo-sqlite';
 
-const DATABASE_NAME = "wallet-ai.db";
+const DATABASE_NAME = 'wallet-ai.db';
 
 let db: SQLite.SQLiteDatabase | null = null;
+let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
-export async function getDatabase() {
+export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (db) {
     return db;
   }
 
-  db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+  if (databasePromise) {
+    return databasePromise;
+  }
 
-  await initializeDatabase(db);
+  databasePromise = initializeDatabase();
 
-  return db;
+  try {
+    db = await databasePromise;
+
+    return db;
+  } finally {
+    databasePromise = null;
+  }
 }
 
-async function initializeDatabase(database: SQLite.SQLiteDatabase) {
+async function initializeDatabase() {
+  const database =
+    await SQLite.openDatabaseAsync(
+      DATABASE_NAME
+    );
+
   await database.execAsync(`
     PRAGMA journal_mode = WAL;
 
@@ -76,40 +90,63 @@ async function initializeDatabase(database: SQLite.SQLiteDatabase) {
     );
   `);
 
+  /*
+   * Migração: goal_id nas transações.
+   */
+  try {
+    await database.execAsync(`
+      ALTER TABLE transactions
+      ADD COLUMN goal_id INTEGER;
+    `);
+  } catch {
+    // A coluna já existe.
+  }
+
+  /*
+   * Migração: onboarding.
+   */
   try {
     await database.execAsync(`
       ALTER TABLE user_settings
-      ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 0;
+      ADD COLUMN onboarding_completed
+      INTEGER NOT NULL DEFAULT 0;
     `);
   } catch {
     // A coluna já existe.
   }
 
   await seedCategories(database);
+
+  return database;
 }
 
-async function seedCategories(database: SQLite.SQLiteDatabase) {
+async function seedCategories(
+  database: SQLite.SQLiteDatabase
+) {
   const categories = [
-    "Alimentação",
-    "Moradia",
-    "Transporte",
-    "Lazer",
-    "Compras",
-    "Contas",
-    "Saúde",
-    "Educação",
-    "Assinaturas",
-    "Outros",
+    'Alimentação',
+    'Moradia',
+    'Transporte',
+    'Lazer',
+    'Compras',
+    'Contas',
+    'Saúde',
+    'Educação',
+    'Assinaturas',
+    'Outros',
   ];
 
   for (const category of categories) {
     await database.runAsync(
       `
-        INSERT OR IGNORE INTO categories (name, created_at)
+        INSERT OR IGNORE INTO categories (
+          name,
+          created_at
+        )
         VALUES (?, ?)
       `,
       category,
-      new Date().toISOString(),
+      new Date().toISOString()
     );
   }
 }

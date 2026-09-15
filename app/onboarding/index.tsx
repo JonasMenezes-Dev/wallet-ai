@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 import {
   Alert,
   KeyboardAvoidingView,
@@ -9,15 +10,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
 import { router } from 'expo-router';
 
 import { useUserSettings } from '../../src/hooks/use-user-settings';
+import { addAccount } from '../../src/services/account.service';
 
 export default function OnboardingScreen() {
   const { save } = useUserSettings();
 
   const [salary, setSalary] = useState('');
   const [benefitAmount, setBenefitAmount] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [initialBalance, setInitialBalance] = useState('');
   const [saving, setSaving] = useState(false);
 
   async function handleContinue() {
@@ -27,6 +32,10 @@ export default function OnboardingScreen() {
 
     const benefitValue = Number(
       benefitAmount.replace(/\./g, '').replace(',', '.')
+    );
+
+    const balanceValue = Number(
+      initialBalance.replace(/\./g, '').replace(',', '.')
     );
 
     if (!salaryValue || salaryValue < 0) {
@@ -39,6 +48,16 @@ export default function OnboardingScreen() {
       return;
     }
 
+    if (!accountName.trim()) {
+      Alert.alert('Conta obrigatória', 'Digite o nome da sua conta principal.');
+      return;
+    }
+
+    if (Number.isNaN(balanceValue) || balanceValue < 0) {
+      Alert.alert('Valor inválido', 'Digite um saldo inicial válido.');
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -46,6 +65,12 @@ export default function OnboardingScreen() {
         salary: salaryValue,
         benefitAmount: benefitValue,
         onboardingCompleted: true,
+      });
+
+      await addAccount({
+        name: accountName.trim(),
+        type: 'bank',
+        balance: balanceValue,
       });
 
       router.replace('/');
@@ -114,6 +139,39 @@ export default function OnboardingScreen() {
 
               <Text style={styles.helper}>
                 Se você não recebe VA ou outro benefício, coloque 0.
+              </Text>
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Sua conta principal</Text>
+
+              <TextInput
+                style={styles.textInput}
+                value={accountName}
+                onChangeText={setAccountName}
+                placeholder="Ex.: Nubank"
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Saldo atual da conta</Text>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.prefix}>R$</Text>
+
+                <TextInput
+                  style={styles.input}
+                  value={initialBalance}
+                  onChangeText={setInitialBalance}
+                  placeholder="0,00"
+                  placeholderTextColor="#999"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+
+              <Text style={styles.helper}>
+                Quanto você tem disponível nessa conta hoje?
               </Text>
             </View>
           </View>
@@ -195,6 +253,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+
+  textInput: {
+    height: 58,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    fontSize: 17,
+    color: '#111827',
   },
 
   prefix: {

@@ -1,6 +1,12 @@
-export type TransactionType = "income" | "expense" | "transfer";
+export type TransactionType =
+  | 'income'
+  | 'expense'
+  | 'transfer';
 
-export type TransactionSource = "manual" | "notification" | "import";
+export type TransactionSource =
+  | 'manual'
+  | 'notification'
+  | 'import';
 
 export interface Transaction {
   id: number;
@@ -12,6 +18,8 @@ export interface Transaction {
   categoryId: number | null;
   accountId: number | null;
   paymentMethod: string | null;
+  goalId: number | null;
+  goalName?: string | null;
   isAutomatic: boolean;
   source: TransactionSource;
   createdAt: string;

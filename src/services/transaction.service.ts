@@ -21,6 +21,10 @@ export async function addTransaction(
     throw new Error('O tipo da transação é obrigatório.');
   }
 
+  if (!transaction.accountId) {
+    throw new Error('A conta da transação é obrigatória.');
+  }
+
   return createTransaction(transaction);
 }
 

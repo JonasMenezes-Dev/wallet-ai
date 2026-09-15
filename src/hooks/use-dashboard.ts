@@ -1,21 +1,31 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 import {
-    DashboardSummary,
-    getDashboardSummary,
-} from "../services/dashboard.service";
+  DashboardSummary,
+  getDashboardSummary,
+} from '../services/dashboard.service';
 
 const initialSummary: DashboardSummary = {
   totalIncome: 0,
   totalExpenses: 0,
   balance: 0,
   transactionCount: 0,
+  accounts: [],
+  monthIncome: 0,
+  monthExpenses: 0,
+  monthBalance: 0,
+  monthTransactionCount: 0,
 };
 
 export function useDashboard() {
-  const [summary, setSummary] = useState<DashboardSummary>(initialSummary);
+  const [summary, setSummary] =
+    useState<DashboardSummary>(initialSummary);
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const [error, setError] =
+    useState<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -26,16 +36,24 @@ export function useDashboard() {
 
       setSummary(data);
     } catch (err) {
-      console.error("Erro ao carregar dashboard:", err);
-      setError("Não foi possível carregar seus dados.");
+      console.error(
+        'Erro ao carregar dashboard:',
+        err
+      );
+
+      setError(
+        'Não foi possível carregar seus dados.'
+      );
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboard();
+    }, [loadDashboard])
+  );
 
   return {
     summary,
