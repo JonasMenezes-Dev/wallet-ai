@@ -1,20 +1,30 @@
 import {
-  Alert,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    FlatList,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+
+import { AnimatedListItem, FadeInView } from '../../src/components/AnimatedListItem';
+import { AnimatedPressable } from '../../src/components/AnimatedPressable';
+
+import { useAccounts } from '../../src/hooks/use-accounts';
 
 import {
-  addAccount,
-  listAccounts,
+    addAccount,
+    editAccount,
+    removeAccount,
 } from '../../src/services/account.service';
 
+import {
+    ThemeColors,
+    useThemeColors,
+    useThemedStyles,
+} from '../../src/theme';
 import { Account, AccountType } from '../../src/types/account';
 
 const accountTypes: {
@@ -29,39 +39,51 @@ const accountTypes: {
 ];
 
 export default function AccountsScreen() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { accounts, loading, error, reload } = useAccounts();
+  const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
 
   const [showForm, setShowForm] = useState(false);
+
+  /** Conta em edição. `null` significa que o formulário está criando. */
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const [name, setName] = useState('');
   const [balance, setBalance] = useState('');
   const [type, setType] = useState<AccountType>('bank');
 
-  async function loadAccounts() {
-    try {
-      setLoading(true);
+  const isEditing = editingId !== null;
 
-      const data = await listAccounts();
-
-      setAccounts(data);
-    } catch (error) {
-      console.error('Erro ao carregar contas:', error);
-
-      Alert.alert(
-        'Erro',
-        'Não foi possível carregar suas contas.'
-      );
-    } finally {
-      setLoading(false);
-    }
+  function resetForm() {
+    setName('');
+    setBalance('');
+    setType('bank');
+    setEditingId(null);
+    setShowForm(false);
   }
 
-  useEffect(() => {
-    loadAccounts();
-  }, []);
+  function handleOpenCreate() {
+    if (showForm && !isEditing) {
+      resetForm();
+      return;
+    }
 
-  async function handleCreateAccount() {
+    setName('');
+    setBalance('');
+    setType('bank');
+    setEditingId(null);
+    setShowForm(true);
+  }
+
+  function handleOpenEdit(account: Account) {
+    setName(account.name);
+    setBalance(account.balance.toFixed(2).replace('.', ','));
+    setType(account.type);
+    setEditingId(account.id);
+    setShowForm(true);
+  }
+
+  async function handleSubmit() {
     const balanceValue = Number(
       balance.replace(/\./g, '').replace(',', '.')
     );
@@ -81,43 +103,91 @@ export default function AccountsScreen() {
     ) {
       Alert.alert(
         'Saldo inválido',
-        'Digite um saldo inicial válido.'
+        'Digite um saldo válido.'
       );
 
       return;
     }
 
     try {
-      await addAccount({
-        name: name.trim(),
-        type,
-        balance: balanceValue,
-      });
+      if (isEditing) {
+        await editAccount(editingId, {
+          name: name.trim(),
+          type,
+          balance: balanceValue,
+        });
+      } else {
+        await addAccount({
+          name: name.trim(),
+          type,
+          balance: balanceValue,
+        });
+      }
 
-      setName('');
-      setBalance('');
-      setType('bank');
-      setShowForm(false);
+      resetForm();
 
-      await loadAccounts();
-    } catch (error) {
+      await reload();
+    } catch (submitError) {
       console.error(
-        'Erro ao criar conta:',
-        error
+        isEditing ? 'Erro ao editar conta:' : 'Erro ao criar conta:',
+        submitError
       );
 
-      Alert.alert(
-        'Erro',
-        'Não foi possível criar a conta.'
-      );
+      const message =
+        submitError instanceof Error
+          ? submitError.message
+          : 'Não foi possível salvar a conta.';
+
+      Alert.alert('Não foi possível salvar', message);
     }
+  }
+
+  function handleDeleteAccount(accountId: number, accountName: string) {
+    Alert.alert(
+      'Excluir conta',
+      `Deseja realmente excluir a conta "${accountName}"?`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeAccount(accountId);
+
+              await reload();
+            } catch (error) {
+              console.error('Erro ao excluir conta:', error);
+
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : 'Não foi possível excluir a conta.';
+
+              Alert.alert('Não foi possível excluir', message);
+            }
+          },
+        },
+      ]
+    );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <FadeInView style={styles.center}>
         <Text>Carregando contas...</Text>
-      </View>
+      </FadeInView>
+    );
+  }
+
+  if (error) {
+    return (
+      <FadeInView style={styles.center}>
+        <Text>{error}</Text>
+      </FadeInView>
     );
   }
 
@@ -132,20 +202,21 @@ export default function AccountsScreen() {
           </Text>
         </View>
 
-        <Pressable
+        <AnimatedPressable
           style={styles.addButton}
-          onPress={() => setShowForm(!showForm)}
+          pressedOpacity={0.85}
+          onPress={handleOpenCreate}
         >
           <Text style={styles.addButtonText}>
             {showForm ? 'Fechar' : '+ Conta'}
           </Text>
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       {showForm && (
-        <View style={styles.form}>
+        <FadeInView style={styles.form}>
           <Text style={styles.formTitle}>
-            Nova conta
+            {isEditing ? 'Editar conta' : 'Nova conta'}
           </Text>
 
           <Text style={styles.label}>
@@ -157,7 +228,7 @@ export default function AccountsScreen() {
             value={name}
             onChangeText={setName}
             placeholder="Ex.: Itaú"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textSubtle}
           />
 
           <Text style={styles.label}>
@@ -174,7 +245,7 @@ export default function AccountsScreen() {
               value={balance}
               onChangeText={setBalance}
               placeholder="0,00"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textSubtle}
               keyboardType="decimal-pad"
             />
           </View>
@@ -185,8 +256,9 @@ export default function AccountsScreen() {
 
           <View style={styles.typeList}>
             {accountTypes.map((item) => (
-              <Pressable
+              <AnimatedPressable
                 key={item.value}
+                pressedScale={0.94}
                 style={[
                   styles.typeOption,
                   type === item.value &&
@@ -205,19 +277,20 @@ export default function AccountsScreen() {
                 >
                   {item.label}
                 </Text>
-              </Pressable>
+              </AnimatedPressable>
             ))}
           </View>
 
-          <Pressable
+          <AnimatedPressable
             style={styles.saveButton}
-            onPress={handleCreateAccount}
+            pressedOpacity={0.85}
+            onPress={handleSubmit}
           >
             <Text style={styles.saveButtonText}>
-              Criar conta
+              {isEditing ? 'Salvar alterações' : 'Criar conta'}
             </Text>
-          </Pressable>
-        </View>
+          </AnimatedPressable>
+        </FadeInView>
       )}
 
       <FlatList
@@ -230,8 +303,8 @@ export default function AccountsScreen() {
             ? styles.emptyList
             : styles.list
         }
-        renderItem={({ item }) => (
-          <View style={styles.accountCard}>
+        renderItem={({ item, index }) => (
+          <AnimatedListItem index={index} style={styles.accountCard}>
             <View>
               <Text style={styles.accountName}>
                 {item.name}
@@ -245,13 +318,39 @@ export default function AccountsScreen() {
               </Text>
             </View>
 
-            <Text style={styles.accountBalance}>
-              R${' '}
-              {item.balance
-                .toFixed(2)
-                .replace('.', ',')}
-            </Text>
-          </View>
+            <View style={styles.accountActions}>
+              <Text style={styles.accountBalance}>
+                R${' '}
+                {item.balance
+                  .toFixed(2)
+                  .replace('.', ',')}
+              </Text>
+
+              <View style={styles.cardButtons}>
+                <AnimatedPressable
+                  style={styles.editButton}
+                  pressedScale={0.93}
+                  onPress={() => handleOpenEdit(item)}
+                >
+                  <Text style={styles.editButtonText}>
+                    Editar
+                  </Text>
+                </AnimatedPressable>
+
+                <AnimatedPressable
+                  style={styles.deleteButton}
+                  pressedScale={0.93}
+                  onPress={() =>
+                    handleDeleteAccount(item.id, item.name)
+                  }
+                >
+                  <Text style={styles.deleteButtonText}>
+                    Excluir
+                  </Text>
+                </AnimatedPressable>
+              </View>
+            </View>
+          </AnimatedListItem>
         )}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
@@ -263,19 +362,20 @@ export default function AccountsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
     paddingTop: 70,
-    backgroundColor: '#F7F8FA',
+    backgroundColor: colors.background,
   },
 
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F7F8FA',
+    backgroundColor: colors.background,
   },
 
   header: {
@@ -287,40 +387,40 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: '800',
-    color: '#111827',
+    color: colors.text,
   },
 
   subtitle: {
     marginTop: 8,
     fontSize: 15,
-    color: '#6B7280',
+    color: colors.textMuted,
   },
 
   addButton: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: '#174EA6',
+    backgroundColor: colors.primary,
   },
 
   addButtonText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 
   form: {
     marginTop: 24,
     padding: 18,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
 
   formTitle: {
     marginBottom: 18,
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
 
   label: {
@@ -328,7 +428,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.text,
   },
 
   input: {
@@ -336,9 +436,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
     fontSize: 16,
-    color: '#111827',
+    color: colors.text,
   },
 
   moneyInput: {
@@ -348,21 +449,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
   },
 
   prefix: {
     marginRight: 8,
     fontSize: 16,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textMuted,
   },
 
   moneyTextInput: {
     flex: 1,
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
   },
 
   typeList: {
@@ -376,23 +478,23 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
 
   typeOptionActive: {
-    borderColor: '#174EA6',
-    backgroundColor: '#174EA6',
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
 
   typeOptionText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textMuted,
   },
 
   typeOptionTextActive: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 
   saveButton: {
@@ -401,13 +503,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 13,
-    backgroundColor: '#174EA6',
+    backgroundColor: colors.primary,
   },
 
   saveButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 
   list: {
@@ -423,7 +525,7 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    color: '#9CA3AF',
+    color: colors.textSubtle,
   },
 
   accountCard: {
@@ -432,24 +534,60 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
 
   accountName: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
 
   accountType: {
     marginTop: 5,
     fontSize: 13,
-    color: '#9CA3AF',
+    color: colors.textSubtle,
   },
 
   accountBalance: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
-});
+
+  accountActions: {
+    alignItems: 'flex-end',
+  },
+
+  cardButtons: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 8,
+  },
+
+  editButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: colors.accentSurface,
+  },
+
+  editButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+
+  deleteButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: colors.expenseSurface,
+  },
+
+  deleteButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.expense,
+  },
+  });

@@ -1,13 +1,15 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+
+import { FadeInView } from '../../src/components/AnimatedListItem';
 
 export default function SettingsScreen() {
   return (
-    <View style={styles.container}>
+    <FadeInView style={styles.container}>
       <Text style={styles.title}>Configurações</Text>
       <Text style={styles.subtitle}>
         Configurações do Wallet.ai.
       </Text>
-    </View>
+    </FadeInView>
   );
 }
 

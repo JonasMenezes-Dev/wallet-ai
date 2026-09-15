@@ -1,933 +1,928 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 import {
   Alert,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { router } from 'expo-router';
+import { router } from "expo-router";
 
-import { useAccounts } from '../../src/hooks/use-accounts';
-import { useGoals } from '../../src/hooks/use-goals';
-import { contributeToGoal } from '../../src/services/goal.service';
+import { AnimatedBlock, AnimatedListItem, FadeInView } from "../../src/components/AnimatedListItem";
+import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { useAccounts } from "../../src/hooks/use-accounts";
+import { useGoals } from "../../src/hooks/use-goals";
+
+import {
+  calculateGoalProgress,
+  contributeToGoal,
+  removeGoal,
+} from "../../src/services/goal.service";
+
+import { ThemeColors, useThemedStyles } from "../../src/theme";
 
 function formatCurrency(value: number) {
-  return `R$ ${value
-    .toFixed(2)
-    .replace('.', ',')}`;
+  return `R$ ${value.toFixed(2).replace(".", ",")}`;
 }
 
-function getProgress(
-  current: number,
-  target: number
-) {
-  if (target <= 0) {
-    return 0;
+function formatDate(date: string | null) {
+  if (!date) {
+    return "Sem prazo definido";
   }
 
-  return Math.min(
-    current / target,
-    1
-  );
-}
+  const [year, month, day] = date.split("-").map(Number);
 
-function formatDeadline(
-  deadline: string | null
-) {
-  if (!deadline) {
-    return 'Sem prazo definido';
+  const parsedDate = new Date(year, month - 1, day);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Prazo inválido";
   }
 
-  return `Prazo: ${deadline}`;
+  return parsedDate.toLocaleDateString("pt-BR");
 }
 
 export default function GoalsScreen() {
   const {
     goals,
-    loading,
-    error,
+    loading: goalsLoading,
+    error: goalsError,
     reload: reloadGoals,
   } = useGoals();
 
-  const {
-    accounts,
-    reload: reloadAccounts,
-  } = useAccounts();
+  const { accounts, reload: reloadAccounts } = useAccounts();
+  const styles = useThemedStyles(createStyles);
 
-  const [selectedGoalId, setSelectedGoalId] =
-    useState<number | null>(null);
+  const [contributingGoalId, setContributingGoalId] = useState<number | null>(
+    null,
+  );
 
-  const [selectedAccountId, setSelectedAccountId] =
-    useState<number | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
+    null,
+  );
 
-  const [amount, setAmount] =
-    useState('');
+  const [amount, setAmount] = useState("");
 
-  const [saving, setSaving] =
-    useState(false);
-
-  function parseMoney(value: string) {
-    return Number(
-      value
-        .replace(/\./g, '')
-        .replace(',', '.')
-    );
-  }
-
-  function openContribution(goalId: number) {
-    setSelectedGoalId(goalId);
-    setSelectedAccountId(
-      accounts.length > 0
-        ? accounts[0].id
-        : null
-    );
-    setAmount('');
-  }
-
-  function closeContribution() {
-    setSelectedGoalId(null);
-    setSelectedAccountId(null);
-    setAmount('');
-  }
-
-  async function handleContribution() {
-    if (!selectedGoalId) {
-      return;
-    }
+  async function handleContribution(goalId: number) {
+    const amountValue = Number(amount.replace(/\./g, "").replace(",", "."));
 
     if (!selectedAccountId) {
       Alert.alert(
-        'Conta obrigatória',
-        'Selecione a conta de onde o dinheiro será retirado.'
+        "Conta obrigatória",
+        "Selecione a conta de onde o dinheiro será retirado.",
       );
-
       return;
     }
 
-    const value = parseMoney(amount);
-
-    if (
-      Number.isNaN(value) ||
-      value <= 0
-    ) {
-      Alert.alert(
-        'Valor inválido',
-        'Digite um valor de aporte válido.'
-      );
-
+    if (!amountValue || amountValue <= 0) {
+      Alert.alert("Valor inválido", "Digite um valor maior que zero.");
       return;
     }
 
     try {
-      setSaving(true);
+      await contributeToGoal(goalId, selectedAccountId, amountValue);
 
-      await contributeToGoal(
-        selectedGoalId,
-        selectedAccountId,
-        value
-      );
+      setContributingGoalId(null);
+      setSelectedAccountId(null);
+      setAmount("");
 
-      await reloadGoals();
-      await reloadAccounts();
+      await Promise.all([reloadGoals(), reloadAccounts()]);
 
-      closeContribution();
-
-      Alert.alert(
-        'Aporte realizado',
-        'O dinheiro foi adicionado à sua meta.'
-      );
+      Alert.alert("Aporte realizado", "O valor foi adicionado à sua meta.");
     } catch (error) {
-      console.error(
-        'Erro ao adicionar aporte:',
-        error
-      );
+      console.error("Erro ao realizar aporte:", error);
 
       const message =
         error instanceof Error
           ? error.message
-          : 'Não foi possível realizar o aporte.';
+          : "Não foi possível realizar o aporte.";
 
-      Alert.alert(
-        'Não foi possível realizar o aporte',
-        message
-      );
-    } finally {
-      setSaving(false);
+      Alert.alert("Erro", message);
     }
   }
 
-  if (loading) {
+  function openContribution(goalId: number) {
+    setContributingGoalId(goalId);
+
+    setSelectedAccountId(accounts[0]?.id ?? null);
+
+    setAmount("");
+  }
+
+  function closeContribution() {
+    setContributingGoalId(null);
+    setSelectedAccountId(null);
+    setAmount("");
+  }
+
+  function handleDeleteGoal(goalId: number) {
+    Alert.alert("Excluir meta", "Tem certeza que deseja excluir esta meta?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await removeGoal(goalId);
+
+            await reloadGoals();
+
+            Alert.alert("Meta excluída", "A meta foi removida com sucesso.");
+          } catch (error) {
+            console.error("Erro ao excluir meta:", error);
+
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Não foi possível excluir a meta.";
+
+            Alert.alert("Não foi possível excluir", message);
+          }
+        },
+      },
+    ]);
+  }
+
+  if (goalsLoading) {
     return (
-      <View style={styles.center}>
-        <Text>
-          Carregando metas...
-        </Text>
-      </View>
+      <FadeInView style={styles.center}>
+        <Text style={styles.loadingText}>Carregando metas...</Text>
+      </FadeInView>
     );
   }
 
-  if (error) {
+  if (goalsError) {
     return (
-      <View style={styles.center}>
-        <Text>{error}</Text>
-      </View>
+      <FadeInView style={styles.center}>
+        <Text style={styles.errorText}>{goalsError}</Text>
+
+        <AnimatedPressable
+          style={styles.retryButton}
+          pressedOpacity={0.85}
+          onPress={reloadGoals}
+        >
+          <Text style={styles.retryButtonText}>Tentar novamente</Text>
+        </AnimatedPressable>
+      </FadeInView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>
-              Metas
-            </Text>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      <AnimatedBlock style={styles.header}>
+        <View>
+          <Text style={styles.title}>Metas</Text>
 
-            <Text style={styles.subtitle}>
-              Seus objetivos financeiros
-            </Text>
-          </View>
-
-          <Pressable
-            style={styles.addButton}
-            onPress={() =>
-              router.push('/goal/new')
-            }
-          >
-            <Text style={styles.addButtonText}>
-              + Meta
-            </Text>
-          </Pressable>
+          <Text style={styles.subtitle}>
+            Planeje o que você quer conquistar.
+          </Text>
         </View>
 
-        {goals.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyIcon}>
-              🎯
-            </Text>
+        <AnimatedPressable
+          style={styles.addButton}
+          pressedOpacity={0.85}
+          onPress={() => router.push("/goal/new")}
+        >
+          <Text style={styles.addButtonText}>+ Nova</Text>
+        </AnimatedPressable>
+      </AnimatedBlock>
 
-            <Text style={styles.emptyTitle}>
-              Nenhuma meta ainda
-            </Text>
+      {goals.length === 0 ? (
+        <FadeInView style={styles.emptyCard}>
+          <Text style={styles.emptyIcon}>🎯</Text>
 
-            <Text style={styles.emptyText}>
-              Crie uma meta para começar a
-              acompanhar seu progresso.
-            </Text>
+          <Text style={styles.emptyTitle}>Nenhuma meta criada</Text>
 
-            <Pressable
-              style={styles.emptyButton}
-              onPress={() =>
-                router.push('/goal/new')
-              }
+          <Text style={styles.emptyText}>
+            Crie sua primeira meta e deixe o Wallet.ai calcular o caminho até
+            ela.
+          </Text>
+
+          <AnimatedPressable
+            style={styles.emptyButton}
+            pressedOpacity={0.85}
+            onPress={() => router.push("/goal/new")}
+          >
+            <Text style={styles.emptyButtonText}>
+              Criar minha primeira meta
+            </Text>
+          </AnimatedPressable>
+        </FadeInView>
+      ) : (
+        goals.map((goal, index) => {
+          const progress = calculateGoalProgress(goal);
+
+          const isContributing = contributingGoalId === goal.id;
+
+          const isCompleted = progress.remainingAmount <= 0;
+
+          return (
+            <AnimatedListItem
+              key={goal.id}
+              index={index}
+              delayStep={70}
+              style={styles.goalCard}
             >
-              <Text
-                style={styles.emptyButtonText}
-              >
-                Criar minha primeira meta
-              </Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.goalsList}>
-            {goals.map((goal) => {
-              const progress =
-                getProgress(
-                  goal.currentAmount,
-                  goal.targetAmount
-                );
+              <View style={styles.goalHeader}>
+                <View style={styles.goalTitleArea}>
+                  <Text style={styles.goalName}>{goal.name}</Text>
 
-              const percentage =
-                Math.round(
-                  progress * 100
-                );
+                  <Text style={styles.deadline}>
+                    📅 {formatDate(goal.deadline)}
+                  </Text>
 
-              const remaining =
-                Math.max(
-                  goal.targetAmount -
-                    goal.currentAmount,
-                  0
-                );
-
-              const isContributing =
-                selectedGoalId === goal.id;
-
-              return (
-                <View
-                  key={goal.id}
-                  style={styles.goalCard}
-                >
-                  <View
-                    style={
-                      styles.goalHeader
-                    }
-                  >
-                    <View
-                      style={
-                        styles.goalInfo
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.goalName
-                        }
-                      >
-                        {goal.name}
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.deadline
-                        }
-                      >
-                        {formatDeadline(
-                          goal.deadline
-                        )}
-                      </Text>
-                    </View>
-
-                    <Text
-                      style={
-                        styles.percentage
-                      }
-                    >
-                      {percentage}%
-                    </Text>
-                  </View>
-
-                  <View
-                    style={
-                      styles.progressBackground
-                    }
-                  >
-                    <View
-                      style={[
-                        styles.progressFill,
-                        {
-                          width: `${percentage}%`,
-                        },
-                      ]}
-                    />
-                  </View>
-
-                  <View
-                    style={styles.values}
-                  >
-                    <View>
-                      <Text
-                        style={
-                          styles.valueLabel
-                        }
-                      >
-                        Guardado
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.currentValue
-                        }
-                      >
-                        {formatCurrency(
-                          goal.currentAmount
-                        )}
-                      </Text>
-                    </View>
-
-                    <View
-                      style={
-                        styles.targetContainer
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.valueLabel
-                        }
-                      >
-                        Objetivo
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.targetValue
-                        }
-                      >
-                        {formatCurrency(
-                          goal.targetAmount
-                        )}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {remaining > 0 ? (
-                    <Text
-                      style={
-                        styles.remaining
-                      }
-                    >
-                      Faltam{' '}
-                      {formatCurrency(
-                        remaining
-                      )}
-                    </Text>
-                  ) : (
-                    <Text
-                      style={
-                        styles.completed
-                      }
-                    >
-                      🎉 Meta alcançada!
-                    </Text>
+                  {progress.deadlineStatus === "overdue" && (
+                    <Text style={styles.overdueText}>Prazo vencido</Text>
                   )}
 
-                  {remaining > 0 && (
-                    <>
-                      {!isContributing ? (
-                        <Pressable
-                          style={
-                            styles.addMoneyButton
-                          }
-                          onPress={() =>
-                            openContribution(
-                              goal.id
-                            )
-                          }
-                        >
-                          <Text
-                            style={
-                              styles.addMoneyText
-                            }
-                          >
-                            + Adicionar dinheiro
-                          </Text>
-                        </Pressable>
-                      ) : (
-                        <View
-                          style={
-                            styles.contributionBox
-                          }
-                        >
-                          <Text
-                            style={
-                              styles.contributionTitle
-                            }
-                          >
-                            Adicionar dinheiro
-                          </Text>
-
-                          <Text
-                            style={
-                              styles.contributionSubtitle
-                            }
-                          >
-                            De qual conta vai sair o
-                            dinheiro?
-                          </Text>
-
-                          <View
-                            style={
-                              styles.accountsList
-                            }
-                          >
-                            {accounts.map(
-                              (account) => {
-                                const selected =
-                                  selectedAccountId ===
-                                  account.id;
-
-                                return (
-                                  <Pressable
-                                    key={
-                                      account.id
-                                    }
-                                    style={[
-                                      styles.accountOption,
-                                      selected &&
-                                        styles.accountOptionSelected,
-                                    ]}
-                                    onPress={() =>
-                                      setSelectedAccountId(
-                                        account.id
-                                      )
-                                    }
-                                  >
-                                    <View>
-                                      <Text
-                                        style={
-                                          styles.accountName
-                                        }
-                                      >
-                                        {
-                                          account.name
-                                        }
-                                      </Text>
-
-                                      <Text
-                                        style={
-                                          styles.accountBalance
-                                        }
-                                      >
-                                        Saldo:{' '}
-                                        {formatCurrency(
-                                          account.balance
-                                        )}
-                                      </Text>
-                                    </View>
-
-                                    {selected && (
-                                      <Text
-                                        style={
-                                          styles.selectedMark
-                                        }
-                                      >
-                                        ✓
-                                      </Text>
-                                    )}
-                                  </Pressable>
-                                );
-                              }
-                            )}
-                          </View>
-
-                          <Text
-                            style={
-                              styles.contributionSubtitle
-                            }
-                          >
-                            Quanto deseja adicionar?
-                          </Text>
-
-                          <TextInput
-                            value={amount}
-                            onChangeText={setAmount}
-                            placeholder="Ex.: 100,00"
-                            placeholderTextColor="#9CA3AF"
-                            keyboardType="decimal-pad"
-                            style={
-                              styles.amountInput
-                            }
-                          />
-
-                          <View
-                            style={
-                              styles.quickValues
-                            }
-                          >
-                            {[50, 100, 200, 500].map(
-                              (value) => (
-                                <Pressable
-                                  key={value}
-                                  style={
-                                    styles.quickValue
-                                  }
-                                  onPress={() =>
-                                    setAmount(
-                                      value.toString()
-                                    )
-                                  }
-                                >
-                                  <Text
-                                    style={
-                                      styles.quickValueText
-                                    }
-                                  >
-                                    R$ {value}
-                                  </Text>
-                                </Pressable>
-                              )
-                            )}
-                          </View>
-
-                          <View
-                            style={
-                              styles.contributionActions
-                            }
-                          >
-                            <Pressable
-                              style={
-                                styles.cancelButton
-                              }
-                              onPress={
-                                closeContribution
-                              }
-                              disabled={saving}
-                            >
-                              <Text
-                                style={
-                                  styles.cancelButtonText
-                                }
-                              >
-                                Cancelar
-                              </Text>
-                            </Pressable>
-
-                            <Pressable
-                              style={
-                                styles.confirmButton
-                              }
-                              onPress={
-                                handleContribution
-                              }
-                              disabled={saving}
-                            >
-                              <Text
-                                style={
-                                  styles.confirmButtonText
-                                }
-                              >
-                                {saving
-                                  ? 'Salvando...'
-                                  : 'Confirmar aporte'}
-                              </Text>
-                            </Pressable>
-                          </View>
-                        </View>
-                      )}
-                    </>
+                  {progress.deadlineStatus === "on-track" && (
+                    <Text style={styles.daysRemainingText}>
+                      {progress.daysRemaining === 0
+                        ? "Vence hoje"
+                        : `${progress.daysRemaining} dias restantes`}
+                    </Text>
                   )}
                 </View>
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
-    </View>
+
+                <Text style={styles.percentage}>
+                  {progress.progressPercentage.toFixed(0)}%
+                </Text>
+              </View>
+
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${progress.progressPercentage}%`,
+                    },
+                  ]}
+                />
+              </View>
+
+              <View style={styles.valuesRow}>
+                <View>
+                  <Text style={styles.smallLabel}>Guardado</Text>
+
+                  <Text style={styles.currentAmount}>
+                    {formatCurrency(goal.currentAmount)}
+                  </Text>
+                </View>
+
+                <View style={styles.targetArea}>
+                  <Text style={styles.smallLabel}>Objetivo</Text>
+
+                  <Text style={styles.targetAmount}>
+                    {formatCurrency(goal.targetAmount)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.remainingCard}>
+                <Text style={styles.remainingLabel}>
+                  {isCompleted ? "Meta concluída 🎉" : "Ainda falta"}
+                </Text>
+
+                <Text style={styles.remainingAmount}>
+                  {formatCurrency(progress.remainingAmount)}
+                </Text>
+              </View>
+
+              {!isCompleted && progress.deadlineStatus === "on-track" && (
+                <View style={styles.plansSection}>
+                  <Text style={styles.plansTitle}>
+                    Média mensal para chegar à meta
+                  </Text>
+
+                  {/* AGRESSIVA */}
+                  <View style={styles.planCard}>
+                    <Text style={styles.planIcon}>🔥</Text>
+
+                    <View style={styles.planInfo}>
+                      <Text style={styles.planName}>Agressiva</Text>
+
+                      <Text style={styles.planDescription}>
+                        Economiza mais e antecipa sua meta.
+                      </Text>
+
+                      <Text style={styles.planDate}>
+                        Objetivo em {progress.plans.aggressive.estimatedDate}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.planValue}>
+                      {formatCurrency(progress.plans.aggressive.monthlyAmount)}
+                      /mês
+                    </Text>
+                  </View>
+
+                  {/* EQUILIBRADA */}
+                  <View style={[styles.planCard, styles.balancedPlan]}>
+                    <Text style={styles.planIcon}>⚖️</Text>
+
+                    <View style={styles.planInfo}>
+                      <Text style={styles.planName}>Equilibrada</Text>
+
+                      <Text style={styles.planDescription}>
+                        Valor necessário para chegar no prazo.
+                      </Text>
+
+                      <Text style={styles.planDate}>
+                        Objetivo em {progress.plans.balanced.estimatedDate}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.planValue}>
+                      {formatCurrency(progress.plans.balanced.monthlyAmount)}
+                      /mês
+                    </Text>
+                  </View>
+
+                  {/* CONFORTÁVEL */}
+                  <View style={styles.planCard}>
+                    <Text style={styles.planIcon}>😌</Text>
+
+                    <View style={styles.planInfo}>
+                      <Text style={styles.planName}>Confortável</Text>
+
+                      <Text style={styles.planDescription}>
+                        Menos pressão no mês, mas leva mais tempo.
+                      </Text>
+
+                      <Text style={styles.planDate}>
+                        Objetivo em {progress.plans.comfortable.estimatedDate}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.planValue}>
+                      {formatCurrency(progress.plans.comfortable.monthlyAmount)}
+                      /mês
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {progress.deadlineStatus === "overdue" && !isCompleted && (
+                <View style={styles.overdueBox}>
+                  <Text style={styles.overdueBoxTitle}>
+                    Essa meta ficou para trás
+                  </Text>
+
+                  <Text style={styles.overdueBoxText}>
+                    Escolha uma nova data para recalcular os três planos.
+                  </Text>
+                </View>
+              )}
+
+              {isContributing ? (
+                <View style={styles.contributionBox}>
+                  <Text style={styles.contributionTitle}>Fazer aporte</Text>
+
+                  <TextInput
+                    value={amount}
+                    onChangeText={setAmount}
+                    placeholder="0,00"
+                    keyboardType="decimal-pad"
+                    style={styles.amountInput}
+                  />
+
+                  <Text style={styles.accountLabel}>Retirar de:</Text>
+
+                  <View style={styles.accountsRow}>
+                    {accounts.map((account) => (
+                      <AnimatedPressable
+                        key={account.id}
+                        pressedScale={0.94}
+                        style={[
+                          styles.accountOption,
+                          selectedAccountId === account.id &&
+                            styles.accountOptionSelected,
+                        ]}
+                        onPress={() => setSelectedAccountId(account.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.accountOptionText,
+                            selectedAccountId === account.id &&
+                              styles.accountOptionTextSelected,
+                          ]}
+                        >
+                          {account.name}
+                        </Text>
+                      </AnimatedPressable>
+                    ))}
+                  </View>
+
+                  <View style={styles.quickValues}>
+                    {[50, 100, 200, 500].map((value) => (
+                      <AnimatedPressable
+                        key={value}
+                        pressedScale={0.94}
+                        style={styles.quickValue}
+                        onPress={() =>
+                          setAmount(value.toFixed(2).replace(".", ","))
+                        }
+                      >
+                        <Text>R$ {value}</Text>
+                      </AnimatedPressable>
+                    ))}
+                  </View>
+
+                  <View style={styles.contributionActions}>
+                    <AnimatedPressable
+                      style={styles.cancelButton}
+                      pressedOpacity={0.85}
+                      onPress={closeContribution}
+                    >
+                      <Text>Cancelar</Text>
+                    </AnimatedPressable>
+
+                    <AnimatedPressable
+                      style={styles.confirmButton}
+                      pressedOpacity={0.85}
+                      onPress={() => handleContribution(goal.id)}
+                    >
+                      <Text style={styles.confirmButtonText}>
+                        Confirmar aporte
+                      </Text>
+                    </AnimatedPressable>
+                  </View>
+                </View>
+              ) : (
+                <AnimatedPressable
+                  style={styles.contributeButton}
+                  pressedOpacity={0.85}
+                  onPress={() => openContribution(goal.id)}
+                >
+                  <Text style={styles.contributeButtonText}>
+                    + Fazer aporte
+                  </Text>
+                </AnimatedPressable>
+              )}
+
+              <View style={styles.managementRow}>
+                <AnimatedPressable
+                  style={styles.managementButton}
+                  pressedScale={0.94}
+                  pressedOpacity={0.7}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/goal/edit",
+                      params: {
+                        id: String(goal.id),
+                      },
+                    })
+                  }
+                >
+                  <Text>✏️ Editar</Text>
+                </AnimatedPressable>
+
+                <AnimatedPressable
+                  style={styles.managementButton}
+                  pressedScale={0.94}
+                  pressedOpacity={0.7}
+                  onPress={() => handleDeleteGoal(goal.id)}
+                >
+                  <Text style={styles.deleteText}>🗑️ Excluir</Text>
+                </AnimatedPressable>
+              </View>
+            </AnimatedListItem>
+          );
+        })
+      )}
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#F7F8FA',
-  },
-
-  content: {
-    padding: 24,
-    paddingTop: 70,
+    padding: 20,
     paddingBottom: 40,
   },
 
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F7F8FA',
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
   },
 
   title: {
     fontSize: 30,
-    fontWeight: '800',
-    color: '#111827',
+    fontWeight: "800",
   },
 
   subtitle: {
-    marginTop: 5,
-    fontSize: 14,
-    color: '#6B7280',
+    marginTop: 4,
+    color: colors.textMuted,
   },
 
   addButton: {
-    paddingHorizontal: 14,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: '#174EA6',
   },
 
   addButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-
-  emptyCard: {
-    marginTop: 30,
-    padding: 24,
-    alignItems: 'center',
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-  },
-
-  emptyIcon: {
-    fontSize: 36,
-  },
-
-  emptyTitle: {
-    marginTop: 12,
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#111827',
-  },
-
-  emptyText: {
-    marginTop: 7,
-    maxWidth: 280,
-    textAlign: 'center',
-    fontSize: 14,
-    lineHeight: 21,
-    color: '#6B7280',
-  },
-
-  emptyButton: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#E8F0FE',
-  },
-
-  emptyButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#174EA6',
-  },
-
-  goalsList: {
-    marginTop: 24,
-    gap: 14,
+    color: colors.onPrimary,
+    fontWeight: "700",
   },
 
   goalCard: {
-    padding: 20,
+    backgroundColor: colors.surface,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    padding: 18,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   goalHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
 
-  goalInfo: {
+  goalTitleArea: {
     flex: 1,
     marginRight: 12,
   },
 
   goalName: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
+    fontSize: 21,
+    fontWeight: "800",
   },
 
   deadline: {
-    marginTop: 5,
+    marginTop: 6,
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+
+  daysRemainingText: {
+    marginTop: 4,
+    color: colors.income,
     fontSize: 12,
-    color: '#9CA3AF',
+    fontWeight: "700",
+  },
+
+  overdueText: {
+    marginTop: 4,
+    color: colors.expense,
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   percentage: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#174EA6',
+    fontSize: 20,
+    fontWeight: "800",
   },
 
-  progressBackground: {
+  progressTrack: {
     height: 10,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 10,
+    overflow: "hidden",
     marginTop: 18,
-    overflow: 'hidden',
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
   },
 
   progressFill: {
-    height: '100%',
-    borderRadius: 999,
-    backgroundColor: '#174EA6',
+    height: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 10,
   },
 
-  values: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
+  valuesRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 14,
   },
 
-  valueLabel: {
+  targetArea: {
+    alignItems: "flex-end",
+  },
+
+  smallLabel: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.textSubtle,
   },
 
-  currentValue: {
-    marginTop: 3,
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#15803D',
+  currentAmount: {
+    marginTop: 2,
+    fontSize: 18,
+    fontWeight: "800",
   },
 
-  targetContainer: {
-    alignItems: 'flex-end',
+  targetAmount: {
+    marginTop: 2,
+    fontSize: 16,
+    fontWeight: "700",
   },
 
-  targetValue: {
-    marginTop: 3,
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111827',
-  },
-
-  remaining: {
-    marginTop: 14,
-    fontSize: 13,
-    color: '#6B7280',
-  },
-
-  completed: {
-    marginTop: 14,
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#15803D',
-  },
-
-  addMoneyButton: {
-    height: 46,
+  remainingCard: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 14,
+    padding: 14,
     marginTop: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#E8F0FE',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
-  addMoneyText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#174EA6',
+  remainingLabel: {
+    color: colors.textMuted,
+    fontWeight: "600",
+  },
+
+  remainingAmount: {
+    fontSize: 17,
+    fontWeight: "800",
+  },
+
+  plansSection: {
+    marginTop: 20,
+  },
+
+  plansTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 10,
+  },
+
+  overdueBox: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: colors.warningSurface,
+    borderWidth: 1,
+    borderColor: colors.warning,
+  },
+
+  overdueBoxTitle: {
+    color: colors.warning,
+    fontWeight: "800",
+  },
+
+  overdueBoxText: {
+    marginTop: 4,
+    color: colors.warning,
+    fontSize: 12,
+  },
+
+  planCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceMuted,
+    marginBottom: 8,
+  },
+
+  balancedPlan: {
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
+  planIcon: {
+    fontSize: 21,
+    marginRight: 10,
+  },
+
+  planInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+
+  planName: {
+    fontWeight: "800",
+  },
+
+  planDescription: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+
+  planDate: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 5,
+    fontWeight: "600",
+  },
+
+  planValue: {
+    fontWeight: "800",
+    fontSize: 15,
+  },
+
+  contributeButton: {
+    marginTop: 16,
+    backgroundColor: colors.primary,
+    borderRadius: 14,
+    padding: 14,
+    alignItems: "center",
+  },
+
+  contributeButtonText: {
+    color: colors.onPrimary,
+    fontWeight: "800",
   },
 
   contributionBox: {
     marginTop: 16,
-    padding: 16,
+    padding: 14,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 16,
-    backgroundColor: '#F7F8FA',
   },
 
   contributionTitle: {
     fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
+    fontWeight: "800",
+    marginBottom: 10,
   },
 
-  contributionSubtitle: {
-    marginTop: 12,
+  amountInput: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 18,
+    color: colors.text,
+  },
+
+  accountLabel: {
+    marginTop: 14,
     marginBottom: 8,
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6B7280',
+    fontWeight: "700",
   },
 
-  accountsList: {
+  accountsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
 
   accountOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    backgroundColor: colors.surface,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
 
   accountOptionSelected: {
-    borderColor: '#174EA6',
-    backgroundColor: '#E8F0FE',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
-  accountName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
+  accountOptionText: {
+    fontWeight: "600",
+    color: colors.text,
   },
 
-  accountBalance: {
-    marginTop: 3,
-    fontSize: 12,
-    color: '#6B7280',
-  },
-
-  selectedMark: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#174EA6',
-  },
-
-  amountInput: {
-    height: 52,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    fontSize: 16,
-    color: '#111827',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+  accountOptionTextSelected: {
+    color: colors.onPrimary,
   },
 
   quickValues: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    marginTop: 10,
+    marginTop: 12,
   },
 
   quickValue: {
-    flex: 1,
-    paddingVertical: 9,
-    alignItems: 'center',
-    borderRadius: 10,
-    backgroundColor: '#E8F0FE',
-  },
-
-  quickValueText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#174EA6',
+    backgroundColor: colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   contributionActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 16,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 14,
   },
 
   cancelButton: {
     flex: 1,
-    height: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 12,
+    alignItems: "center",
+    backgroundColor: colors.surface,
     borderRadius: 12,
-    backgroundColor: '#E5E7EB',
-  },
-
-  cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#374151',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   confirmButton: {
-    flex: 1.5,
-    height: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1,
+    padding: 12,
+    alignItems: "center",
+    backgroundColor: colors.primary,
     borderRadius: 12,
-    backgroundColor: '#174EA6',
   },
 
   confirmButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
+    fontWeight: "700",
   },
-});
+
+  managementRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginTop: 12,
+  },
+
+  managementButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+
+  deleteText: {
+    color: colors.expense,
+    fontWeight: "600",
+  },
+
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
+  emptyIcon: {
+    fontSize: 42,
+  },
+
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginTop: 12,
+  },
+
+  emptyText: {
+    textAlign: "center",
+    color: colors.textMuted,
+    lineHeight: 20,
+    marginTop: 8,
+  },
+
+  emptyButton: {
+    marginTop: 18,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+
+  emptyButtonText: {
+    color: colors.onPrimary,
+    fontWeight: "700",
+  },
+
+  loadingText: {
+    color: colors.textMuted,
+  },
+
+  errorText: {
+    color: colors.expense,
+    textAlign: "center",
+  },
+
+  retryButton: {
+    marginTop: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+  },
+
+  retryButtonText: {
+    color: colors.onPrimary,
+    fontWeight: "700",
+  },
+  });

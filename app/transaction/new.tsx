@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 
 import {
   Alert,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,12 +11,15 @@ import {
 
 import { router } from 'expo-router';
 
-import { addTransaction } from '../../src/services/transaction.service';
-import { listCategories } from '../../src/services/category.service';
-import { listAccounts } from '../../src/services/account.service';
+import { AnimatedBlock } from '../../src/components/AnimatedListItem';
+import { AnimatedPressable } from '../../src/components/AnimatedPressable';
 
-import { Category } from '../../src/types/category';
+import { listAccounts } from '../../src/services/account.service';
+import { listCategories } from '../../src/services/category.service';
+import { addTransaction } from '../../src/services/transaction.service';
+
 import { Account } from '../../src/types/account';
+import { Category } from '../../src/types/category';
 import { TransactionType } from '../../src/types/transaction';
 
 export default function NewTransactionScreen() {
@@ -135,14 +137,17 @@ export default function NewTransactionScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Nova transação</Text>
+      <AnimatedBlock>
+        <Text style={styles.title}>Nova transação</Text>
 
-      <Text style={styles.subtitle}>
-        Registre uma entrada ou saída de dinheiro.
-      </Text>
+        <Text style={styles.subtitle}>
+          Registre uma entrada ou saída de dinheiro.
+        </Text>
+      </AnimatedBlock>
 
-      <View style={styles.typeSelector}>
-        <Pressable
+      <AnimatedBlock delay={60} style={styles.typeSelector}>
+        <AnimatedPressable
+          pressedScale={0.96}
           style={[
             styles.typeButton,
             type === 'expense' && styles.typeButtonActive,
@@ -157,9 +162,10 @@ export default function NewTransactionScreen() {
           >
             Despesa
           </Text>
-        </Pressable>
+        </AnimatedPressable>
 
-        <Pressable
+        <AnimatedPressable
+          pressedScale={0.96}
           style={[
             styles.typeButton,
             type === 'income' && styles.typeButtonActive,
@@ -174,8 +180,8 @@ export default function NewTransactionScreen() {
           >
             Receita
           </Text>
-        </Pressable>
-      </View>
+        </AnimatedPressable>
+      </AnimatedBlock>
 
       <View style={styles.field}>
         <Text style={styles.label}>Valor</Text>
@@ -215,8 +221,9 @@ export default function NewTransactionScreen() {
           contentContainerStyle={styles.options}
         >
           {categories.map((category) => (
-            <Pressable
+            <AnimatedPressable
               key={category.id}
+              pressedScale={0.94}
               style={[
                 styles.option,
                 selectedCategoryId === category.id && styles.optionActive,
@@ -232,7 +239,7 @@ export default function NewTransactionScreen() {
               >
                 {category.name}
               </Text>
-            </Pressable>
+            </AnimatedPressable>
           ))}
         </ScrollView>
       </View>
@@ -246,8 +253,9 @@ export default function NewTransactionScreen() {
           contentContainerStyle={styles.options}
         >
           {accounts.map((account) => (
-            <Pressable
+            <AnimatedPressable
               key={account.id}
+              pressedScale={0.94}
               style={[
                 styles.option,
                 selectedAccountId === account.id && styles.optionActive,
@@ -263,24 +271,24 @@ export default function NewTransactionScreen() {
               >
                 {account.name}
               </Text>
-            </Pressable>
+            </AnimatedPressable>
           ))}
         </ScrollView>
       </View>
 
-      <Pressable
-        style={({ pressed }) => [
+      <AnimatedPressable
+        style={[
           styles.saveButton,
-          pressed && styles.saveButtonPressed,
           saving && styles.saveButtonDisabled,
         ]}
+        pressedOpacity={0.85}
         onPress={handleSave}
         disabled={saving}
       >
         <Text style={styles.saveButtonText}>
           {saving ? 'Salvando...' : 'Salvar transação'}
         </Text>
-      </Pressable>
+      </AnimatedPressable>
     </ScrollView>
   );
 }
@@ -422,10 +430,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 16,
     backgroundColor: '#174EA6',
-  },
-
-  saveButtonPressed: {
-    opacity: 0.8,
   },
 
   saveButtonDisabled: {

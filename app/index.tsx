@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { router } from 'expo-router';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { useUserSettings } from '../src/hooks/use-user-settings';
 
@@ -21,7 +22,8 @@ export default function IndexScreen() {
   }, [settings, loading]);
 
   return (
-    <View
+    <Animated.View
+      entering={FadeIn.duration(320)}
       style={{
         flex: 1,
         alignItems: 'center',
@@ -29,6 +31,6 @@ export default function IndexScreen() {
       }}
     >
       <Text>Carregando Wallet.ai...</Text>
-    </View>
+    </Animated.View>
   );
 }

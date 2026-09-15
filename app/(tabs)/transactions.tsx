@@ -1,98 +1,86 @@
-import {
-  Alert,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { router } from "expo-router";
+import { useState } from "react";
+import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
 
-import { useTransactions } from '../../src/hooks/use-transactions';
-import { removeTransaction } from '../../src/services/transaction.service';
+import { AnimatedListItem, FadeInView } from "../../src/components/AnimatedListItem";
+import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { useTransactions } from "../../src/hooks/use-transactions";
+import { removeTransaction } from "../../src/services/transaction.service";
+import { ThemeColors, useThemedStyles } from "../../src/theme";
 
 function formatCurrency(value: number) {
-  return `R$ ${value
-    .toFixed(2)
-    .replace('.', ',')}`;
+  return `R$ ${value.toFixed(2).replace(".", ",")}`;
 }
 
-function getTransactionLabel(
-  type: string
-) {
+function getTransactionLabel(type: string) {
   switch (type) {
-    case 'income':
-      return 'Entrada';
+    case "income":
+      return "Entrada";
 
-    case 'transfer':
-      return 'Aporte para meta';
+    case "transfer":
+      return "Aporte para meta";
 
     default:
-      return 'Gasto';
+      return "Gasto";
   }
 }
 
-function getTransactionAmountPrefix(
-  type: string
-) {
-  if (type === 'income') {
-    return '+';
+function getTransactionAmountPrefix(type: string) {
+  if (type === "income") {
+    return "+";
   }
 
-  if (type === 'transfer') {
-    return '↗';
+  if (type === "transfer") {
+    return "↗";
   }
 
-  return '-';
+  return "-";
 }
 
 export default function TransactionsScreen() {
-  const {
-    transactions,
-    loading,
-    error,
-    reload,
-  } = useTransactions();
+  const { transactions, loading, error, reload } = useTransactions();
+  const styles = useThemedStyles(createStyles);
+  const [filter, setFilter] = useState<
+    "all" | "income" | "expense" | "transfer"
+  >("all");
+
+  const visibleTransactions =
+    filter === "all"
+      ? transactions
+      : transactions.filter((item) => item.type === filter);
 
   async function handleDelete(id: number) {
     Alert.alert(
-      'Excluir transação',
-      'Tem certeza que deseja excluir esta transação?',
+      "Excluir transação",
+      "Tem certeza que deseja excluir esta transação?",
       [
         {
-          text: 'Cancelar',
-          style: 'cancel',
+          text: "Cancelar",
+          style: "cancel",
         },
         {
-          text: 'Excluir',
-          style: 'destructive',
+          text: "Excluir",
+          style: "destructive",
           onPress: async () => {
             try {
               await removeTransaction(id);
               await reload();
             } catch (error) {
-              console.error(
-                'Erro ao excluir transação:',
-                error
-              );
+              console.error("Erro ao excluir transação:", error);
 
-              Alert.alert(
-                'Erro',
-                'Não foi possível excluir a transação.'
-              );
+              Alert.alert("Erro", "Não foi possível excluir a transação.");
             }
           },
         },
-      ]
+      ],
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <Text>
-          Carregando transações...
-        </Text>
-      </View>
+      <FadeInView style={styles.center}>
+        <Text>Carregando transações...</Text>
+      </FadeInView>
     );
   }
 
@@ -106,74 +94,71 @@ export default function TransactionsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        Transações
-      </Text>
+      <Text style={styles.title}>Transações</Text>
 
       <Text style={styles.subtitle}>
-        {transactions.length === 0
-          ? 'Nenhuma transação registrada.'
-          : `${transactions.length} ${
-              transactions.length === 1
-                ? 'transação'
-                : 'transações'
-            } registrada${
-              transactions.length === 1
-                ? ''
-                : 's'
-            }.`}
+        {visibleTransactions.length === 0
+          ? "Nenhuma transação registrada."
+          : `${visibleTransactions.length} ${
+              visibleTransactions.length === 1 ? "transação" : "transações"
+            } registrada${visibleTransactions.length === 1 ? "" : "s"}.`}
       </Text>
 
+      <View style={styles.filters}>
+        {[
+          ["all", "Todas"],
+          ["income", "Entradas"],
+          ["expense", "Gastos"],
+          ["transfer", "Aportes"],
+        ].map(([value, label]) => (
+          <AnimatedPressable
+            key={value}
+            pressedScale={0.94}
+            style={[
+              styles.filterButton,
+              filter === value && styles.filterButtonActive,
+            ]}
+            onPress={() => setFilter(value as typeof filter)}
+          >
+            <Text
+              style={
+                filter === value ? styles.filterTextActive : styles.filterText
+              }
+            >
+              {label}
+            </Text>
+          </AnimatedPressable>
+        ))}
+      </View>
+
       <FlatList
-        data={transactions}
-        keyExtractor={(item) =>
-          item.id.toString()
-        }
+        data={visibleTransactions}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={
-          transactions.length === 0
-            ? styles.emptyList
-            : styles.list
+          visibleTransactions.length === 0 ? styles.emptyList : styles.list
         }
-        renderItem={({ item }) => {
-          const isIncome =
-            item.type === 'income';
+        renderItem={({ item, index }) => {
+          const isIncome = item.type === "income";
 
           const isGoalContribution =
-            item.type === 'transfer' &&
-            item.goalId !== null;
+            item.type === "transfer" && item.goalId !== null;
 
-          const label =
-            getTransactionLabel(
-              item.type
-            );
+          const label = getTransactionLabel(item.type);
 
-          const prefix =
-            getTransactionAmountPrefix(
-              item.type
-            );
+          const prefix = getTransactionAmountPrefix(item.type);
 
           return (
-            <View
-              style={styles.transactionCard}
-            >
-              <View
-                style={
-                  styles.transactionInfo
-                }
-              >
-                <View
-                  style={
-                    styles.labelRow
-                  }
-                >
+            <AnimatedListItem index={index} style={styles.transactionCard}>
+              <View style={styles.transactionInfo}>
+                <View style={styles.labelRow}>
                   <View
                     style={[
                       styles.typeBadge,
                       isIncome
                         ? styles.incomeBadge
                         : isGoalContribution
-                        ? styles.goalBadge
-                        : styles.expenseBadge,
+                          ? styles.goalBadge
+                          : styles.expenseBadge,
                     ]}
                   >
                     <Text
@@ -182,8 +167,8 @@ export default function TransactionsScreen() {
                         isIncome
                           ? styles.incomeBadgeText
                           : isGoalContribution
-                          ? styles.goalBadgeText
-                          : styles.expenseBadgeText,
+                            ? styles.goalBadgeText
+                            : styles.expenseBadgeText,
                       ]}
                     >
                       {label}
@@ -191,69 +176,55 @@ export default function TransactionsScreen() {
                   </View>
                 </View>
 
-                <Text
-                  style={
-                    styles.transactionDescription
-                  }
-                >
-                  {item.description ||
-                    'Sem descrição'}
+                <Text style={styles.transactionDescription}>
+                  {item.description || "Sem descrição"}
                 </Text>
 
-                <Text
-                  style={
-                    styles.transactionMeta
-                  }
-                >
-                  {item.source === 'manual'
-                    ? 'Lançamento manual'
-                    : 'Automático'}
+                <Text style={styles.transactionMeta}>
+                  {item.source === "manual"
+                    ? "Lançamento manual"
+                    : "Automático"}
                 </Text>
               </View>
 
-              <View
-                style={
-                  styles.transactionRight
-                }
-              >
+              <View style={styles.transactionRight}>
                 <Text
                   style={[
                     styles.transactionAmount,
                     isIncome
                       ? styles.income
                       : isGoalContribution
-                      ? styles.goal
-                      : styles.expense,
+                        ? styles.goal
+                        : styles.expense,
                   ]}
                 >
-                  {prefix}{' '}
-                  {formatCurrency(
-                    item.amount
-                  )}
+                  {prefix} {formatCurrency(item.amount)}
                 </Text>
 
-                <Pressable
-                  style={({
-                    pressed,
-                  }) => [
-                    styles.deleteButton,
-                    pressed &&
-                      styles.deleteButtonPressed,
-                  ]}
-                  onPress={() =>
-                    handleDelete(item.id)
-                  }
-                >
-                  <Text
-                    style={
-                      styles.deleteButtonText
+                {!isGoalContribution && (
+                  <AnimatedPressable
+                    style={styles.editButton}
+                    pressedScale={0.93}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/transaction/edit",
+                        params: { id: String(item.id) },
+                      })
                     }
                   >
-                    Excluir
-                  </Text>
-                </Pressable>
+                    <Text style={styles.editButtonText}>Editar</Text>
+                  </AnimatedPressable>
+                )}
+
+                <AnimatedPressable
+                  style={styles.deleteButton}
+                  pressedScale={0.93}
+                  onPress={() => handleDelete(item.id)}
+                >
+                  <Text style={styles.deleteButtonText}>Excluir</Text>
+                </AnimatedPressable>
               </View>
-            </View>
+            </AnimatedListItem>
           );
         }}
       />
@@ -261,31 +232,61 @@ export default function TransactionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
     paddingTop: 70,
-    backgroundColor: '#F7F8FA',
+    backgroundColor: colors.background,
   },
 
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F7F8FA',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
   },
 
   title: {
     fontSize: 30,
-    fontWeight: '800',
-    color: '#111827',
+    fontWeight: "800",
+    color: colors.text,
   },
 
   subtitle: {
     marginTop: 8,
     fontSize: 15,
-    color: '#6B7280',
+    color: colors.textMuted,
+  },
+
+  filters: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 18,
+  },
+
+  filterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceMuted,
+  },
+
+  filterButtonActive: {
+    backgroundColor: colors.primary,
+  },
+
+  filterText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  filterTextActive: {
+    color: colors.onPrimary,
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   list: {
@@ -296,17 +297,17 @@ const styles = StyleSheet.create({
 
   emptyList: {
     flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   transactionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 18,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
 
   transactionInfo: {
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
   },
 
   labelRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 7,
   },
 
@@ -326,65 +327,65 @@ const styles = StyleSheet.create({
   },
 
   incomeBadge: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: colors.incomeSurface,
   },
 
   expenseBadge: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.expenseSurface,
   },
 
   goalBadge: {
-    backgroundColor: '#E8F0FE',
+    backgroundColor: colors.accentSurface,
   },
 
   typeBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   incomeBadgeText: {
-    color: '#15803D',
+    color: colors.income,
   },
 
   expenseBadgeText: {
-    color: '#DC2626',
+    color: colors.expense,
   },
 
   goalBadgeText: {
-    color: '#174EA6',
+    color: colors.primary,
   },
 
   transactionDescription: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: colors.text,
   },
 
   transactionMeta: {
     marginTop: 5,
     fontSize: 13,
-    color: '#9CA3AF',
+    color: colors.textSubtle,
   },
 
   transactionRight: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
 
   transactionAmount: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   income: {
-    color: '#15803D',
+    color: colors.income,
   },
 
   expense: {
-    color: '#DC2626',
+    color: colors.expense,
   },
 
   goal: {
-    color: '#174EA6',
+    color: colors.primary,
   },
 
   deleteButton: {
@@ -392,16 +393,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.expenseSurface,
   },
 
-  deleteButtonPressed: {
-    opacity: 0.6,
+  editButton: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: colors.accentSurface,
+  },
+
+  editButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.primary,
   },
 
   deleteButtonText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#DC2626',
+    fontWeight: "600",
+    color: colors.expense,
   },
-});
+  });

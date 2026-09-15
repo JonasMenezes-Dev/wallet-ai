@@ -188,3 +188,121 @@ export async function addGoalContribution(
   );
   });
 }
+
+export async function deleteGoal(
+  goalId: number
+): Promise<void> {
+  const database = await getDatabase();
+
+  await database.withTransactionAsync(
+    async () => {
+      const goal = await database.getFirstAsync<{
+        id: number;
+        current_amount: number;
+      }>(
+        `
+          SELECT
+            id,
+            current_amount
+          FROM goals
+          WHERE id = ?
+        `,
+        goalId
+      );
+
+      if (!goal) {
+        throw new Error(
+          'Meta não encontrada.'
+        );
+      }
+
+      if (goal.current_amount > 0) {
+        throw new Error(
+          'Não é possível excluir uma meta que possui dinheiro guardado. Retire o valor primeiro.'
+        );
+      }
+
+      await database.runAsync(
+        `
+          DELETE FROM goals
+          WHERE id = ?
+        `,
+        goalId
+      );
+    }
+  );
+}
+
+export async function getGoalById(
+  goalId: number
+): Promise<Goal | null> {
+  const database = await getDatabase();
+
+  const row = await database.getFirstAsync<{
+    id: number;
+    name: string;
+    target_amount: number;
+    current_amount: number;
+    deadline: string | null;
+    created_at: string;
+    updated_at: string;
+  }>(
+    `
+      SELECT
+        id,
+        name,
+        target_amount,
+        current_amount,
+        deadline,
+        created_at,
+        updated_at
+      FROM goals
+      WHERE id = ?
+    `,
+    goalId
+  );
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    targetAmount: row.target_amount,
+    currentAmount: row.current_amount,
+    deadline: row.deadline,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function updateGoal(
+  goalId: number,
+  goal: {
+    name: string;
+    targetAmount: number;
+    deadline: string | null;
+  }
+): Promise<void> {
+  const database = await getDatabase();
+
+  const now = new Date().toISOString();
+
+  await database.runAsync(
+    `
+      UPDATE goals
+      SET
+        name = ?,
+        target_amount = ?,
+        deadline = ?,
+        updated_at = ?
+      WHERE id = ?
+    `,
+    goal.name,
+    goal.targetAmount,
+    goal.deadline,
+    now,
+    goalId
+  );
+}

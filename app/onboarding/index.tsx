@@ -1,60 +1,59 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { router } from 'expo-router';
+import { router } from "expo-router";
 
-import { useUserSettings } from '../../src/hooks/use-user-settings';
-import { addAccount } from '../../src/services/account.service';
+import { AnimatedBlock } from "../../src/components/AnimatedListItem";
+import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { useUserSettings } from "../../src/hooks/use-user-settings";
+import { addAccount } from "../../src/services/account.service";
 
 export default function OnboardingScreen() {
   const { save } = useUserSettings();
 
-  const [salary, setSalary] = useState('');
-  const [benefitAmount, setBenefitAmount] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [initialBalance, setInitialBalance] = useState('');
+  const [salary, setSalary] = useState("");
+  const [benefitAmount, setBenefitAmount] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [initialBalance, setInitialBalance] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function handleContinue() {
-    const salaryValue = Number(
-      salary.replace(/\./g, '').replace(',', '.')
-    );
+    const salaryValue = Number(salary.replace(/\./g, "").replace(",", "."));
 
     const benefitValue = Number(
-      benefitAmount.replace(/\./g, '').replace(',', '.')
+      benefitAmount.replace(/\./g, "").replace(",", "."),
     );
 
     const balanceValue = Number(
-      initialBalance.replace(/\./g, '').replace(',', '.')
+      initialBalance.replace(/\./g, "").replace(",", "."),
     );
 
     if (!salaryValue || salaryValue < 0) {
-      Alert.alert('Valor inválido', 'Digite um salário válido.');
+      Alert.alert("Valor inválido", "Digite um salário válido.");
       return;
     }
 
     if (benefitValue < 0 || Number.isNaN(benefitValue)) {
-      Alert.alert('Valor inválido', 'Digite um valor de VA válido.');
+      Alert.alert("Valor inválido", "Digite um valor de VA válido.");
       return;
     }
 
     if (!accountName.trim()) {
-      Alert.alert('Conta obrigatória', 'Digite o nome da sua conta principal.');
+      Alert.alert("Conta obrigatória", "Digite o nome da sua conta principal.");
       return;
     }
 
     if (Number.isNaN(balanceValue) || balanceValue < 0) {
-      Alert.alert('Valor inválido', 'Digite um saldo inicial válido.');
+      Alert.alert("Valor inválido", "Digite um saldo inicial válido.");
       return;
     }
 
@@ -69,17 +68,17 @@ export default function OnboardingScreen() {
 
       await addAccount({
         name: accountName.trim(),
-        type: 'bank',
+        type: "bank",
         balance: balanceValue,
       });
 
-      router.replace('/');
+      router.replace("/");
     } catch (error) {
-      console.error('Erro ao salvar onboarding:', error);
+      console.error("Erro ao salvar onboarding:", error);
 
       Alert.alert(
-        'Erro',
-        'Não foi possível salvar seus dados. Tente novamente.'
+        "Erro",
+        "Não foi possível salvar seus dados. Tente novamente.",
       );
     } finally {
       setSaving(false);
@@ -89,15 +88,13 @@ export default function OnboardingScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.content}>
-        <View>
+        <AnimatedBlock>
           <Text style={styles.brand}>Wallet.ai</Text>
 
-          <Text style={styles.title}>
-            Vamos começar.
-          </Text>
+          <Text style={styles.title}>Vamos começar.</Text>
 
           <Text style={styles.description}>
             Primeiro, vamos entender quanto dinheiro entra no seu mês.
@@ -175,21 +172,20 @@ export default function OnboardingScreen() {
               </Text>
             </View>
           </View>
-        </View>
+        </AnimatedBlock>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-            saving && styles.buttonDisabled,
-          ]}
-          onPress={handleContinue}
-          disabled={saving}
-        >
-          <Text style={styles.buttonText}>
-            {saving ? 'Salvando...' : 'Continuar'}
-          </Text>
-        </Pressable>
+        <AnimatedBlock delay={180}>
+          <AnimatedPressable
+            style={[styles.button, saving && styles.buttonDisabled]}
+            pressedOpacity={0.85}
+            onPress={handleContinue}
+            disabled={saving}
+          >
+            <Text style={styles.buttonText}>
+              {saving ? "Salvando..." : "Continuar"}
+            </Text>
+          </AnimatedPressable>
+        </AnimatedBlock>
       </View>
     </KeyboardAvoidingView>
   );
@@ -198,12 +194,12 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F8FA',
+    backgroundColor: "#F7F8FA",
   },
 
   content: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     paddingHorizontal: 24,
     paddingTop: 80,
     paddingBottom: 32,
@@ -211,22 +207,22 @@ const styles = StyleSheet.create({
 
   brand: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#174EA6',
+    fontWeight: "700",
+    color: "#174EA6",
   },
 
   title: {
     marginTop: 42,
     fontSize: 36,
-    fontWeight: '800',
-    color: '#111827',
+    fontWeight: "800",
+    color: "#111827",
   },
 
   description: {
     marginTop: 12,
     fontSize: 16,
     lineHeight: 24,
-    color: '#6B7280',
+    color: "#6B7280",
   },
 
   form: {
@@ -240,62 +236,58 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: "600",
+    color: "#374151",
   },
 
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     height: 58,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
   },
 
   textInput: {
     height: 58,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
     fontSize: 17,
-    color: '#111827',
+    color: "#111827",
   },
 
   prefix: {
     marginRight: 8,
     fontSize: 17,
-    fontWeight: '600',
-    color: '#6B7280',
+    fontWeight: "600",
+    color: "#6B7280",
   },
 
   input: {
     flex: 1,
     fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
 
   helper: {
     fontSize: 13,
     lineHeight: 18,
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
 
   button: {
     height: 58,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 16,
-    backgroundColor: '#174EA6',
-  },
-
-  buttonPressed: {
-    opacity: 0.8,
+    backgroundColor: "#174EA6",
   },
 
   buttonDisabled: {
@@ -304,7 +296,7 @@ const styles = StyleSheet.create({
 
   buttonText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });

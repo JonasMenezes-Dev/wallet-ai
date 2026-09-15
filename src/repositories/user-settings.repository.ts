@@ -44,22 +44,27 @@ export async function saveUserSettings(
 
   const now = new Date().toISOString();
 
-  await database.execAsync(`
-    DELETE FROM user_settings;
+  await database.withTransactionAsync(async () => {
+    await database.runAsync(`DELETE FROM user_settings;`);
 
-    INSERT INTO user_settings (
-      salary,
-      benefit_amount,
-      onboarding_completed,
-      created_at,
-      updated_at
-    )
-    VALUES (
-      ${settings.salary},
-      ${settings.benefitAmount},
-      ${settings.onboardingCompleted ? 1 : 0},
-      '${now}',
-      '${now}'
+    await database.runAsync(
+      `
+        INSERT INTO user_settings (
+          salary,
+          benefit_amount,
+          onboarding_completed,
+          created_at,
+          updated_at
+        )
+        VALUES ($salary, $benefitAmount, $onboardingCompleted, $createdAt, $updatedAt)
+      `,
+      {
+        $salary: settings.salary,
+        $benefitAmount: settings.benefitAmount,
+        $onboardingCompleted: settings.onboardingCompleted ? 1 : 0,
+        $createdAt: now,
+        $updatedAt: now,
+      },
     );
-  `);
+  });
 }

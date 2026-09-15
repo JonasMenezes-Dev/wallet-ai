@@ -1,6 +1,6 @@
-import { getDatabase } from '../database/database';
+import { getDatabase } from "../database/database";
 
-import { Transaction } from '../types/transaction';
+import { Transaction } from "../types/transaction";
 
 export async function getAllTransactions(): Promise<Transaction[]> {
   const database = await getDatabase();
@@ -10,7 +10,7 @@ export async function getAllTransactions(): Promise<Transaction[]> {
     goal_id: number | null;
     goal_name: string | null;
     amount: number;
-    type: Transaction['type'];
+    type: Transaction["type"];
     description: string | null;
     merchant: string | null;
     date: string;
@@ -18,7 +18,7 @@ export async function getAllTransactions(): Promise<Transaction[]> {
     account_id: number | null;
     payment_method: string | null;
     is_automatic: number;
-    source: Transaction['source'];
+    source: Transaction["source"];
     created_at: string;
     updated_at: string;
   }>(`
@@ -32,30 +32,29 @@ export async function getAllTransactions(): Promise<Transaction[]> {
   `);
 
   return rows.map((row) => ({
-  id: row.id,
-  amount: row.amount,
-  type: row.type,
-  description:
-    row.type === 'transfer' &&
-    row.goal_name
-      ? `Aporte para: ${row.goal_name}`
-      : row.description,
-  merchant: row.merchant,
-  date: row.date,
-  categoryId: row.category_id,
-  accountId: row.account_id,
-  paymentMethod: row.payment_method,
-  goalId: row.goal_id,
-  goalName: row.goal_name,
-  isAutomatic: row.is_automatic === 1,
-  source: row.source,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-}));
+    id: row.id,
+    amount: row.amount,
+    type: row.type,
+    description:
+      row.type === "transfer" && row.goal_name
+        ? `Aporte para: ${row.goal_name}`
+        : row.description,
+    merchant: row.merchant,
+    date: row.date,
+    categoryId: row.category_id,
+    accountId: row.account_id,
+    paymentMethod: row.payment_method,
+    goalId: row.goal_id,
+    goalName: row.goal_name,
+    isAutomatic: row.is_automatic === 1,
+    source: row.source,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
 }
 
 export async function createTransaction(
-  transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
+  transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
 ): Promise<number> {
   const database = await getDatabase();
 
@@ -73,11 +72,11 @@ export async function createTransaction(
         FROM accounts
         WHERE id = ?
       `,
-      transaction.accountId
+      transaction.accountId,
     );
 
     if (!account) {
-      throw new Error('Conta não encontrada.');
+      throw new Error("Conta não encontrada.");
     }
 
     const result = await database.runAsync(
@@ -109,18 +108,18 @@ export async function createTransaction(
       transaction.isAutomatic ? 1 : 0,
       transaction.source,
       now,
-      now
+      now,
     );
 
     transactionId = result.lastInsertRowId;
 
     let newBalance = account.balance;
 
-    if (transaction.type === 'expense') {
+    if (transaction.type === "expense") {
       newBalance -= transaction.amount;
     }
 
-    if (transaction.type === 'income') {
+    if (transaction.type === "income") {
       newBalance += transaction.amount;
     }
 
@@ -132,7 +131,7 @@ export async function createTransaction(
       `,
       newBalance,
       now,
-      account.id
+      account.id,
     );
   });
 
@@ -145,7 +144,7 @@ export async function deleteTransaction(id: number): Promise<void> {
   await database.withTransactionAsync(async () => {
     const transaction = await database.getFirstAsync<{
       amount: number;
-      type: Transaction['type'];
+      type: Transaction["type"];
       account_id: number | null;
       goal_id: number | null;
     }>(
@@ -158,11 +157,11 @@ export async function deleteTransaction(id: number): Promise<void> {
         FROM transactions
         WHERE id = ?
       `,
-      id
+      id,
     );
 
     if (!transaction) {
-      throw new Error('Transação não encontrada.');
+      throw new Error("Transação não encontrada.");
     }
 
     const now = new Date().toISOString();
@@ -174,10 +173,7 @@ export async function deleteTransaction(id: number): Promise<void> {
      * - devolvemos o dinheiro para a conta;
      * - retiramos o valor da meta.
      */
-    if (
-      transaction.type === 'transfer' &&
-      transaction.goal_id
-    ) {
+    if (transaction.type === "transfer" && transaction.goal_id) {
       const account = await database.getFirstAsync<{
         balance: number;
       }>(
@@ -186,13 +182,11 @@ export async function deleteTransaction(id: number): Promise<void> {
           FROM accounts
           WHERE id = ?
         `,
-        transaction.account_id
+        transaction.account_id,
       );
 
       if (!account) {
-        throw new Error(
-          'Conta do aporte não encontrada.'
-        );
+        throw new Error("Conta do aporte não encontrada.");
       }
 
       const goal = await database.getFirstAsync<{
@@ -203,24 +197,19 @@ export async function deleteTransaction(id: number): Promise<void> {
           FROM goals
           WHERE id = ?
         `,
-        transaction.goal_id
+        transaction.goal_id,
       );
 
       if (!goal) {
-        throw new Error(
-          'Meta do aporte não encontrada.'
-        );
+        throw new Error("Meta do aporte não encontrada.");
       }
 
-      const newAccountBalance =
-        account.balance + transaction.amount;
+      const newAccountBalance = account.balance + transaction.amount;
 
-      const newGoalAmount =
-        Math.max(
-          goal.current_amount -
-            transaction.amount,
-          0
-        );
+      const newGoalAmount = Math.max(
+        goal.current_amount - transaction.amount,
+        0,
+      );
 
       await database.runAsync(
         `
@@ -232,7 +221,7 @@ export async function deleteTransaction(id: number): Promise<void> {
         `,
         newAccountBalance,
         now,
-        transaction.account_id
+        transaction.account_id,
       );
 
       await database.runAsync(
@@ -245,7 +234,7 @@ export async function deleteTransaction(id: number): Promise<void> {
         `,
         newGoalAmount,
         now,
-        transaction.goal_id
+        transaction.goal_id,
       );
     } else if (transaction.account_id) {
       /*
@@ -261,17 +250,17 @@ export async function deleteTransaction(id: number): Promise<void> {
           FROM accounts
           WHERE id = ?
         `,
-        transaction.account_id
+        transaction.account_id,
       );
 
       if (account) {
         let newBalance = account.balance;
 
-        if (transaction.type === 'expense') {
+        if (transaction.type === "expense") {
           newBalance += transaction.amount;
         }
 
-        if (transaction.type === 'income') {
+        if (transaction.type === "income") {
           newBalance -= transaction.amount;
         }
 
@@ -285,7 +274,7 @@ export async function deleteTransaction(id: number): Promise<void> {
           `,
           newBalance,
           now,
-          transaction.account_id
+          transaction.account_id,
         );
       }
     }
@@ -295,7 +284,148 @@ export async function deleteTransaction(id: number): Promise<void> {
         DELETE FROM transactions
         WHERE id = ?
       `,
-      id
+      id,
     );
   });
+}
+
+export async function updateTransaction(
+  id: number,
+  transaction: {
+    amount: number;
+    type: Transaction["type"];
+    description: string | null;
+    categoryId: number | null;
+    accountId: number;
+  },
+): Promise<void> {
+  const database = await getDatabase();
+  const now = new Date().toISOString();
+
+  await database.withTransactionAsync(async () => {
+    const current = await database.getFirstAsync<{
+      amount: number;
+      type: Transaction["type"];
+      account_id: number | null;
+      goal_id: number | null;
+    }>(
+      `
+        SELECT amount, type, account_id, goal_id
+        FROM transactions
+        WHERE id = ?
+      `,
+      id,
+    );
+
+    if (!current) {
+      throw new Error("Transação não encontrada.");
+    }
+
+    if (current.goal_id || current.type === "transfer") {
+      throw new Error("Aportes de metas não podem ser editados.");
+    }
+
+    const oldAccount = await database.getFirstAsync<{
+      balance: number;
+    }>("SELECT balance FROM accounts WHERE id = ?", current.account_id);
+
+    const newAccount = await database.getFirstAsync<{
+      balance: number;
+    }>("SELECT balance FROM accounts WHERE id = ?", transaction.accountId);
+
+    if (!oldAccount || !newAccount) {
+      throw new Error("Conta da transação não encontrada.");
+    }
+
+    const restoredOldBalance = applyTransactionToBalance(
+      oldAccount.balance,
+      current.type,
+      -current.amount,
+    );
+    if (current.account_id !== transaction.accountId) {
+      await database.runAsync(
+        `
+          UPDATE accounts
+          SET balance = ?, updated_at = ?
+          WHERE id = ?
+        `,
+        restoredOldBalance,
+        now,
+        current.account_id,
+      );
+
+      const finalNewBalance = applyTransactionToBalance(
+        newAccount.balance,
+        transaction.type,
+        transaction.amount,
+      );
+
+      if (finalNewBalance < 0) {
+        throw new Error("Saldo insuficiente na conta.");
+      }
+
+      await database.runAsync(
+        `
+          UPDATE accounts
+          SET balance = ?, updated_at = ?
+          WHERE id = ?
+        `,
+        finalNewBalance,
+        now,
+        transaction.accountId,
+      );
+    } else {
+      const updatedNewBalance = applyTransactionToBalance(
+        restoredOldBalance,
+        transaction.type,
+        transaction.amount,
+      );
+
+      if (updatedNewBalance < 0) {
+        throw new Error("Saldo insuficiente na conta.");
+      }
+
+      await database.runAsync(
+        `
+          UPDATE accounts
+          SET balance = ?, updated_at = ?
+          WHERE id = ?
+        `,
+        updatedNewBalance,
+        now,
+        transaction.accountId,
+      );
+    }
+
+    await database.runAsync(
+      `
+        UPDATE transactions
+        SET amount = ?, type = ?, description = ?, category_id = ?, account_id = ?, updated_at = ?
+        WHERE id = ?
+      `,
+      transaction.amount,
+      transaction.type,
+      transaction.description,
+      transaction.categoryId,
+      transaction.accountId,
+      now,
+      id,
+    );
+  });
+}
+
+function applyTransactionToBalance(
+  balance: number,
+  type: Transaction["type"],
+  amount: number,
+): number {
+  if (type === "expense") {
+    return balance - amount;
+  }
+
+  if (type === "income") {
+    return balance + amount;
+  }
+
+  return balance;
 }

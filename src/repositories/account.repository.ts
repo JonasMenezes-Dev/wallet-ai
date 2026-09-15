@@ -1,5 +1,5 @@
-import { getDatabase } from '../database/database';
-import { Account } from '../types/account';
+import { getDatabase } from "../database/database";
+import { Account } from "../types/account";
 
 export async function getAllAccounts(): Promise<Account[]> {
   const database = await getDatabase();
@@ -7,7 +7,7 @@ export async function getAllAccounts(): Promise<Account[]> {
   const rows = await database.getAllAsync<{
     id: number;
     name: string;
-    type: Account['type'];
+    type: Account["type"];
     balance: number;
     createdAt: string;
     updatedAt: string;
@@ -27,47 +27,114 @@ export async function getAllAccounts(): Promise<Account[]> {
 }
 
 export async function createAccount(
-  account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>
+  account: Omit<Account, "id" | "createdAt" | "updatedAt">,
 ): Promise<number> {
   const database = await getDatabase();
 
   const now = new Date().toISOString();
 
-  const safeName = account.name.replace(/'/g, "''");
-  const safeType = account.type.replace(/'/g, "''");
+  const result = await database.runAsync(
+    `
+      INSERT INTO accounts (
+        name,
+        type,
+        balance,
+        created_at,
+        updated_at
+      )
+      VALUES ($name, $type, $balance, $createdAt, $updatedAt)
+    `,
+    {
+      $name: account.name,
+      $type: account.type,
+      $balance: account.balance,
+      $createdAt: now,
+      $updatedAt: now,
+    },
+  );
 
-  const result = await database.execAsync(`
-    INSERT INTO accounts (
-      name,
-      type,
-      balance,
-      created_at,
-      updated_at
-    )
-    VALUES (
-      '${safeName}',
-      '${safeType}',
-      ${account.balance},
-      '${now}',
-      '${now}'
-    );
-  `);
+  return result.lastInsertRowId;
+}
 
-  const createdAccount = await database.getFirstAsync<{
-    id: number;
-  }>(`
-    SELECT id
-    FROM accounts
-    WHERE name = '${safeName}'
-      AND type = '${safeType}'
-      AND created_at = '${now}'
-    ORDER BY id DESC
-    LIMIT 1
-  `);
+export async function updateAccount(
+  accountId: number,
+  account: {
+    name: string;
+    type: Account["type"];
+    balance: number;
+  },
+): Promise<void> {
+  const database = await getDatabase();
 
-  if (!createdAccount) {
-    throw new Error('Conta criada, mas não foi possível recuperar o ID.');
+  const now = new Date().toISOString();
+
+  const result = await database.runAsync(
+    `
+      UPDATE accounts
+      SET
+        name = $name,
+        type = $type,
+        balance = $balance,
+        updated_at = $updatedAt
+      WHERE id = $id
+    `,
+    {
+      $name: account.name,
+      $type: account.type,
+      $balance: account.balance,
+      $updatedAt: now,
+      $id: accountId,
+    },
+  );
+
+  if (result.changes === 0) {
+    throw new Error("Conta não encontrada.");
   }
+}
 
-  return createdAccount.id;
+export async function deleteAccount(accountId: number): Promise<void> {
+  const database = await getDatabase();
+
+  await database.withTransactionAsync(async () => {
+    const account = await database.getFirstAsync<{
+      id: number;
+      name: string;
+    }>(
+      `
+        SELECT id, name
+        FROM accounts
+        WHERE id = ?
+      `,
+      accountId,
+    );
+
+    if (!account) {
+      throw new Error("Conta não encontrada.");
+    }
+
+    const transactions = await database.getFirstAsync<{
+      total: number;
+    }>(
+      `
+        SELECT COUNT(*) AS total
+        FROM transactions
+        WHERE account_id = ?
+      `,
+      accountId,
+    );
+
+    if ((transactions?.total ?? 0) > 0) {
+      throw new Error(
+        "Essa conta possui transações. Exclua ou mova as transações antes de remover a conta.",
+      );
+    }
+
+    await database.runAsync(
+      `
+        DELETE FROM accounts
+        WHERE id = ?
+      `,
+      accountId,
+    );
+  });
 }

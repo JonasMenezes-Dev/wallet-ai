@@ -1,54 +1,51 @@
-import { Tabs } from 'expo-router';
+import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        animation: "shift",
+        transitionSpec: {
+          animation: "timing",
+          config: { duration: 220 },
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Início',
+          title: "Início",
         }}
       />
 
       <Tabs.Screen
         name="transactions"
         options={{
-          title: 'Transações',
+          title: "Transações",
         }}
       />
 
       <Tabs.Screen
         name="accounts"
         options={{
-          title: 'Contas',
+          title: "Contas",
         }}
       />
 
       <Tabs.Screen
         name="goals"
         options={{
-          title: 'Metas',
+          title: "Metas",
         }}
       />
 
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Configurações',
+          title: "Configurações",
         }}
       />
     </Tabs>
   );
 }
-
-<Tabs.Screen
-  name="accounts"
-  options={{
-    title: 'Contas',
-  }}
-/>
-

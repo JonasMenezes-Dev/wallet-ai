@@ -1,6 +1,8 @@
 import {
     createAccount,
+    deleteAccount,
     getAllAccounts,
+    updateAccount,
 } from "../repositories/account.repository";
 
 import { Account } from "../types/account";
@@ -21,4 +23,39 @@ export async function addAccount(
   }
 
   return createAccount(account);
+}
+
+export async function removeAccount(accountId: number): Promise<void> {
+  if (accountId <= 0) {
+    throw new Error("ID de conta inválido.");
+  }
+
+  await deleteAccount(accountId);
+}
+
+export async function editAccount(
+  accountId: number,
+  account: Omit<Account, "id" | "createdAt" | "updatedAt">,
+): Promise<void> {
+  if (accountId <= 0) {
+    throw new Error("ID de conta inválido.");
+  }
+
+  if (!account.name.trim()) {
+    throw new Error("O nome da conta é obrigatório.");
+  }
+
+  if (!account.type) {
+    throw new Error("O tipo da conta é obrigatório.");
+  }
+
+  if (Number.isNaN(account.balance) || account.balance < 0) {
+    throw new Error("O saldo da conta não pode ser negativo.");
+  }
+
+  await updateAccount(accountId, {
+    name: account.name.trim(),
+    type: account.type,
+    balance: account.balance,
+  });
 }
