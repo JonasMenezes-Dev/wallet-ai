@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,12 +17,17 @@ import { AnimatedBlock } from '../../src/components/AnimatedListItem';
 import { AnimatedPressable } from '../../src/components/AnimatedPressable';
 
 import { listAccounts } from '../../src/services/account.service';
-import { listCategories } from '../../src/services/category.service';
+import {
+  listCategories,
+  suggestCategoryId,
+} from '../../src/services/category.service';
 import { addTransaction } from '../../src/services/transaction.service';
 
 import { Account } from '../../src/types/account';
 import { Category } from '../../src/types/category';
 import { TransactionType } from '../../src/types/transaction';
+import { ThemeColors, useThemedStyles, useThemeColors } from '../../src/theme';
+
 
 export default function NewTransactionScreen() {
   const [type, setType] = useState<TransactionType>('expense');
@@ -40,6 +47,8 @@ export default function NewTransactionScreen() {
   );
 
   const [saving, setSaving] = useState(false);
+  const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
 
   useEffect(() => {
     async function loadData() {
@@ -101,13 +110,19 @@ export default function NewTransactionScreen() {
         description: description.trim() || null,
         merchant: null,
         date: new Date().toISOString(),
-        categoryId: selectedCategoryId,
+        categoryId:
+          type === 'expense'
+            ? suggestCategoryId(description, categories, selectedCategoryId)
+            : selectedCategoryId,
         accountId: selectedAccountId,
         paymentMethod: null,
         goalId: null,
         isAutomatic: false,
         source: 'manual',
-});
+        externalId: null,
+        provider: null,
+        institution: null,
+      });
 
       Alert.alert(
         'Transação salva',
@@ -132,11 +147,17 @@ export default function NewTransactionScreen() {
   }
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={24}
     >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
       <AnimatedBlock>
         <Text style={styles.title}>Nova transação</Text>
 
@@ -194,7 +215,7 @@ export default function NewTransactionScreen() {
             value={amount}
             onChangeText={setAmount}
             placeholder="0,00"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textSubtle}
             keyboardType="decimal-pad"
           />
         </View>
@@ -208,7 +229,7 @@ export default function NewTransactionScreen() {
           value={description}
           onChangeText={setDescription}
           placeholder="Ex.: Almoço"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textSubtle}
         />
       </View>
 
@@ -289,14 +310,15 @@ export default function NewTransactionScreen() {
           {saving ? 'Salvando...' : 'Salvar transação'}
         </Text>
       </AnimatedPressable>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F8FA',
+    backgroundColor: colors.background,
   },
 
   content: {
@@ -308,13 +330,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: '800',
-    color: '#111827',
+    color: colors.text,
   },
 
   subtitle: {
     marginTop: 8,
     fontSize: 15,
-    color: '#6B7280',
+    color: colors.textMuted,
   },
 
   typeSelector: {
@@ -322,7 +344,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
     padding: 4,
     borderRadius: 14,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.surfaceMuted,
   },
 
   typeButton: {
@@ -334,17 +356,17 @@ const styles = StyleSheet.create({
   },
 
   typeButtonActive: {
-    backgroundColor: '#174EA6',
+    backgroundColor: colors.primary,
   },
 
   typeButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textMuted,
   },
 
   typeButtonTextActive: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 
   field: {
@@ -355,7 +377,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 15,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.text,
   },
 
   moneyInput: {
@@ -364,34 +386,34 @@ const styles = StyleSheet.create({
     height: 60,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
 
   prefix: {
     marginRight: 8,
     fontSize: 17,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textMuted,
   },
 
   input: {
     flex: 1,
     fontSize: 22,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
   },
 
   textInput: {
     height: 56,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     fontSize: 16,
-    color: '#111827',
+    color: colors.text,
   },
 
   options: {
@@ -403,24 +425,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 11,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
 
   optionActive: {
-    backgroundColor: '#174EA6',
-    borderColor: '#174EA6',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   optionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.text,
   },
 
   optionTextActive: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 
   saveButton: {
@@ -429,7 +451,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
-    backgroundColor: '#174EA6',
+    backgroundColor: colors.primary,
   },
 
   saveButtonDisabled: {
@@ -439,6 +461,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 });

@@ -32,9 +32,9 @@ export default function NewGoalScreen() {
   const [saving, setSaving] = useState(false);
   const styles = useThemedStyles(createStyles);
 
-  function handleDeadlineChange(_event: unknown, date: Date) {
+  function handleDeadlineChange(_event: unknown, date?: Date) {
     setShowDatePicker(false);
-    setDeadline(date);
+    if (date) setDeadline(date);
   }
 
   function parseMoney(value: string) {
@@ -186,7 +186,7 @@ export default function NewGoalScreen() {
               mode="date"
               display="calendar"
               minimumDate={new Date()}
-              onValueChange={handleDeadlineChange}
+              onChange={handleDeadlineChange}
               onDismiss={() => setShowDatePicker(false)}
             />
           )}

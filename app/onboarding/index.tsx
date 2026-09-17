@@ -4,6 +4,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +17,11 @@ import { AnimatedBlock } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { useUserSettings } from "../../src/hooks/use-user-settings";
 import { addAccount } from "../../src/services/account.service";
+import {
+  ThemeColors,
+  useThemeColors,
+  useThemedStyles,
+} from "../../src/theme";
 
 export default function OnboardingScreen() {
   const { save } = useUserSettings();
@@ -25,6 +31,8 @@ export default function OnboardingScreen() {
   const [accountName, setAccountName] = useState("");
   const [initialBalance, setInitialBalance] = useState("");
   const [saving, setSaving] = useState(false);
+  const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
 
   async function handleContinue() {
     const salaryValue = Number(salary.replace(/\./g, "").replace(",", "."));
@@ -70,6 +78,8 @@ export default function OnboardingScreen() {
         name: accountName.trim(),
         type: "bank",
         balance: balanceValue,
+        // A conta principal do onboarding é bancária: nunca tem limite.
+        limitAmount: null,
       });
 
       router.replace("/");
@@ -88,9 +98,14 @@ export default function OnboardingScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={24}
     >
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <AnimatedBlock>
           <Text style={styles.brand}>Wallet.ai</Text>
 
@@ -112,7 +127,7 @@ export default function OnboardingScreen() {
                   value={salary}
                   onChangeText={setSalary}
                   placeholder="0,00"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.textSubtle}
                   keyboardType="decimal-pad"
                 />
               </View>
@@ -129,7 +144,7 @@ export default function OnboardingScreen() {
                   value={benefitAmount}
                   onChangeText={setBenefitAmount}
                   placeholder="0,00"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.textSubtle}
                   keyboardType="decimal-pad"
                 />
               </View>
@@ -147,7 +162,7 @@ export default function OnboardingScreen() {
                 value={accountName}
                 onChangeText={setAccountName}
                 placeholder="Ex.: Nubank"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.textSubtle}
               />
             </View>
 
@@ -162,7 +177,7 @@ export default function OnboardingScreen() {
                   value={initialBalance}
                   onChangeText={setInitialBalance}
                   placeholder="0,00"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.textSubtle}
                   keyboardType="decimal-pad"
                 />
               </View>
@@ -186,19 +201,18 @@ export default function OnboardingScreen() {
             </Text>
           </AnimatedPressable>
         </AnimatedBlock>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F8FA",
+    backgroundColor: colors.background,
   },
 
   content: {
-    flex: 1,
     justifyContent: "space-between",
     paddingHorizontal: 24,
     paddingTop: 80,
@@ -208,21 +222,21 @@ const styles = StyleSheet.create({
   brand: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#174EA6",
+    color: colors.primary,
   },
 
   title: {
     marginTop: 42,
     fontSize: 36,
     fontWeight: "800",
-    color: "#111827",
+    color: colors.text,
   },
 
   description: {
     marginTop: 12,
     fontSize: 16,
     lineHeight: 24,
-    color: "#6B7280",
+    color: colors.textMuted,
   },
 
   form: {
@@ -237,7 +251,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#374151",
+    color: colors.text,
   },
 
   inputContainer: {
@@ -246,40 +260,40 @@ const styles = StyleSheet.create({
     height: 58,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.border,
   },
 
   textInput: {
     height: 58,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.border,
     fontSize: 17,
-    color: "#111827",
+    color: colors.text,
   },
 
   prefix: {
     marginRight: 8,
     fontSize: 17,
     fontWeight: "600",
-    color: "#6B7280",
+    color: colors.textMuted,
   },
 
   input: {
     flex: 1,
     fontSize: 20,
     fontWeight: "600",
-    color: "#111827",
+    color: colors.text,
   },
 
   helper: {
     fontSize: 13,
     lineHeight: 18,
-    color: "#9CA3AF",
+    color: colors.textSubtle,
   },
 
   button: {
@@ -287,7 +301,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    backgroundColor: "#174EA6",
+    backgroundColor: colors.primary,
   },
 
   buttonDisabled: {
@@ -297,6 +311,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.onPrimary,
   },
 });

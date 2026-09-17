@@ -5,9 +5,9 @@ import {
   updateTransaction,
 } from "../repositories/transaction.repository";
 
-import { Transaction } from "../types/transaction";
+import { Transaction, TransactionWithRelations } from "../types/transaction";
 
-export async function listTransactions(): Promise<Transaction[]> {
+export async function listTransactions(): Promise<TransactionWithRelations[]> {
   return getAllTransactions();
 }
 

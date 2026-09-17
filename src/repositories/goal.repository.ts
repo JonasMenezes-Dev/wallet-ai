@@ -37,14 +37,16 @@ export async function createGoal(
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES ($name, $targetAmount, $currentAmount, $deadline, $createdAt, $updatedAt)
     `,
-    goal.name,
-    goal.targetAmount,
-    goal.currentAmount,
-    goal.deadline,
-    now,
-    now
+    {
+      $name: goal.name,
+      $targetAmount: goal.targetAmount,
+      $currentAmount: goal.currentAmount,
+      $deadline: goal.deadline,
+      $createdAt: now,
+      $updatedAt: now,
+    },
   );
 
   return result.lastInsertRowId;
@@ -62,6 +64,7 @@ export async function addGoalContribution(
   await database.withTransactionAsync(async () => {
     const goal = await database.getFirstAsync<{
       id: number;
+      name: string;
       current_amount: number;
       target_amount: number;
     }>(
@@ -71,9 +74,9 @@ export async function addGoalContribution(
           current_amount,
           target_amount
         FROM goals
-        WHERE id = ?
+        WHERE id = $goalId
       `,
-      goalId
+      { $goalId: goalId },
     );
 
     if (!goal) {
@@ -91,9 +94,9 @@ export async function addGoalContribution(
           balance,
           name
         FROM accounts
-        WHERE id = ?
+        WHERE id = $accountId
       `,
-      accountId
+      { $accountId: accountId },
     );
 
     if (!account) {
@@ -131,26 +134,30 @@ export async function addGoalContribution(
       `
         UPDATE goals
         SET
-          current_amount = ?,
-          updated_at = ?
-        WHERE id = ?
+          current_amount = $currentAmount,
+          updated_at = $updatedAt
+        WHERE id = $goalId
       `,
-      newGoalAmount,
-      now,
-      goalId
+      {
+        $currentAmount: newGoalAmount,
+        $updatedAt: now,
+        $goalId: goalId,
+      },
     );
 
     await database.runAsync(
       `
         UPDATE accounts
         SET
-          balance = ?,
-          updated_at = ?
-        WHERE id = ?
+          balance = $balance,
+          updated_at = $updatedAt
+        WHERE id = $accountId
       `,
-      newAccountBalance,
-      now,
-      accountId
+      {
+        $balance: newAccountBalance,
+        $updatedAt: now,
+        $accountId: accountId,
+      },
     );
 
     await database.runAsync(
@@ -170,21 +177,23 @@ export async function addGoalContribution(
         updated_at,
         goal_id
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES ($amount, $type, $description, $merchant, $date, $categoryId, $accountId, $paymentMethod, $isAutomatic, $source, $createdAt, $updatedAt, $goalId)
     `,
-    amount,
-    'transfer',
-    `Aporte para a meta: ${goal.id}`,
-    null,
-    now,
-    null,
-    accountId,
-    null,
-    0,
-    'manual',
-    now,
-    now,
-    goalId
+    {
+      $amount: amount,
+      $type: 'transfer',
+      $description: `Aporte para a meta: ${goal.name}`,
+      $merchant: null,
+      $date: now,
+      $categoryId: null,
+      $accountId: accountId,
+      $paymentMethod: null,
+      $isAutomatic: 0,
+      $source: 'manual',
+      $createdAt: now,
+      $updatedAt: now,
+      $goalId: goalId,
+    },
   );
   });
 }
@@ -205,9 +214,9 @@ export async function deleteGoal(
             id,
             current_amount
           FROM goals
-          WHERE id = ?
+          WHERE id = $goalId
         `,
-        goalId
+        { $goalId: goalId },
       );
 
       if (!goal) {
@@ -225,9 +234,9 @@ export async function deleteGoal(
       await database.runAsync(
         `
           DELETE FROM goals
-          WHERE id = ?
+          WHERE id = $goalId
         `,
-        goalId
+        { $goalId: goalId },
       );
     }
   );
@@ -257,9 +266,9 @@ export async function getGoalById(
         created_at,
         updated_at
       FROM goals
-      WHERE id = ?
+      WHERE id = $goalId
     `,
-    goalId
+    { $goalId: goalId },
   );
 
   if (!row) {
@@ -289,20 +298,26 @@ export async function updateGoal(
 
   const now = new Date().toISOString();
 
-  await database.runAsync(
+  const result = await database.runAsync(
     `
       UPDATE goals
       SET
-        name = ?,
-        target_amount = ?,
-        deadline = ?,
-        updated_at = ?
-      WHERE id = ?
+        name = $name,
+        target_amount = $targetAmount,
+        deadline = $deadline,
+        updated_at = $updatedAt
+      WHERE id = $id
     `,
-    goal.name,
-    goal.targetAmount,
-    goal.deadline,
-    now,
-    goalId
+    {
+      $name: goal.name,
+      $targetAmount: goal.targetAmount,
+      $deadline: goal.deadline,
+      $updatedAt: now,
+      $id: goalId,
+    },
   );
+
+  if (result.changes === 0) {
+    throw new Error('Meta não encontrada.');
+  }
 }

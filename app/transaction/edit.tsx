@@ -2,6 +2,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     Alert,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -19,6 +21,7 @@ import {
 import { Account } from "../../src/types/account";
 import { Category } from "../../src/types/category";
 import { Transaction, TransactionType } from "../../src/types/transaction";
+import { ThemeColors, useThemedStyles } from "../../src/theme";
 
 function parseMoney(value: string) {
   return Number(value.replace(/\./g, "").replace(",", "."));
@@ -36,6 +39,7 @@ export default function EditTransactionScreen() {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [accountId, setAccountId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const styles = useThemedStyles(createStyles);
 
   useEffect(() => {
     async function load() {
@@ -113,7 +117,16 @@ export default function EditTransactionScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={24}
+    >
+    <ScrollView
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+    >
       <AnimatedPressable
         pressedScale={0.94}
         pressedOpacity={0.7}
@@ -235,27 +248,28 @@ export default function EditTransactionScreen() {
         </Text>
       </AnimatedPressable>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F8FA" },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 24, paddingTop: 70, paddingBottom: 40 },
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F7F8FA",
+    backgroundColor: colors.background,
   },
-  back: { color: "#174EA6", fontWeight: "700" },
-  title: { marginTop: 28, fontSize: 30, fontWeight: "800", color: "#111827" },
-  subtitle: { marginTop: 8, color: "#6B7280" },
+  back: { color: colors.primary, fontWeight: "700" },
+  title: { marginTop: 28, fontSize: 30, fontWeight: "800", color: colors.text },
+  subtitle: { marginTop: 8, color: colors.textMuted },
   typeSelector: {
     flexDirection: "row",
     marginTop: 28,
     padding: 4,
     borderRadius: 14,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.surfaceMuted,
   },
   typeButton: {
     flex: 1,
@@ -264,20 +278,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 11,
   },
-  typeButtonActive: { backgroundColor: "#174EA6" },
-  typeButtonText: { color: "#6B7280", fontWeight: "700" },
-  typeButtonTextActive: { color: "#FFFFFF" },
+  typeButtonActive: { backgroundColor: colors.primary },
+  typeButtonText: { color: colors.textMuted, fontWeight: "700" },
+  typeButtonTextActive: { color: colors.onPrimary },
   label: {
     marginTop: 22,
     marginBottom: 8,
     fontWeight: "700",
-    color: "#374151",
+    color: colors.text,
   },
   input: {
     height: 56,
     paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     fontSize: 16,
   },
   options: { gap: 8 },
@@ -285,19 +299,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
-  optionActive: { backgroundColor: "#174EA6" },
-  optionText: { color: "#374151", fontWeight: "600" },
-  optionTextActive: { color: "#FFFFFF", fontWeight: "700" },
+  optionActive: { backgroundColor: colors.primary },
+  optionText: { color: colors.text, fontWeight: "600" },
+  optionTextActive: { color: colors.onPrimary, fontWeight: "700" },
   saveButton: {
     height: 56,
     marginTop: 32,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    backgroundColor: "#174EA6",
+    backgroundColor: colors.primary,
   },
-  saveText: { color: "#FFFFFF", fontWeight: "800" },
+  saveText: { color: colors.onPrimary, fontWeight: "800" },
   disabled: { opacity: 0.5 },
 });

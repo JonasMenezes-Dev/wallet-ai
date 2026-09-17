@@ -39,9 +39,9 @@ export default function EditGoalScreen() {
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  function handleDeadlineChange(_event: unknown, date: Date) {
+  function handleDeadlineChange(_event: unknown, date?: Date) {
     setShowDatePicker(false);
-    setDeadline(date);
+    if (date) setDeadline(date);
   }
 
   const [currentAmount, setCurrentAmount] = useState(0);
@@ -231,7 +231,7 @@ export default function EditGoalScreen() {
             mode="date"
             display="calendar"
             minimumDate={new Date()}
-            onValueChange={handleDeadlineChange}
+            onChange={handleDeadlineChange}
             onDismiss={() => setShowDatePicker(false)}
           />
         )}

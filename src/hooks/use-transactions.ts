@@ -2,10 +2,12 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
 import { listTransactions } from '../services/transaction.service';
-import { Transaction } from '../types/transaction';
+import { TransactionWithRelations } from '../types/transaction';
 
 export function useTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<
+    TransactionWithRelations[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

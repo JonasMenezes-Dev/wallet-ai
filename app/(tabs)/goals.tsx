@@ -174,6 +174,7 @@ export default function GoalsScreen() {
 
   return (
     <ScrollView
+      style={styles.screen}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
@@ -504,9 +505,17 @@ export default function GoalsScreen() {
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
   container: {
+    flexGrow: 1,
     padding: 20,
+    paddingTop: 70,
     paddingBottom: 40,
+    backgroundColor: colors.background,
   },
 
   center: {
@@ -514,6 +523,7 @@ const createStyles = (colors: ThemeColors) =>
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
+    backgroundColor: colors.background,
   },
 
   header: {
@@ -526,6 +536,7 @@ const createStyles = (colors: ThemeColors) =>
   title: {
     fontSize: 30,
     fontWeight: "800",
+    color: colors.text,
   },
 
   subtitle: {

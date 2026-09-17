@@ -8,7 +8,7 @@ export default function TabsLayout() {
         animation: "shift",
         transitionSpec: {
           animation: "timing",
-          config: { duration: 220 },
+          config: { duration: 280 },
         },
       }}
     >

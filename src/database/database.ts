@@ -1,6 +1,8 @@
-import * as SQLite from 'expo-sqlite';
+import * as SQLite from "expo-sqlite";
 
-const DATABASE_NAME = 'wallet-ai.db';
+import { runMigrations } from "./migrations";
+
+const DATABASE_NAME = "wallet-ai.db";
 
 let db: SQLite.SQLiteDatabase | null = null;
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -26,10 +28,7 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
 }
 
 async function initializeDatabase() {
-  const database =
-    await SQLite.openDatabaseAsync(
-      DATABASE_NAME
-    );
+  const database = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
   await database.execAsync(`
     PRAGMA journal_mode = WAL;
@@ -47,6 +46,7 @@ async function initializeDatabase() {
       name TEXT NOT NULL,
       type TEXT NOT NULL,
       balance REAL NOT NULL DEFAULT 0,
+      limit_amount REAL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -90,63 +90,44 @@ async function initializeDatabase() {
     );
   `);
 
-  /*
-   * Migração: goal_id nas transações.
-   */
-  try {
-    await database.execAsync(`
-      ALTER TABLE transactions
-      ADD COLUMN goal_id INTEGER;
-    `);
-  } catch {
-    // A coluna já existe.
-  }
-
-  /*
-   * Migração: onboarding.
-   */
-  try {
-    await database.execAsync(`
-      ALTER TABLE user_settings
-      ADD COLUMN onboarding_completed
-      INTEGER NOT NULL DEFAULT 0;
-    `);
-  } catch {
-    // A coluna já existe.
-  }
-
+  await runMigrations(database);
   await seedCategories(database);
 
   return database;
 }
 
-async function seedCategories(
-  database: SQLite.SQLiteDatabase
-) {
+async function seedCategories(database: SQLite.SQLiteDatabase) {
   const categories = [
-    'Alimentação',
-    'Moradia',
-    'Transporte',
-    'Lazer',
-    'Compras',
-    'Contas',
-    'Saúde',
-    'Educação',
-    'Assinaturas',
-    'Outros',
+    "Alimentação",
+    "Moradia",
+    "Transporte",
+    "Lazer",
+    "Compras",
+    "Contas",
+    "Saúde",
+    "Educação",
+    "Assinaturas",
+    "Outros",
   ];
+
+  const now = new Date().toISOString();
 
   for (const category of categories) {
     await database.runAsync(
       `
         INSERT OR IGNORE INTO categories (
           name,
-          created_at
+          created_at,
+          updated_at,
+          is_default
         )
-        VALUES (?, ?)
+        VALUES ($name, $createdAt, $updatedAt, 1)
       `,
-      category,
-      new Date().toISOString()
+      {
+        $name: category,
+        $createdAt: now,
+        $updatedAt: now,
+      },
     );
   }
 }

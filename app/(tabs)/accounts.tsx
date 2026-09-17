@@ -1,31 +1,43 @@
 import {
-    Alert,
-    FlatList,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 
 import { useState } from 'react';
 
 import { AnimatedListItem, FadeInView } from '../../src/components/AnimatedListItem';
 import { AnimatedPressable } from '../../src/components/AnimatedPressable';
+import {
+  CreditCardSummary,
+  formatCurrency,
+} from '../../src/components/CreditCardSummary';
 
 import { useAccounts } from '../../src/hooks/use-accounts';
 
 import {
-    addAccount,
-    editAccount,
-    removeAccount,
+  addAccount,
+  editAccount,
+  removeAccount,
 } from '../../src/services/account.service';
 
 import {
-    ThemeColors,
-    useThemeColors,
-    useThemedStyles,
+  ThemeColors,
+  useThemeColors,
+  useThemedStyles,
 } from '../../src/theme';
 import { Account, AccountType } from '../../src/types/account';
+
+/**
+ * Converte texto com padrão brasileiro ("2.500,00") para número.
+ * Retorna `NaN` quando não é um número válido.
+ */
+function toNumber(value: string): number {
+  return Number(value.replace(/\./g, '').replace(',', '.'));
+}
 
 const accountTypes: {
   value: AccountType;
@@ -52,12 +64,20 @@ export default function AccountsScreen() {
   const [balance, setBalance] = useState('');
   const [type, setType] = useState<AccountType>('bank');
 
+  /*
+   * Mantido como texto para aceitar vírgula brasileira ("2.500,00").
+   * A conversão para número acontece só no momento de salvar.
+   */
+  const [limitAmount, setLimitAmount] = useState('');
+
   const isEditing = editingId !== null;
+  const isCreditCard = type === 'credit_card';
 
   function resetForm() {
     setName('');
     setBalance('');
     setType('bank');
+    setLimitAmount('');
     setEditingId(null);
     setShowForm(false);
   }
@@ -71,6 +91,7 @@ export default function AccountsScreen() {
     setName('');
     setBalance('');
     setType('bank');
+    setLimitAmount('');
     setEditingId(null);
     setShowForm(true);
   }
@@ -79,14 +100,34 @@ export default function AccountsScreen() {
     setName(account.name);
     setBalance(account.balance.toFixed(2).replace('.', ','));
     setType(account.type);
+
+    // Sem limite informado, o campo fica vazio (e não "0,00").
+    setLimitAmount(
+      typeof account.limitAmount === 'number'
+        ? account.limitAmount.toFixed(2).replace('.', ',')
+        : ''
+    );
+
     setEditingId(account.id);
     setShowForm(true);
   }
 
+  /**
+   * Troca o tipo da conta.
+   * Ao sair de cartão, o limite é limpo aqui também (além de o service
+   * forçar `null`), para que o campo não reapareça preenchido se o
+   * usuário voltar ao tipo cartão.
+   */
+  function handleChangeType(nextType: AccountType) {
+    setType(nextType);
+
+    if (nextType !== 'credit_card') {
+      setLimitAmount('');
+    }
+  }
+
   async function handleSubmit() {
-    const balanceValue = Number(
-      balance.replace(/\./g, '').replace(',', '.')
-    );
+    const balanceValue = toNumber(balance);
 
     if (!name.trim()) {
       Alert.alert(
@@ -109,19 +150,37 @@ export default function AccountsScreen() {
       return;
     }
 
+    /*
+     * Conferência rápida para dar feedback imediato. A decisão final
+     * continua no service, que é a autoridade das regras.
+     */
+    let limitValue: number | null = null;
+
+    if (isCreditCard && limitAmount.trim()) {
+      limitValue = toNumber(limitAmount);
+
+      if (Number.isNaN(limitValue) || limitValue <= 0) {
+        Alert.alert(
+          'Limite inválido',
+          'O limite do cartão deve ser maior que zero.'
+        );
+
+        return;
+      }
+    }
+
+    const payload = {
+      name: name.trim(),
+      type,
+      balance: balanceValue,
+      limitAmount: isCreditCard ? limitValue : null,
+    };
+
     try {
       if (isEditing) {
-        await editAccount(editingId, {
-          name: name.trim(),
-          type,
-          balance: balanceValue,
-        });
+        await editAccount(editingId, payload);
       } else {
-        await addAccount({
-          name: name.trim(),
-          type,
-          balance: balanceValue,
-        });
+        await addAccount(payload);
       }
 
       resetForm();
@@ -232,7 +291,7 @@ export default function AccountsScreen() {
           />
 
           <Text style={styles.label}>
-            Saldo inicial
+            {isCreditCard ? 'Valor utilizado do cartão' : 'Saldo inicial'}
           </Text>
 
           <View style={styles.moneyInput}>
@@ -250,6 +309,12 @@ export default function AccountsScreen() {
             />
           </View>
 
+          {isCreditCard && (
+            <Text style={styles.helper}>
+              Quanto já foi gasto no cartão e ainda não foi pago.
+            </Text>
+          )}
+
           <Text style={styles.label}>
             Tipo
           </Text>
@@ -265,7 +330,7 @@ export default function AccountsScreen() {
                     styles.typeOptionActive,
                 ]}
                 onPress={() =>
-                  setType(item.value)
+                  handleChangeType(item.value)
                 }
               >
                 <Text
@@ -280,6 +345,34 @@ export default function AccountsScreen() {
               </AnimatedPressable>
             ))}
           </View>
+
+          {isCreditCard && (
+            <>
+              <Text style={styles.label}>
+                Limite do cartão
+              </Text>
+
+              <View style={styles.moneyInput}>
+                <Text style={styles.prefix}>
+                  R$
+                </Text>
+
+                <TextInput
+                  style={styles.moneyTextInput}
+                  value={limitAmount}
+                  onChangeText={setLimitAmount}
+                  placeholder="0,00"
+                  placeholderTextColor={colors.textSubtle}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+
+              <Text style={styles.helper}>
+                Informe o limite total disponibilizado pelo banco. Deixe
+                vazio se não quiser acompanhar o disponível.
+              </Text>
+            </>
+          )}
 
           <AnimatedPressable
             style={styles.saveButton}
@@ -303,55 +396,71 @@ export default function AccountsScreen() {
             ? styles.emptyList
             : styles.list
         }
-        renderItem={({ item, index }) => (
-          <AnimatedListItem index={index} style={styles.accountCard}>
-            <View>
-              <Text style={styles.accountName}>
-                {item.name}
-              </Text>
+        renderItem={({ item, index }) => {
+          const isCard = item.type === 'credit_card';
 
-              <Text style={styles.accountType}>
-                {accountTypes.find(
-                  (typeItem) =>
-                    typeItem.value === item.type
-                )?.label ?? 'Outro'}
-              </Text>
-            </View>
-
-            <View style={styles.accountActions}>
-              <Text style={styles.accountBalance}>
-                R${' '}
-                {item.balance
-                  .toFixed(2)
-                  .replace('.', ',')}
-              </Text>
-
-              <View style={styles.cardButtons}>
-                <AnimatedPressable
-                  style={styles.editButton}
-                  pressedScale={0.93}
-                  onPress={() => handleOpenEdit(item)}
-                >
-                  <Text style={styles.editButtonText}>
-                    Editar
+          return (
+            <AnimatedListItem index={index} style={styles.accountCard}>
+              <View style={styles.accountHeader}>
+                <View style={styles.accountInfo}>
+                  <Text style={styles.accountName}>
+                    {item.name}
                   </Text>
-                </AnimatedPressable>
 
-                <AnimatedPressable
-                  style={styles.deleteButton}
-                  pressedScale={0.93}
-                  onPress={() =>
-                    handleDeleteAccount(item.id, item.name)
-                  }
-                >
-                  <Text style={styles.deleteButtonText}>
-                    Excluir
+                  <Text style={styles.accountType}>
+                    {accountTypes.find(
+                      (typeItem) =>
+                        typeItem.value === item.type
+                    )?.label ?? 'Outro'}
                   </Text>
-                </AnimatedPressable>
+                </View>
+
+                <View style={styles.accountActions}>
+                  {!isCard && (
+                    <Text style={styles.accountBalance}>
+                      {formatCurrency(item.balance)}
+                    </Text>
+                  )}
+
+                  <View style={styles.cardButtons}>
+                    <AnimatedPressable
+                      style={styles.editButton}
+                      pressedScale={0.93}
+                      onPress={() => handleOpenEdit(item)}
+                    >
+                      <Text style={styles.editButtonText}>
+                        Editar
+                      </Text>
+                    </AnimatedPressable>
+
+                    <AnimatedPressable
+                      style={styles.deleteButton}
+                      pressedScale={0.93}
+                      onPress={() =>
+                        handleDeleteAccount(item.id, item.name)
+                      }
+                    >
+                      <Text style={styles.deleteButtonText}>
+                        Excluir
+                      </Text>
+                    </AnimatedPressable>
+                  </View>
+                </View>
               </View>
-            </View>
-          </AnimatedListItem>
-        )}
+
+              {/*
+               * Cartão não é dinheiro em conta: em vez do saldo, mostramos
+               * o quanto já foi utilizado e quanto sobra de limite.
+               */}
+              {isCard && (
+                <CreditCardSummary
+                  usedAmount={Math.abs(Math.min(item.balance, 0))}
+                  limitAmount={item.limitAmount}
+                />
+              )}
+            </AnimatedListItem>
+          );
+        }}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
             Nenhuma conta cadastrada.
@@ -528,13 +637,28 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.textSubtle,
   },
 
+  helper: {
+    marginTop: 6,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textSubtle,
+  },
+
   accountCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 20,
     borderRadius: 16,
     backgroundColor: colors.surface,
+  },
+
+  accountHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  accountInfo: {
+    flex: 1,
+    marginRight: 12,
   },
 
   accountName: {

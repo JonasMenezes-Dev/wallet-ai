@@ -16,6 +16,17 @@ const initialSummary: DashboardSummary = {
   monthExpenses: 0,
   monthBalance: 0,
   monthTransactionCount: 0,
+  previousMonthIncome: 0,
+  previousMonthExpenses: 0,
+  expensesChangeRatio: null,
+  expensesByCategory: [],
+  categorizedExpenseTotal: 0,
+  recentTransactions: [],
+  creditCards: [],
+  creditCardUsedTotal: 0,
+  featuredGoal: null,
+  goalCount: 0,
+  insights: [],
   currentMonthName: "",
 };
 

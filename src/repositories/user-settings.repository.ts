@@ -1,5 +1,5 @@
-import { getDatabase } from '../database/database';
-import { UserSettings } from '../types/user-settings';
+import { getDatabase } from "../database/database";
+import { UserSettings } from "../types/user-settings";
 
 export async function getUserSettings(): Promise<UserSettings | null> {
   const database = await getDatabase();
@@ -38,14 +38,14 @@ export async function getUserSettings(): Promise<UserSettings | null> {
 }
 
 export async function saveUserSettings(
-  settings: Omit<UserSettings, 'id' | 'createdAt' | 'updatedAt'>
+  settings: Omit<UserSettings, "id" | "createdAt" | "updatedAt">,
 ): Promise<void> {
   const database = await getDatabase();
 
   const now = new Date().toISOString();
 
   await database.withTransactionAsync(async () => {
-    await database.runAsync(`DELETE FROM user_settings;`);
+    await database.runAsync("DELETE FROM user_settings");
 
     await database.runAsync(
       `
