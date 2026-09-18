@@ -266,34 +266,39 @@ export default function NewTransactionScreen() {
       </View>
 
       <View style={styles.field}>
-        <Text style={styles.label}>Conta</Text>
+        <Text style={styles.label}>Conta ou cartão</Text>
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.options}
         >
-          {accounts.map((account) => (
-            <AnimatedPressable
-              key={account.id}
-              pressedScale={0.94}
-              style={[
-                styles.option,
-                selectedAccountId === account.id && styles.optionActive,
-              ]}
-              onPress={() => setSelectedAccountId(account.id)}
-            >
-              <Text
+          {accounts.map((account) => {
+            const isCard = account.type === 'credit_card';
+
+            return (
+              <AnimatedPressable
+                key={account.id}
+                pressedScale={0.94}
                 style={[
-                  styles.optionText,
-                  selectedAccountId === account.id &&
-                    styles.optionTextActive,
+                  styles.option,
+                  selectedAccountId === account.id && styles.optionActive,
                 ]}
+                onPress={() => setSelectedAccountId(account.id)}
               >
-                {account.name}
-              </Text>
-            </AnimatedPressable>
-          ))}
+                <Text
+                  style={[
+                    styles.optionText,
+                    selectedAccountId === account.id &&
+                      styles.optionTextActive,
+                  ]}
+                >
+                  {isCard ? '💳 ' : ''}
+                  {account.name}
+                </Text>
+              </AnimatedPressable>
+            );
+          })}
         </ScrollView>
       </View>
 

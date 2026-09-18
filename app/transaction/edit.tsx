@@ -7,8 +7,9 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput
+    TextInput,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AnimatedBlock } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
@@ -21,10 +22,24 @@ import {
 import { Account } from "../../src/types/account";
 import { Category } from "../../src/types/category";
 import { Transaction, TransactionType } from "../../src/types/transaction";
+import { toDateKey } from "../../src/types/transaction-filters";
 import { ThemeColors, useThemedStyles } from "../../src/theme";
 
 function parseMoney(value: string) {
   return Number(value.replace(/\./g, "").replace(",", "."));
+}
+
+/** Converte `YYYY-MM-DD`/ISO para um `Date` local, sem passar por UTC. */
+function parseDate(value: string): Date {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (!match) return new Date();
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function formatDateLabel(date: Date): string {
+  return date.toLocaleDateString("pt-BR");
 }
 
 export default function EditTransactionScreen() {
@@ -38,6 +53,8 @@ export default function EditTransactionScreen() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [accountId, setAccountId] = useState<number | null>(null);
+  const [date, setDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const styles = useThemedStyles(createStyles);
 
@@ -68,6 +85,7 @@ export default function EditTransactionScreen() {
         setAccounts(accountsData);
         setCategoryId(current.categoryId);
         setAccountId(current.accountId);
+        setDate(parseDate(current.date));
       } catch (error) {
         console.error("Erro ao carregar transação:", error);
         Alert.alert("Erro", "Não foi possível carregar a transação.", [
@@ -95,6 +113,7 @@ export default function EditTransactionScreen() {
         description: description.trim() || null,
         categoryId,
         accountId,
+        date: toDateKey(date),
       });
       router.back();
     } catch (error) {
@@ -174,6 +193,28 @@ export default function EditTransactionScreen() {
         placeholder="0,00"
         style={styles.input}
       />
+      <Text style={styles.label}>Data</Text>
+      <AnimatedPressable
+        pressedScale={0.98}
+        pressedOpacity={0.8}
+        style={styles.input}
+        onPress={() => setShowDatePicker(true)}
+      >
+        <Text style={styles.dateValue}>{formatDateLabel(date)}</Text>
+      </AnimatedPressable>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display={Platform.OS === "ios" ? "inline" : "default"}
+          onChange={(_event, selected) => {
+            setShowDatePicker(Platform.OS === "ios");
+            if (selected) setDate(selected);
+          }}
+        />
+      )}
+
       <Text style={styles.label}>Descrição</Text>
       <TextInput
         value={description}
@@ -209,33 +250,42 @@ export default function EditTransactionScreen() {
           </AnimatedPressable>
         ))}
       </ScrollView>
-      <Text style={styles.label}>Conta</Text>
+      <Text style={styles.label}>Conta ou cartão</Text>
+      <Text style={styles.helper}>
+        Escolher um cartão lança o gasto no limite dele (aumenta o utilizado,
+        reduz o disponível). Contas comuns movimentam o saldo.
+      </Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.options}
       >
-        {accounts.map((account) => (
-          <AnimatedPressable
-            key={account.id}
-            pressedScale={0.94}
-            style={[
-              styles.option,
-              accountId === account.id && styles.optionActive,
-            ]}
-            onPress={() => setAccountId(account.id)}
-          >
-            <Text
-              style={
-                accountId === account.id
-                  ? styles.optionTextActive
-                  : styles.optionText
-              }
+        {accounts.map((account) => {
+          const isCard = account.type === "credit_card";
+
+          return (
+            <AnimatedPressable
+              key={account.id}
+              pressedScale={0.94}
+              style={[
+                styles.option,
+                accountId === account.id && styles.optionActive,
+              ]}
+              onPress={() => setAccountId(account.id)}
             >
-              {account.name}
-            </Text>
-          </AnimatedPressable>
-        ))}
+              <Text
+                style={
+                  accountId === account.id
+                    ? styles.optionTextActive
+                    : styles.optionText
+                }
+              >
+                {isCard ? "💳 " : ""}
+                {account.name}
+              </Text>
+            </AnimatedPressable>
+          );
+        })}
       </ScrollView>
       <AnimatedPressable
         pressedOpacity={0.85}
@@ -289,10 +339,23 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   input: {
     height: 56,
+    justifyContent: "center",
     paddingHorizontal: 16,
     borderRadius: 14,
     backgroundColor: colors.surface,
     fontSize: 16,
+  },
+  dateValue: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: "600",
+  },
+  helper: {
+    marginTop: -4,
+    marginBottom: 8,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textSubtle,
   },
   options: { gap: 8 },
   option: {

@@ -30,10 +30,7 @@ import {
   type TransactionPeriodFilter,
   type TransactionTypeFilter,
 } from "../../src/types/transaction-filters";
-import type {
-  TransactionSource,
-  TransactionWithRelations,
-} from "../../src/types/transaction";
+import type { TransactionWithRelations } from "../../src/types/transaction";
 
 function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
@@ -88,23 +85,6 @@ function getTransactionAmountPrefix(type: string) {
   }
 
   return "-";
-}
-
-/** Rótulo legível da origem da transação. */
-function getSourceLabel(source: TransactionSource) {
-  switch (source) {
-    case "notification":
-      return "Notificação";
-
-    case "import":
-      return "Importado";
-
-    case "open_finance":
-      return "Open Finance";
-
-    default:
-      return "Manual";
-  }
 }
 
 export default function TransactionsScreen() {
@@ -184,6 +164,27 @@ export default function TransactionsScreen() {
     return categories.filter((category) => ids.has(category.id));
   }, [transactions, categories]);
 
+  /*
+   * Cartão é uma conta do tipo `credit_card`, mas o filtro precisa ser
+   * oferecido separado: "de onde saiu o dinheiro" (conta) e "em qual
+   * cartão" são perguntas diferentes para o usuário.
+   */
+  const creditCards = useMemo(
+    () => accounts.filter((account) => account.type === "credit_card"),
+    [accounts],
+  );
+
+  const regularAccounts = useMemo(
+    () => accounts.filter((account) => account.type !== "credit_card"),
+    [accounts],
+  );
+
+  /** Ids das contas que são cartão, para marcar a transação na listagem. */
+  const cardAccountIds = useMemo(
+    () => new Set(creditCards.map((card) => card.id)),
+    [creditCards],
+  );
+
   /**
    * Troca a categoria de uma transação sem sair da lista.
    * Passa pelo service, que é quem decide se a edição é permitida
@@ -220,19 +221,26 @@ export default function TransactionsScreen() {
   function handleDelete(transaction: TransactionWithRelations) {
     const isGoalContribution = transaction.type === "transfer" || transaction.goalId !== null;
 
+    const isCardTransaction =
+      transaction.accountId !== null &&
+      cardAccountIds.has(transaction.accountId);
+
     const description = transaction.description || "Sem descrição";
 
     /*
-     * O alerta mostra o que vai ser apagado: excluir uma transação mexe no
-     * saldo da conta, então o usuário precisa confirmar sabendo qual.
+     * O alerta mostra o que vai ser apagado e QUEM é afetado: excluir uma
+     * transação mexe no saldo da conta ou no limite do cartão, então o
+     * usuário precisa confirmar sabendo qual.
      */
+    const impactMessage = isGoalContribution
+      ? "O valor será devolvido ao saldo da conta e retirado da meta."
+      : isCardTransaction
+        ? "O valor sairá do limite usado do cartão, liberando limite disponível."
+        : "O valor será devolvido ao saldo da conta.";
+
     Alert.alert(
       "Excluir transação",
-      `${description} · ${formatCurrency(transaction.amount)}\n\nO valor será devolvido ao saldo da conta.${
-        isGoalContribution
-          ? " Esta transação é um aporte de meta: o valor também sairá da meta."
-          : ""
-      }`,
+      `${description} · ${formatCurrency(transaction.amount)}\n\n${impactMessage}`,
       [
         {
           text: "Cancelar",
@@ -423,7 +431,7 @@ export default function TransactionsScreen() {
         ))}
       </ScrollView>
 
-      {accounts.length > 0 && (
+      {regularAccounts.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -448,7 +456,7 @@ export default function TransactionsScreen() {
             </Text>
           </AnimatedPressable>
 
-          {accounts.map((account) => (
+          {regularAccounts.map((account) => (
             <AnimatedPressable
               key={account.id}
               pressedScale={0.94}
@@ -470,6 +478,60 @@ export default function TransactionsScreen() {
                 }
               >
                 {account.name}
+              </Text>
+            </AnimatedPressable>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Fileira só de cartões: filtra os gastos lançados no limite. */}
+      {creditCards.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filters}
+        >
+          <AnimatedPressable
+            pressedScale={0.94}
+            style={[
+              styles.filterButton,
+              filters.cardId === null && styles.filterButtonActive,
+            ]}
+            onPress={() => updateFilters({ cardId: null })}
+          >
+            <Text
+              style={
+                filters.cardId === null
+                  ? styles.filterTextActive
+                  : styles.filterText
+              }
+            >
+              💳 Todos os cartões
+            </Text>
+          </AnimatedPressable>
+
+          {creditCards.map((card) => (
+            <AnimatedPressable
+              key={card.id}
+              pressedScale={0.94}
+              style={[
+                styles.filterButton,
+                filters.cardId === card.id && styles.filterButtonActive,
+              ]}
+              onPress={() =>
+                updateFilters({
+                  cardId: filters.cardId === card.id ? null : card.id,
+                })
+              }
+            >
+              <Text
+                style={
+                  filters.cardId === card.id
+                    ? styles.filterTextActive
+                    : styles.filterText
+                }
+              >
+                💳 {card.name}
               </Text>
             </AnimatedPressable>
           ))}
@@ -599,6 +661,9 @@ export default function TransactionsScreen() {
 
           const isEditingCategory = editingCategoryId === item.id;
 
+          const isCardTransaction =
+            item.accountId !== null && cardAccountIds.has(item.accountId);
+
           return (
             <AnimatedListItem index={index} style={styles.transactionCard}>
               <View style={styles.transactionHeader}>
@@ -628,8 +693,12 @@ export default function TransactionsScreen() {
                       </Text>
                     </View>
 
-                    {/* Origem: o usuário precisa saber o que foi lançado
-                        por ele e o que veio de notificação/importação. */}
+                    {/*
+                     * Origem: separa o que o usuário lançou do que veio de
+                     * notificação/importação. O círculo (🟢/🔵) é o código
+                     * visual que a leitura automática de notificações vai
+                     * reaproveitar quando entrar.
+                     */}
                     <View
                       style={[
                         styles.sourceBadge,
@@ -642,8 +711,7 @@ export default function TransactionsScreen() {
                           isAutomatic && styles.automaticBadgeText,
                         ]}
                       >
-                        {isAutomatic ? "⚡ " : "✎ "}
-                        {getSourceLabel(item.source)}
+                        {isAutomatic ? "🟢 Automática" : "🔵 Manual"}
                       </Text>
                     </View>
                   </View>
@@ -654,7 +722,9 @@ export default function TransactionsScreen() {
 
                   <Text style={styles.transactionMeta}>
                     {formatTransactionDate(item.date)}
-                    {item.accountName ? ` · ${item.accountName}` : ""}
+                    {item.accountName
+                      ? ` · ${isCardTransaction ? "💳 " : ""}${item.accountName}`
+                      : ""}
                   </Text>
                 </View>
 

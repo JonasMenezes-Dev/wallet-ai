@@ -453,8 +453,14 @@ export default function AccountsScreen() {
                * o quanto já foi utilizado e quanto sobra de limite.
                */}
               {isCard && (
+                /*
+                 * O `balance` do cartão é o valor utilizado. Lemos sempre
+                 * em módulo: lançamentos antigos gravaram a dívida como
+                 * saldo negativo e os novos gravam como positivo — os dois
+                 * significam o mesmo "utilizado".
+                 */
                 <CreditCardSummary
-                  usedAmount={Math.abs(Math.min(item.balance, 0))}
+                  usedAmount={Math.abs(item.balance)}
                   limitAmount={item.limitAmount}
                 />
               )}

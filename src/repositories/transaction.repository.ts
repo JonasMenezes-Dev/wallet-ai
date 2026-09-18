@@ -1,5 +1,10 @@
 import { getDatabase } from "../database/database";
 
+import {
+  applyTransactionToAccount,
+  isBalanceInvalid,
+} from "../services/transaction-balance";
+import { Account } from "../types/account";
 import { Transaction, TransactionWithRelations } from "../types/transaction";
 
 export async function getAllTransactions(): Promise<
@@ -84,9 +89,10 @@ export async function createTransaction(
     const account = await database.getFirstAsync<{
       id: number;
       balance: number;
+      type: Account["type"];
     }>(
       `
-        SELECT id, balance
+        SELECT id, balance, type
         FROM accounts
         WHERE id = $accountId
       `,
@@ -146,14 +152,21 @@ export async function createTransaction(
 
     transactionId = result.lastInsertRowId;
 
-    let newBalance = account.balance;
+    /*
+     * O efeito no valor guardado depende do tipo de conta:
+     * conta comum tira/soma o dinheiro, cartão soma/subtrai a dívida.
+     * Isso também é o que faz a compra no cartão reduzir o limite
+     * disponível (utilizado sobe) em vez de mexer em saldo real.
+     */
+    const newBalance = applyTransactionToAccount(
+      account.balance,
+      account.type,
+      transaction.type,
+      transaction.amount,
+    );
 
-    if (transaction.type === "expense") {
-      newBalance -= transaction.amount;
-    }
-
-    if (transaction.type === "income") {
-      newBalance += transaction.amount;
+    if (isBalanceInvalid(newBalance, account.type)) {
+      throw new Error("Saldo insuficiente na conta.");
     }
 
     await database.runAsync(
@@ -279,15 +292,18 @@ export async function deleteTransaction(id: number): Promise<void> {
       );
     } else if (transaction.account_id) {
       /*
-       * Transação normal:
-       * - despesa: devolve o valor;
-       * - entrada: retira o valor novamente.
+       * Transação normal: desfaz exatamente o efeito da criação.
+       * Em conta comum o dinheiro volta ou sai; em cartão a dívida
+       * (utilizado) cai ou sobe, o que também devolve limite disponível.
+       * Passamos o valor negativo para `applyTransactionToAccount`
+       * representar “estornar”.
        */
       const account = await database.getFirstAsync<{
         balance: number;
+        type: Account["type"];
       }>(
         `
-          SELECT balance
+          SELECT balance, type
           FROM accounts
           WHERE id = ?
         `,
@@ -295,15 +311,12 @@ export async function deleteTransaction(id: number): Promise<void> {
       );
 
       if (account) {
-        let newBalance = account.balance;
-
-        if (transaction.type === "expense") {
-          newBalance += transaction.amount;
-        }
-
-        if (transaction.type === "income") {
-          newBalance -= transaction.amount;
-        }
+        const newBalance = applyTransactionToAccount(
+          account.balance,
+          account.type,
+          transaction.type,
+          -transaction.amount,
+        );
 
         await database.runAsync(
           `
@@ -340,6 +353,8 @@ export async function updateTransaction(
     description: string | null;
     categoryId: number | null;
     accountId: number;
+    /** Data de competência (`YYYY-MM-DD` ou ISO). Ausente mantém a atual. */
+    date?: string;
   },
 ): Promise<void> {
   const database = await getDatabase();
@@ -351,9 +366,10 @@ export async function updateTransaction(
       type: Transaction["type"];
       account_id: number | null;
       goal_id: number | null;
+      date: string;
     }>(
       `
-        SELECT amount, type, account_id, goal_id
+        SELECT amount, type, account_id, goal_id, date
         FROM transactions
         WHERE id = $id
       `,
@@ -370,13 +386,15 @@ export async function updateTransaction(
 
     const oldAccount = await database.getFirstAsync<{
       balance: number;
-    }>("SELECT balance FROM accounts WHERE id = $accountId", {
+      type: Account["type"];
+    }>("SELECT balance, type FROM accounts WHERE id = $accountId", {
       $accountId: current.account_id,
     });
 
     const newAccount = await database.getFirstAsync<{
       balance: number;
-    }>("SELECT balance FROM accounts WHERE id = $accountId", {
+      type: Account["type"];
+    }>("SELECT balance, type FROM accounts WHERE id = $accountId", {
       $accountId: transaction.accountId,
     });
 
@@ -385,25 +403,45 @@ export async function updateTransaction(
     }
 
     /*
+     * Cartão é tratado como cartão mesmo quando a transação troca de
+     * conta: o efeito é recalculado nos dois lados com o tipo de conta
+     * de cada um. Isso é o que faz mover um gasto de banco para cartão
+     * devolver o dinheiro à conta e jogar a dívida no cartão.
+     */
+
+    /*
      * Desfaz o efeito antigo (na conta antiga) e aplica o novo
      * (na conta nova). Quando a conta é a mesma, os dois passos
      * acontecem no mesmo saldo, calculado a partir do valor restaurado.
      */
     const isSameAccount = current.account_id === transaction.accountId;
 
-    const restoredOldBalance = applyTransactionToBalance(
+    // Desfaz o lançamento antigo na conta antiga (valor negativo).
+    const restoredOldBalance = applyTransactionToAccount(
       oldAccount.balance,
+      oldAccount.type,
       current.type,
       -current.amount,
     );
 
-    const updatedBalance = applyTransactionToBalance(
+    // Aplica o novo lançamento na conta nova.
+    const updatedBalance = applyTransactionToAccount(
       isSameAccount ? restoredOldBalance : newAccount.balance,
+      newAccount.type,
       transaction.type,
       transaction.amount,
     );
 
-    if (updatedBalance < 0) {
+    /*
+     * Só conta comum pode ficar negativa. No cartão o valor "negativo"
+     * representa dívida e é aceito normalmente. As duas checagens ficam
+     * antes de qualquer gravação, dentro da mesma transação do banco:
+     * ou tudo passa, ou nada é alterado.
+     */
+    if (
+      isBalanceInvalid(restoredOldBalance, oldAccount.type) ||
+      isBalanceInvalid(updatedBalance, newAccount.type)
+    ) {
       throw new Error("Saldo insuficiente na conta.");
     }
 
@@ -448,6 +486,7 @@ export async function updateTransaction(
           description = $description,
           category_id = $categoryId,
           account_id = $accountId,
+          date = $date,
           updated_at = $updatedAt
         WHERE id = $id
       `,
@@ -457,25 +496,10 @@ export async function updateTransaction(
         $description: transaction.description,
         $categoryId: transaction.categoryId,
         $accountId: transaction.accountId,
+        $date: transaction.date ?? current.date,
         $updatedAt: now,
         $id: id,
       },
     );
   });
-}
-
-function applyTransactionToBalance(
-  balance: number,
-  type: Transaction["type"],
-  amount: number,
-): number {
-  if (type === "expense") {
-    return balance - amount;
-  }
-
-  if (type === "income") {
-    return balance + amount;
-  }
-
-  return balance;
 }

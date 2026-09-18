@@ -332,20 +332,25 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           : 0,
     }));
 
-  const balance = accounts.reduce(
-    (total, account) => total + account.balance,
-    0,
-  );
+  /*
+   * Só dinheiro real entra no patrimônio. O `balance` do cartão é a
+   * dívida (valor utilizado), não dinheiro disponível — somar isso
+   * inflaria o saldo total. A dívida aparece à parte, em
+   * `creditCardUsedTotal`.
+   */
+  const balance = accounts
+    .filter((account) => account.type !== "credit_card")
+    .reduce((total, account) => total + account.balance, 0);
 
   /*
-   * Cartões de crédito guardam a dívida como saldo negativo.
-   * Aqui a leitura é invertida para "limite usado", que é o que
-   * importa visualmente no dashboard.
+   * Cartões de crédito guardam o valor utilizado em `balance`.
+   * Lemos em módulo para aceitar tanto os lançamentos antigos (dívida
+   * como saldo negativo) quanto os novos (dívida como saldo positivo).
    */
   const creditCards: DashboardCreditCard[] = accounts
     .filter((account) => account.type === "credit_card")
     .map((account) => {
-      const usedAmount = Math.abs(Math.min(account.balance, 0));
+      const usedAmount = Math.abs(account.balance);
       const limit = normalizeLimit(account.limitAmount);
 
       const availableAmount =

@@ -37,15 +37,19 @@ export async function removeTransaction(id: number): Promise<void> {
   await deleteTransaction(id);
 }
 
+export interface TransactionEditPayload {
+  amount: number;
+  type: Transaction["type"];
+  description: string | null;
+  categoryId: number | null;
+  accountId: number;
+  /** Nova data (`YYYY-MM-DD` ou ISO). Omitir mantém a data atual. */
+  date?: string;
+}
+
 export async function editTransaction(
   id: number,
-  transaction: {
-    amount: number;
-    type: Transaction["type"];
-    description: string | null;
-    categoryId: number | null;
-    accountId: number;
-  },
+  transaction: TransactionEditPayload,
 ): Promise<void> {
   if (id <= 0) {
     throw new Error("ID de transação inválido.");

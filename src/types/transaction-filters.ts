@@ -26,6 +26,12 @@ export interface TransactionFilters {
   to: string | null;
   categoryId: number | null;
   accountId: number | null;
+  /**
+   * Cartão de crédito selecionado. Como o cartão é uma conta do tipo
+   * `credit_card`, este filtro também casa por `accountId` — é separado
+   * só para a UI poder oferecer "Conta" e "Cartão" em fileiras distintas.
+   */
+  cardId: number | null;
 }
 
 export const emptyTransactionFilters: TransactionFilters = {
@@ -37,6 +43,7 @@ export const emptyTransactionFilters: TransactionFilters = {
   to: null,
   categoryId: null,
   accountId: null,
+  cardId: null,
 };
 
 /** `true` quando há qualquer filtro ativo (usado para "Limpar filtros"). */
@@ -49,7 +56,8 @@ export function hasActiveTransactionFilters(
     filters.origin !== "all" ||
     filters.period !== "all" ||
     filters.categoryId !== null ||
-    filters.accountId !== null
+    filters.accountId !== null ||
+    filters.cardId !== null
   );
 }
 
@@ -112,6 +120,10 @@ export function filterTransactions(
       filters.accountId !== null &&
       transaction.accountId !== filters.accountId
     ) {
+      return false;
+    }
+
+    if (filters.cardId !== null && transaction.accountId !== filters.cardId) {
       return false;
     }
 

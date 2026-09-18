@@ -1,13 +1,18 @@
 {
   "expo": {
-    "name": "wallet-ai",
+    "name": "Wallet AI",
     "slug": "wallet-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "walletai",
     "userInterfaceStyle": "automatic",
     "android": {
+      "package": "com.walletai.app",
+      "versionCode": 1,
       "predictiveBackGestureEnabled": false
+    },
+    "ios": {
+      "bundleIdentifier": "com.walletai.app"
     },
     "web": {
       "output": "static"
@@ -15,8 +20,18 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
+      "expo-updates",
       "@react-native-community/datetimepicker"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/REPLACE_WITH_PROJECT_ID",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
