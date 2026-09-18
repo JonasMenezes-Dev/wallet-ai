@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
-import { StyleSheet, Text } from 'react-native';
-import { useThemeColors } from '../src/theme';
-import { ThemeColors, useThemedStyles } from '../src/theme';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import {
+  ThemeColors,
+  useThemeColors,
+  useThemedStyles,
+} from '../src/theme';
 import { AnimatedPressable } from '../src/components/AnimatedPressable';
-import { useState } from 'react';
-import { View } from 'react-native';
-import { ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
