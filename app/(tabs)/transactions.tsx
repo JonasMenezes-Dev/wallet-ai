@@ -12,6 +12,7 @@ import {
 
 import { AnimatedListItem, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { useAccounts } from "../../src/hooks/use-accounts";
 import { useTransactions } from "../../src/hooks/use-transactions";
 import { listCategories } from "../../src/services/category.service";
@@ -287,15 +288,17 @@ export default function TransactionsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Transações</Text>
-
-      <Text style={styles.subtitle}>
-        {visibleTransactions.length === 0
-          ? "Nenhuma transação registrada."
-          : `${visibleTransactions.length} ${
-              visibleTransactions.length === 1 ? "transação" : "transações"
-            }`}
-      </Text>
+      <ScreenHeader
+        title="Transações"
+        subtitle={
+          visibleTransactions.length === 0
+            ? "Nenhuma transação registrada."
+            : `${visibleTransactions.length} ${
+                visibleTransactions.length === 1 ? "transação" : "transações"
+              }`
+        }
+        eyebrow="Movimentações"
+      />
 
       {visibleTransactions.length > 0 && (
         <View style={styles.totalsRow}>
@@ -853,7 +856,7 @@ const createStyles = (colors: ThemeColors) =>
   container: {
     flex: 1,
     padding: 24,
-    paddingTop: 70,
+    paddingTop: 28,
     backgroundColor: colors.background,
   },
 
@@ -1120,8 +1123,10 @@ const createStyles = (colors: ThemeColors) =>
 
   transactionCard: {
     padding: 18,
-    borderRadius: 16,
+    borderRadius: 18,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   transactionInfo: {
