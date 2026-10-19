@@ -8,7 +8,7 @@ export {
   useThemePreference,
 } from "./colors";
 
-export type { ThemeColors, ThemeName } from "./colors";
+export type { ThemeColors, ThemeName, ThemePreference } from "./colors";
 
 export { useThemedStyles } from "./use-themed-styles";
 
