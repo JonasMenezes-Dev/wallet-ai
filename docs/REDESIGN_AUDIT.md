@@ -143,3 +143,32 @@ As alterações foram gravadas na branch remota; a integração do GitHub não e
 ## Validação local da fase 6/7
 
 As alterações foram aplicadas na branch remota `redesign/phase-1-design-system`. Rodar no checkout local atualizado `npm run typecheck` e `npm run lint`; depois conferir em um aparelho estreito e em tema claro/escuro a barra inferior, valores longos, filtros, opções de toque e formulários com teclado aberto. A edição via GitHub não executa esses testes.
+## Fase 8 — revisão funcional financeira
+
+Revisão estática dos serviços e repositórios de transações, contas, metas e dashboard. Nenhum cálculo de saldo ou esquema SQLite foi alterado nesta fase.
+
+### Ajuste aplicado
+
+- As validações de metas agora rejeitam explicitamente valores não finitos (NaN/Infinity) e IDs que não sejam inteiros seguros positivos. Isso fecha uma brecha de validação de entrada sem mudar os fluxos válidos de criação, edição e aporte.
+
+### Regras críticas revisadas
+
+- Entradas e despesas alteram saldos de contas comuns em sentidos opostos; em cartão, despesas aumentam o valor utilizado e entradas o reduzem.
+- Criação, edição e exclusão de transações atualizam o saldo dentro de transações SQLite.
+- Aportes em metas descontam o saldo da conta, aumentam o valor guardado e registram uma transação; a exclusão do aporte deve reverter esses efeitos.
+- Contas com transações não podem ser removidas; metas com valor guardado não podem ser removidas.
+- Cartão armazena valor utilizado positivo; limite disponível não é exibido como valor negativo.
+
+### Verificação ainda necessária no dispositivo
+
+O projeto não possui atualmente um runner de testes automatizados configurado. Não foi adicionada uma dependência de testes só para esta fase, e a revisão estática não equivale à execução dos fluxos. Após atualizar a branch, validar manualmente:
+
+1. Criar uma entrada e uma despesa em conta bancária e confirmar o saldo.
+2. Criar uma despesa no cartão e confirmar o valor utilizado/disponível.
+3. Editar uma transação alterando valor, tipo e conta; conferir os saldos das duas contas.
+4. Excluir transação e confirmar o estorno correto.
+5. Fazer aporte em meta, confirmar o saldo e progresso; excluir o aporte e confirmar a reversão.
+6. Tentar lançar uma despesa maior que o saldo, aportar acima do saldo ou ultrapassar a meta; a operação deve ser recusada sem alterações parciais.
+7. Fechar e reabrir o app para confirmar persistência de transações, contas, metas e preferência de tema.
+
+A conexão GitHub permite alterar e revisar o código, mas não executa npm nem o aplicativo. Executar localmente `npm run typecheck` e `npm run lint` depois de puxar as alterações; a execução dos fluxos acima continua pendente até ser testada no app.
