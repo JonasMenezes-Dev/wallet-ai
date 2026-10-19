@@ -855,8 +855,8 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    paddingTop: 28,
+    padding: 18,
+    paddingTop: 24,
     backgroundColor: colors.background,
   },
 
@@ -882,9 +882,9 @@ const createStyles = (colors: ThemeColors) =>
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 18,
+    marginTop: 14,
     paddingHorizontal: 14,
-    height: 50,
+    minHeight: 52,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
@@ -996,6 +996,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   categoryOption: {
+    minHeight: 40,
+    justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
@@ -1038,6 +1040,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   filterButton: {
+    minHeight: 40,
+    justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
@@ -1061,7 +1065,7 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   list: {
-    paddingTop: 24,
+    paddingTop: 18,
     paddingBottom: 32,
     gap: 12,
   },
@@ -1127,6 +1131,7 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    elevation: 1,
   },
 
   transactionInfo: {
