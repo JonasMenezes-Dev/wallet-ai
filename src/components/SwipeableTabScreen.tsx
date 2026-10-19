@@ -25,13 +25,20 @@ type Props = {
   children: ReactNode;
 };
 
+const SWIPE_COOLDOWN_MS = 500;
+let lastSwipeNavigationAt = 0;
+
 /** Navegação horizontal com proteção contra disparos repetidos e scroll vertical. */
 export function SwipeableTabScreen({ routeName, children }: Props) {
   const isNavigating = useRef(false);
+  const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    isNavigating.current = false;
-  }, [routeName]);
+  useEffect(
+    () => () => {
+      if (unlockTimer.current) clearTimeout(unlockTimer.current);
+    },
+    [],
+  );
 
   const panResponder = useMemo(
     () =>
@@ -40,7 +47,13 @@ export function SwipeableTabScreen({ routeName, children }: Props) {
           Math.abs(gesture.dx) > 32 &&
           Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.7,
         onPanResponderRelease: (_, gesture) => {
-          if (isNavigating.current) return;
+          const now = Date.now();
+          if (
+            isNavigating.current ||
+            now - lastSwipeNavigationAt < SWIPE_COOLDOWN_MS
+          ) {
+            return;
+          }
 
           const distance = Math.abs(gesture.dx);
           const velocity = Math.abs(gesture.vx);
@@ -56,10 +69,16 @@ export function SwipeableTabScreen({ routeName, children }: Props) {
           if (!nextRoute) return;
 
           isNavigating.current = true;
+          lastSwipeNavigationAt = now;
           router.navigate(TAB_PATHS[nextRoute]);
-        },
-        onPanResponderTerminate: () => {
-          isNavigating.current = false;
+
+          // As abas ficam montadas em memória; liberar pelo tempo evita travar
+          // uma aba depois da primeira navegação.
+          if (unlockTimer.current) clearTimeout(unlockTimer.current);
+          unlockTimer.current = setTimeout(() => {
+            isNavigating.current = false;
+            unlockTimer.current = null;
+          }, SWIPE_COOLDOWN_MS);
         },
       }),
     [routeName],
