@@ -198,7 +198,6 @@ export default function GoalsScreen() {
 
       {goals.length === 0 ? (
         <FadeInView style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🎯</Text>
 
           <Text style={styles.emptyTitle}>Nenhuma meta criada</Text>
 
@@ -237,7 +236,7 @@ export default function GoalsScreen() {
                   <Text style={styles.goalName}>{goal.name}</Text>
 
                   <Text style={styles.deadline}>
-                    📅 {formatDate(goal.deadline)}
+                    {formatDate(goal.deadline)}
                   </Text>
 
                   {progress.deadlineStatus === "overdue" && (
@@ -289,7 +288,7 @@ export default function GoalsScreen() {
 
               <View style={styles.remainingCard}>
                 <Text style={styles.remainingLabel}>
-                  {isCompleted ? "Meta concluída 🎉" : "Ainda falta"}
+                  {isCompleted ? "Meta concluída" : "Ainda falta"}
                 </Text>
 
                 <Text style={styles.remainingAmount}>
@@ -305,7 +304,6 @@ export default function GoalsScreen() {
 
                   {/* AGRESSIVA */}
                   <View style={styles.planCard}>
-                    <Text style={styles.planIcon}>🔥</Text>
 
                     <View style={styles.planInfo}>
                       <Text style={styles.planName}>Agressiva</Text>
@@ -327,7 +325,6 @@ export default function GoalsScreen() {
 
                   {/* EQUILIBRADA */}
                   <View style={[styles.planCard, styles.balancedPlan]}>
-                    <Text style={styles.planIcon}>⚖️</Text>
 
                     <View style={styles.planInfo}>
                       <Text style={styles.planName}>Equilibrada</Text>
@@ -349,7 +346,6 @@ export default function GoalsScreen() {
 
                   {/* CONFORTÁVEL */}
                   <View style={styles.planCard}>
-                    <Text style={styles.planIcon}>😌</Text>
 
                     <View style={styles.planInfo}>
                       <Text style={styles.planName}>Confortável</Text>
@@ -483,7 +479,7 @@ export default function GoalsScreen() {
                     })
                   }
                 >
-                  <Text>✏️ Editar</Text>
+                  <Text>Editar</Text>
                 </AnimatedPressable>
 
                 <AnimatedPressable
@@ -492,7 +488,7 @@ export default function GoalsScreen() {
                   pressedOpacity={0.7}
                   onPress={() => handleDeleteGoal(goal.id)}
                 >
-                  <Text style={styles.deleteText}>🗑️ Excluir</Text>
+                  <Text style={styles.deleteText}>Excluir</Text>
                 </AnimatedPressable>
               </View>
             </AnimatedListItem>
