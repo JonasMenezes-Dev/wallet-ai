@@ -415,7 +415,12 @@ export default function AccountsScreen() {
 
                 <View style={styles.accountActions}>
                   {!isCard && (
-                    <Text style={styles.accountBalance}>
+                    <Text
+                      style={styles.accountBalance}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.72}
+                    >
                       {formatCurrency(item.balance)}
                     </Text>
                   )}
@@ -666,13 +671,15 @@ const createStyles = (colors: ThemeColors) =>
 
   accountHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: 8,
   },
 
   accountInfo: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 0,
+    marginRight: 8,
   },
 
   accountName: {
@@ -688,17 +695,23 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   accountBalance: {
+    maxWidth: "100%",
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
+    textAlign: 'right',
   },
 
   accountActions: {
     alignItems: 'flex-end',
+    flexShrink: 1,
+    maxWidth: "58%",
   },
 
   cardButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
     gap: 6,
     marginTop: 8,
   },
