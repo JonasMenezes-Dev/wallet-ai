@@ -44,6 +44,7 @@ function formatDate(date: string | null) {
   return parsedDate.toLocaleDateString("pt-BR");
 }
 
+import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function GoalsScreen() {
   const {
     goals,
@@ -173,7 +174,8 @@ export default function GoalsScreen() {
   }
 
   return (
-    <ScrollView
+    <SwipeableTabScreen routeName="goals">
+      <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
@@ -496,6 +498,7 @@ export default function GoalsScreen() {
         })
       )}
     </ScrollView>
+    </SwipeableTabScreen>
   );
 }
 
