@@ -1,6 +1,4 @@
 import { getDatabase } from "../database/database";
-import type { TransactionType } from "../types/transaction";
-
 export interface RecurringItem {
   id: number;
   title: string;
