@@ -151,6 +151,7 @@ export default function EditTransactionScreen() {
         pressedScale={0.94}
         pressedOpacity={0.7}
         onPress={() => router.back()}
+        style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}
       >
         <Text style={styles.back}>← Voltar</Text>
       </AnimatedPressable>
@@ -324,7 +325,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   typeButton: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 11,
