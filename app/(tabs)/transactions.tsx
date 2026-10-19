@@ -661,9 +661,6 @@ export default function TransactionsScreen() {
 
           const isEditingCategory = editingCategoryId === item.id;
 
-          const isCardTransaction =
-            item.accountId !== null && cardAccountIds.has(item.accountId);
-
           return (
             <AnimatedListItem index={index} style={styles.transactionCard}>
               <View style={styles.transactionHeader}>
