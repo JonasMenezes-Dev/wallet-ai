@@ -479,8 +479,8 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    paddingTop: 28,
+    padding: 18,
+    paddingTop: 24,
     backgroundColor: colors.background,
   },
 
@@ -510,6 +510,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   addButton: {
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
@@ -590,6 +592,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   typeOption: {
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 10,
@@ -629,7 +633,7 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   list: {
-    paddingTop: 24,
+    paddingTop: 18,
     paddingBottom: 32,
     gap: 12,
   },
@@ -657,6 +661,7 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    elevation: 1,
   },
 
   accountHeader: {
