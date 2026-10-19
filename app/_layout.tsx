@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { screenTransition } from "../src/animations";
 import { getDatabase } from "../src/database/database";
@@ -21,16 +22,21 @@ function RootNavigator() {
   if (loading) {
     return (
       <>
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: colors.background,
-          }}
+        <SafeAreaView
+          edges={["top"]}
+          style={{ flex: 1, backgroundColor: colors.background }}
         >
-          <ActivityIndicator color={colors.primary} />
-        </View>
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: colors.background,
+            }}
+          >
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        </SafeAreaView>
         <StatusBar style={themeName === "dark" ? "light" : "dark"} />
       </>
     );
@@ -38,15 +44,20 @@ function RootNavigator() {
 
   return (
     <>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: screenTransition.animation,
-          animationDuration: screenTransition.animationDuration,
-          gestureEnabled: true,
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      />
+      <SafeAreaView
+        edges={["top"]}
+        style={{ flex: 1, backgroundColor: colors.background }}
+      >
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: screenTransition.animation,
+            animationDuration: screenTransition.animationDuration,
+            gestureEnabled: true,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        />
+      </SafeAreaView>
 
       <StatusBar style={themeName === "dark" ? "light" : "dark"} />
     </>
@@ -61,8 +72,10 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <RootNavigator />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <RootNavigator />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
