@@ -654,9 +654,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   accountCard: {
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
+    paddingVertical: 18,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
 
   accountHeader: {
