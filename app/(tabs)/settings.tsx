@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import {
   ThemeColors,
   useThemePreference,
@@ -17,13 +18,11 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>PREFERÊNCIAS</Text>
-        <Text style={styles.title}>Configurações</Text>
-        <Text style={styles.subtitle}>
-          Ajuste o Wallet AI para acompanhar sua rotina.
-        </Text>
-      </View>
+      <ScreenHeader
+        title="Configurações"
+        subtitle="Ajuste o Wallet AI para acompanhar sua rotina."
+        eyebrow="Preferências"
+      />
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Aparência</Text>
@@ -98,7 +97,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     container: {
       padding: 24,
-      paddingTop: 64,
+      paddingTop: 28,
       paddingBottom: 40,
     },
     header: {
