@@ -4,18 +4,16 @@ import type { TransactionType } from "../types/transaction";
 /**
  * Regras de quanto uma transação mexe no valor guardado em uma conta.
  *
- * - Conta comum: `balance` é o dinheiro disponível. Uma despesa reduz
- *   o saldo e uma entrada aumenta; não pode ficar negativo.
- * - Cartão: `balance` é o valor utilizado/dívida em aberto, sempre positivo.
- *   Uma despesa aumenta a utilização e uma entrada (pagamento/estorno)
- *   reduz. O cartão pode ultrapassar o limite; a UI sinaliza isso.
+ * - Conta comum: balance é o dinheiro disponível; despesa reduz e entrada
+ *   aumenta. Não pode ficar negativo.
+ * - Cartão: balance é o valor utilizado/dívida em aberto, armazenado como
+ *   número positivo; despesa aumenta e entrada (pagamento/estorno) reduz.
+ *   O cartão pode ultrapassar o limite; a UI sinaliza isso.
  *
  * Toda a aritmética fica aqui para que criar, editar e excluir não divirjam.
  */
 
-/**
- * `amount` positivo lança a transação; negativo desfaz (edição/exclusão).
- */
+/** amount positivo lança a transação; negativo desfaz (edição/exclusão). */
 export function applyTransactionToAccount(
   balance: number,
   accountType: Account["type"],
@@ -33,11 +31,10 @@ export function applyTransactionToAccount(
   return type === "expense" ? balance - amount : balance + amount;
 }
 
-/** Só contas comuns são impedidas de ficar negativas. */
+/** Rejeita saldos negativos e resultados não finitos em qualquer conta. */
 export function isBalanceInvalid(
   balance: number,
-  accountType: Account["type"],
+  _accountType: Account["type"],
 ): boolean {
-  return !Number.isFinite(balance) ||
-    (accountType === "credit_card" ? balance < 0 : balance < 0);
+  return !Number.isFinite(balance) || balance < 0;
 }
