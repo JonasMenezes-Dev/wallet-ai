@@ -13,6 +13,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AnimatedBlock } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { listAccounts } from "../../src/services/account.service";
 import { listCategories } from "../../src/services/category.service";
 import {
@@ -155,11 +156,11 @@ export default function EditTransactionScreen() {
       </AnimatedPressable>
 
       <AnimatedBlock delay={60}>
-        <Text style={styles.title}>Editar transação</Text>
-
-        <Text style={styles.subtitle}>
-          Atualize o lançamento sem perder o saldo da conta.
-        </Text>
+        <ScreenHeader
+          title="Editar transação"
+          subtitle="Atualize o lançamento sem perder o saldo da conta."
+          eyebrow="Movimentação"
+        />
       </AnimatedBlock>
 
       <AnimatedBlock delay={120} style={styles.typeSelector}>
@@ -304,7 +305,7 @@ export default function EditTransactionScreen() {
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 24, paddingTop: 70, paddingBottom: 40 },
+  content: { padding: 24, paddingTop: 28, paddingBottom: 40 },
   center: {
     flex: 1,
     alignItems: "center",
