@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { AppCard } from "../../src/components/AppCard";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import {
   ThemeColors,
@@ -24,7 +25,7 @@ export default function SettingsScreen() {
         eyebrow="Preferências"
       />
 
-      <View style={styles.section}>
+      <AppCard style={styles.section} padded={false}>
         <Text style={styles.sectionTitle}>Aparência</Text>
         <Text style={styles.sectionDescription}>
           Escolha o visual mais confortável para acompanhar suas finanças.
@@ -36,6 +37,9 @@ export default function SettingsScreen() {
             themeName === "light" && styles.themeOptionSelected,
           ]}
           pressedOpacity={0.82}
+          accessibilityRole="radio"
+          accessibilityLabel="Modo claro"
+          accessibilityState={{ selected: themeName === "light" }}
           onPress={() => void setThemeName("light")}
         >
           <View style={styles.optionCopy}>
@@ -60,6 +64,9 @@ export default function SettingsScreen() {
             themeName === "dark" && styles.themeOptionSelected,
           ]}
           pressedOpacity={0.82}
+          accessibilityRole="radio"
+          accessibilityLabel="Modo escuro"
+          accessibilityState={{ selected: themeName === "dark" }}
           onPress={() => void setThemeName("dark")}
         >
           <View style={styles.optionCopy}>
@@ -77,7 +84,7 @@ export default function SettingsScreen() {
             {themeName === "dark" && <View style={styles.radioDot} />}
           </View>
         </AnimatedPressable>
-      </View>
+      </AppCard>
 
       <View style={styles.note}>
         <Text style={styles.noteTitle}>Sua preferência fica salva</Text>
@@ -96,9 +103,9 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.background,
     },
     container: {
-      padding: 24,
-      paddingTop: 28,
-      paddingBottom: 40,
+      paddingHorizontal: 18,
+      paddingTop: 24,
+      paddingBottom: 32,
     },
     header: {
       marginBottom: 28,
@@ -123,10 +130,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     section: {
       padding: 18,
-      borderRadius: 20,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
     },
     sectionTitle: {
       fontSize: 18,
@@ -141,6 +144,7 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
     },
     themeOption: {
+      minHeight: 68,
       flexDirection: "row",
       alignItems: "center",
       padding: 14,
