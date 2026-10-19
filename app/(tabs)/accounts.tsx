@@ -50,6 +50,7 @@ const accountTypes: {
   { value: 'other', label: 'Outro' },
 ];
 
+import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function AccountsScreen() {
   const { accounts, loading, error, reload } = useAccounts();
   const styles = useThemedStyles(createStyles);
@@ -251,7 +252,8 @@ export default function AccountsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SwipeableTabScreen routeName="accounts">
+      <View style={styles.container}>
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Contas</Text>
@@ -474,6 +476,7 @@ export default function AccountsScreen() {
         }
       />
     </View>
+    </SwipeableTabScreen>
   );
 }
 
