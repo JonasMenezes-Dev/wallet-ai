@@ -27,6 +27,11 @@ export function AppCard({
           backgroundColor: muted ? colors.surfaceMuted : colors.surface,
           borderColor: colors.border,
           padding: padded ? spacing.lg : 0,
+          shadowColor: "#10271C",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          elevation: 1,
         },
         style,
       ]}
