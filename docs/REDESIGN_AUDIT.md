@@ -62,4 +62,20 @@ Evitar alterações em `src/database/database.ts`, `src/database/migrations.ts`,
 - Referências completas a `SwipeableTabScreen`
 - Fluxos manuais de criação/edição/exclusão de transações e metas, saldo das contas e persistência do tema
 
+## Fase 1 — fundação visual iniciada
+
+Implementado nesta branch:
+- `src/theme/tokens.ts`: escala compartilhada de espaçamento, raios, tipografia, dimensões de controles, ícones e duração de animações.
+- `src/theme/index.ts`: exporta os tokens para consumo consistente pelas telas e componentes.
+- `app/_layout.tsx`: aguarda o carregamento da preferência de tema antes de montar a navegação, exibindo um indicador simples com a cor do tema para reduzir o flash visual no arranque.
+
+Decisões de segurança:
+- As paletas semânticas existentes em `src/theme/colors.tsx` foram mantidas nesta primeira passagem; não havia evidência suficiente para substituir cores que já estão conectadas a toda a aplicação.
+- Nenhum arquivo de banco, migração, serviço financeiro ou repositório foi alterado.
+- Os tokens foram adicionados sem substituir em massa os estilos das telas. A adoção visual será incremental.
+
+## Verificação desta entrega
+
+Os arquivos foram gravados na branch remota `redesign/phase-1-design-system`. O conector GitHub permite inspecionar e editar os arquivos, mas não executa `npm run typecheck`, `npm run lint` nem abre o app em um emulador. Portanto, esses checks continuam pendentes no checkout local e não devem ser considerados aprovados.
+
 Esta auditoria foi feita a partir dos arquivos acessíveis na branch remota; não representa execução local dos comandos ou teste em dispositivo.
