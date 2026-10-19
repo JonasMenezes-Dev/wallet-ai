@@ -5,6 +5,14 @@ import { router } from "expo-router";
 const TAB_ORDER = ["index", "transactions", "accounts", "goals", "settings"] as const;
 type TabName = (typeof TAB_ORDER)[number];
 
+const TAB_PATHS = {
+  index: "/(tabs)/index",
+  transactions: "/(tabs)/transactions",
+  accounts: "/(tabs)/accounts",
+  goals: "/(tabs)/goals",
+  settings: "/(tabs)/settings",
+} as const;
+
 type Props = {
   routeName: TabName;
   children: ReactNode;
@@ -25,7 +33,7 @@ export function SwipeableTabScreen({ routeName, children }: Props) {
           const nextIndex = gesture.dx < 0 ? currentIndex + 1 : currentIndex - 1;
           const nextRoute = TAB_ORDER[nextIndex];
 
-          if (nextRoute) router.navigate(`/(tabs)/${nextRoute}`);
+          if (nextRoute) router.navigate(TAB_PATHS[nextRoute]);
         },
       }),
     [routeName],
