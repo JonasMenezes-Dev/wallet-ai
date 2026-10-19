@@ -1,4 +1,5 @@
-import { View, type ReactNode } from "react-native";
+import { type ReactNode } from "react";
+import { View } from "react-native";
 
 type Props = {
   routeName: "index" | "transactions" | "accounts" | "goals" | "settings";
