@@ -2,8 +2,10 @@ export {
   darkColors,
   lightColors,
   themes,
+  ThemeProvider,
   useThemeColors,
-  useThemeName
+  useThemeName,
+  useThemePreference,
 } from "./colors";
 
 export type { ThemeColors, ThemeName } from "./colors";
