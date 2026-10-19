@@ -14,29 +14,10 @@ import {
   FinancialInsight,
 } from "../../src/services/financial-insights.service";
 import type { DashboardInsight } from "../../src/services/dashboard.service";
+import { formatTransactionDateTime } from "../../src/utils/date-time";
 
 function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
-}
-
-function formatTransactionDate(value: string) {
-  const parsed = new Date(value);
-
-  if (Number.isNaN(parsed.getTime())) return "";
-
-  const today = new Date();
-
-  if (parsed.toDateString() === today.toDateString()) return "Hoje";
-
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (parsed.toDateString() === yesterday.toDateString()) return "Ontem";
-
-  return parsed.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
 }
 
 function getGreeting() {
@@ -448,7 +429,7 @@ export default function HomeScreen() {
                   </Text>
 
                   <Text style={styles.recentMeta}>
-                    {formatTransactionDate(item.date)} ·{" "}
+                    {formatTransactionDateTime(item.date)} ·{" "}
                     {item.source === "manual" ? "Manual" : "Automático"}
                   </Text>
                 </View>
