@@ -8,7 +8,7 @@ import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { GoalProgressCard } from "../../src/components/GoalProgressCard";
 import { useDashboard } from "../../src/hooks/use-dashboard";
 import { useUserSettings } from "../../src/hooks/use-user-settings";
-import { ThemeColors, useThemedStyles } from "../../src/theme";
+import { ThemeColors, useThemedStyles, radii, spacing, typography } from "../../src/theme";
 import {
   getFinancialInsights,
   FinancialInsight,
@@ -499,9 +499,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   content: {
-    padding: 24,
-    paddingTop: 64,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing["4xl"],
   },
 
   center: {
@@ -560,9 +560,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   balanceCard: {
-    marginTop: 24,
-    padding: 24,
-    borderRadius: 22,
+    marginTop: spacing.xl,
+    padding: spacing.xl,
+    borderRadius: radii.xl,
     backgroundColor: colors.primary,
   },
 
@@ -573,9 +573,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   balance: {
-    marginTop: 8,
-    fontSize: 36,
-    fontWeight: "800",
+    marginTop: spacing.sm,
+    fontSize: typography.size.display,
+    lineHeight: 42,
+    fontWeight: typography.weight.heavy,
     color: colors.onPrimary,
   },
 
@@ -603,8 +604,8 @@ const createStyles = (colors: ThemeColors) =>
 
   card: {
     flex: 1,
-    padding: 18,
-    borderRadius: 18,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -646,8 +647,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: typography.size.subtitle,
+    fontWeight: typography.weight.heavy,
     color: colors.text,
   },
 
@@ -752,9 +753,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   availableCard: {
-    marginTop: 16,
-    padding: 18,
-    borderRadius: 18,
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
     backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
@@ -783,9 +784,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   categoryList: {
-    marginTop: 14,
-    padding: 18,
-    borderRadius: 18,
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -936,7 +937,7 @@ const createStyles = (colors: ThemeColors) =>
 
   newTransactionButton: {
     height: 56,
-    marginTop: 28,
+    marginTop: spacing.xl,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
