@@ -199,6 +199,17 @@ export default function HomeScreen() {
           </View>
         </AnimatedBlock>
 
+        <AnimatedBlock delay={120}>
+          <AnimatedPressable
+            style={styles.inlineButton}
+            pressedScale={0.97}
+            pressedOpacity={0.8}
+            onPress={() => router.push("/budgets")}
+          >
+            <Text style={styles.inlineButtonText}>▤  Planejar gastos do mês</Text>
+          </AnimatedPressable>
+        </AnimatedBlock>
+
         <AnimatedBlock delay={140}>
           <Text style={styles.sectionTitle}>Seus gastos</Text>
 
