@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 
 import { AnimatedBlock } from '../../src/components/AnimatedListItem';
 import { AnimatedPressable } from '../../src/components/AnimatedPressable';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
 
 import { listAccounts } from '../../src/services/account.service';
 import {
@@ -159,11 +160,11 @@ export default function NewTransactionScreen() {
         keyboardDismissMode="on-drag"
       >
       <AnimatedBlock>
-        <Text style={styles.title}>Nova transação</Text>
-
-        <Text style={styles.subtitle}>
-          Registre uma entrada ou saída de dinheiro.
-        </Text>
+        <ScreenHeader
+          title="Nova transação"
+          subtitle="Registre uma entrada ou saída de dinheiro."
+          eyebrow="Movimentação"
+        />
       </AnimatedBlock>
 
       <AnimatedBlock delay={60} style={styles.typeSelector}>
@@ -327,9 +328,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   content: {
-    padding: 24,
-    paddingTop: 70,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
 
   title: {
@@ -354,7 +355,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   typeButton: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 11,

@@ -1,22 +1,22 @@
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { Text, View, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useThemeColors } from "../../src/theme";
+import { useThemeColors, radii, spacing, typography } from "../../src/theme";
+
+const tabSymbols: Record<string, string> = {
+  index: "⌂",
+  transactions: "↔",
+  accounts: "▤",
+  goals: "◎",
+  settings: "⚙",
+};
 
 export default function TabsLayout() {
   const colors = useThemeColors();
-
-  const pageDot = (focused: boolean) => (
-    <View
-      style={{
-        width: focused ? 9 : 7,
-        height: focused ? 9 : 7,
-        borderRadius: 99,
-        backgroundColor: focused ? colors.primary : colors.textSubtle,
-        opacity: focused ? 1 : 0.55,
-      }}
-    />
-  );
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const tabLabelSize = width < 360 ? 10 : 11;
 
   return (
     <Tabs
@@ -25,19 +25,35 @@ export default function TabsLayout() {
         animation: "shift",
         transitionSpec: {
           animation: "timing",
-          config: { duration: 260 },
+          config: { duration: 220 },
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSubtle,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelPosition: "below-icon",
+        tabBarLabelStyle: {
+          fontSize: tabLabelSize,
+          fontWeight: typography.weight.semibold,
+          textAlign: "center",
+          marginTop: spacing.xxs,
+          marginBottom: 1,
+        },
         tabBarHideOnKeyboard: true,
         tabBarItemStyle: {
-          paddingVertical: 9,
+          flex: 1,
+          minWidth: 0,
+          minHeight: 60,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 0,
+          paddingTop: spacing.xs,
         },
         tabBarStyle: {
-          height: 58,
-          paddingTop: 10,
-          paddingBottom: 8,
+          height: 66 + insets.bottom,
+          minHeight: 66 + insets.bottom,
+          paddingTop: spacing.xs,
+          paddingBottom: Math.max(insets.bottom, spacing.sm),
+          paddingHorizontal: spacing.xs,
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
@@ -47,23 +63,74 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: "Início", tabBarAccessibilityLabel: "Início", tabBarIcon: ({ focused }) => pageDot(focused) }}
+        options={{
+          title: "Início",
+          tabBarAccessibilityLabel: "Início",
+          tabBarIcon: ({ focused, color }) => (
+            <View
+              style={{
+                width: 34,
+                height: 28,
+                borderRadius: radii.sm,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: focused ? colors.accentSurface : "transparent",
+              }}
+            >
+              <Text style={{ color, fontSize: 22, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>
+                {tabSymbols.index}
+              </Text>
+            </View>
+          ),
+        }}
       />
       <Tabs.Screen
         name="transactions"
-        options={{ title: "Transações", tabBarAccessibilityLabel: "Transações", tabBarIcon: ({ focused }) => pageDot(focused) }}
+        options={{
+          title: "Transações",
+          tabBarAccessibilityLabel: "Transações",
+          tabBarIcon: ({ focused, color }) => (
+            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
+              <Text style={{ color, fontSize: 21, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.transactions}</Text>
+            </View>
+          ),
+        }}
       />
       <Tabs.Screen
         name="accounts"
-        options={{ title: "Contas", tabBarAccessibilityLabel: "Contas", tabBarIcon: ({ focused }) => pageDot(focused) }}
+        options={{
+          title: "Contas",
+          tabBarAccessibilityLabel: "Contas",
+          tabBarIcon: ({ focused, color }) => (
+            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
+              <Text style={{ color, fontSize: 19, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.accounts}</Text>
+            </View>
+          ),
+        }}
       />
       <Tabs.Screen
         name="goals"
-        options={{ title: "Metas", tabBarAccessibilityLabel: "Metas", tabBarIcon: ({ focused }) => pageDot(focused) }}
+        options={{
+          title: "Metas",
+          tabBarAccessibilityLabel: "Metas",
+          tabBarIcon: ({ focused, color }) => (
+            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
+              <Text style={{ color, fontSize: 20, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.goals}</Text>
+            </View>
+          ),
+        }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: "Configurações", tabBarAccessibilityLabel: "Configurações", tabBarIcon: ({ focused }) => pageDot(focused) }}
+        options={{
+          title: "Ajustes",
+          tabBarAccessibilityLabel: "Configurações",
+          tabBarIcon: ({ focused, color }) => (
+            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
+              <Text style={{ color, fontSize: 19, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.settings}</Text>
+            </View>
+          ),
+        }}
       />
     </Tabs>
   );

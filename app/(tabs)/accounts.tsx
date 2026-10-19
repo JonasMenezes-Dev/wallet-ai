@@ -29,6 +29,7 @@ import {
   useThemeColors,
   useThemedStyles,
 } from '../../src/theme';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Account, AccountType } from '../../src/types/account';
 
 /**
@@ -50,7 +51,6 @@ const accountTypes: {
   { value: 'other', label: 'Outro' },
 ];
 
-import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function AccountsScreen() {
   const { accounts, loading, error, reload } = useAccounts();
   const styles = useThemedStyles(createStyles);
@@ -252,27 +252,23 @@ export default function AccountsScreen() {
   }
 
   return (
-    <SwipeableTabScreen routeName="accounts">
-      <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Contas</Text>
-
-          <Text style={styles.subtitle}>
-            Seu dinheiro organizado por conta.
-          </Text>
-        </View>
-
-        <AnimatedPressable
-          style={styles.addButton}
-          pressedOpacity={0.85}
-          onPress={handleOpenCreate}
-        >
-          <Text style={styles.addButtonText}>
-            {showForm ? 'Fechar' : '+ Conta'}
-          </Text>
-        </AnimatedPressable>
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Contas"
+        subtitle="Seu dinheiro organizado por conta."
+        eyebrow="Patrimônio"
+        accessory={
+          <AnimatedPressable
+            style={styles.addButton}
+            pressedOpacity={0.85}
+            onPress={handleOpenCreate}
+          >
+            <Text style={styles.addButtonText}>
+              {showForm ? 'Fechar' : '+ Conta'}
+            </Text>
+          </AnimatedPressable>
+        }
+      />
 
       {showForm && (
         <FadeInView style={styles.form}>
@@ -419,7 +415,12 @@ export default function AccountsScreen() {
 
                 <View style={styles.accountActions}>
                   {!isCard && (
-                    <Text style={styles.accountBalance}>
+                    <Text
+                      style={styles.accountBalance}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.72}
+                    >
                       {formatCurrency(item.balance)}
                     </Text>
                   )}
@@ -476,7 +477,6 @@ export default function AccountsScreen() {
         }
       />
     </View>
-    </SwipeableTabScreen>
   );
 }
 
@@ -484,8 +484,8 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    paddingTop: 70,
+    padding: 18,
+    paddingTop: 24,
     backgroundColor: colors.background,
   },
 
@@ -515,6 +515,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   addButton: {
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
@@ -528,10 +530,13 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   form: {
-    marginTop: 24,
+    marginTop: 8,
+    marginBottom: 8,
     padding: 18,
     borderRadius: 18,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   formTitle: {
@@ -592,6 +597,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   typeOption: {
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 10,
@@ -631,7 +638,7 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   list: {
-    paddingTop: 24,
+    paddingTop: 18,
     paddingBottom: 32,
     gap: 12,
   },
@@ -654,21 +661,25 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   accountCard: {
-    paddingVertical: 18,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    padding: 20,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    elevation: 1,
   },
 
   accountHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: 8,
   },
 
   accountInfo: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 0,
+    marginRight: 8,
   },
 
   accountName: {
@@ -684,17 +695,23 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   accountBalance: {
+    maxWidth: "100%",
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
+    textAlign: 'right',
   },
 
   accountActions: {
     alignItems: 'flex-end',
+    flexShrink: 1,
+    maxWidth: "58%",
   },
 
   cardButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
     gap: 6,
     marginTop: 8,
   },

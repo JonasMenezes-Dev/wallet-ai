@@ -15,6 +15,7 @@ import { router } from "expo-router";
 
 import { AnimatedBlock, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { addGoal } from "../../src/services/goal.service";
 import {
     ThemeColors,
@@ -100,7 +101,8 @@ export default function NewGoalScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={24}
     >
       <ScrollView
         contentContainerStyle={styles.content}
@@ -110,16 +112,17 @@ export default function NewGoalScreen() {
           pressedScale={0.94}
           pressedOpacity={0.7}
           onPress={() => router.back()}
+          style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}
         >
           <Text style={styles.back}>← Voltar</Text>
         </AnimatedPressable>
 
         <AnimatedBlock delay={60}>
-          <Text style={styles.title}>Nova meta</Text>
-
-          <Text style={styles.subtitle}>
-            Crie um objetivo para acompanhar seu progresso financeiro.
-          </Text>
+          <ScreenHeader
+            title="Nova meta"
+            subtitle="Crie um objetivo para acompanhar seu progresso financeiro."
+            eyebrow="Planejamento"
+          />
         </AnimatedBlock>
 
         <AnimatedBlock delay={120} style={styles.form}>
@@ -215,9 +218,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   content: {
-    padding: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
 
   back: {

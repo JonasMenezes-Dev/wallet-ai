@@ -8,7 +8,7 @@ import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { GoalProgressCard } from "../../src/components/GoalProgressCard";
 import { useDashboard } from "../../src/hooks/use-dashboard";
 import { useUserSettings } from "../../src/hooks/use-user-settings";
-import { ThemeColors, useThemedStyles } from "../../src/theme";
+import { ThemeColors, useThemedStyles, radii, spacing, typography } from "../../src/theme";
 import {
   getFinancialInsights,
   FinancialInsight,
@@ -67,7 +67,6 @@ function getAccountTypeLabel(type: string) {
   }
 }
 
-import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function HomeScreen() {
   const { summary, loading, error, reload } = useDashboard();
   const { settings } = useUserSettings();
@@ -130,8 +129,7 @@ export default function HomeScreen() {
   ];
 
   return (
-    <SwipeableTabScreen routeName="index">
-      <View style={styles.container}>
+    <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
@@ -155,7 +153,14 @@ export default function HomeScreen() {
         <AnimatedBlock delay={60} style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Saldo total</Text>
 
-          <Text style={styles.balance}>{formatCurrency(summary.balance)}</Text>
+          <Text
+            style={styles.balance}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.72}
+          >
+            {formatCurrency(summary.balance)}
+          </Text>
 
           <Text style={styles.balanceMeta}>
             {summary.accounts.length}{" "}
@@ -173,7 +178,7 @@ export default function HomeScreen() {
             <View style={styles.card}>
               <Text style={styles.label}>Entradas</Text>
 
-              <Text style={styles.incomeValue}>
+              <Text style={styles.incomeValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
                 {formatCurrency(summary.monthIncome)}
               </Text>
             </View>
@@ -181,7 +186,7 @@ export default function HomeScreen() {
             <View style={styles.card}>
               <Text style={styles.label}>Gastos</Text>
 
-              <Text style={styles.expenseValue}>
+              <Text style={styles.expenseValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
                 {formatCurrency(summary.monthExpenses)}
               </Text>
             </View>
@@ -490,7 +495,6 @@ export default function HomeScreen() {
         </AnimatedBlock>
       </ScrollView>
     </View>
-    </SwipeableTabScreen>
   );
 }
 
@@ -502,9 +506,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   content: {
-    padding: 24,
-    paddingTop: 64,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing["4xl"],
   },
 
   center: {
@@ -563,9 +567,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   balanceCard: {
-    marginTop: 24,
-    padding: 24,
-    borderRadius: 22,
+    marginTop: spacing.xl,
+    padding: spacing.xl,
+    borderRadius: radii.xl,
     backgroundColor: colors.primary,
   },
 
@@ -576,9 +580,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   balance: {
-    marginTop: 8,
-    fontSize: 36,
-    fontWeight: "800",
+    marginTop: spacing.sm,
+    fontSize: typography.size.display,
+    lineHeight: 42,
+    fontWeight: typography.weight.heavy,
     color: colors.onPrimary,
   },
 
@@ -600,16 +605,18 @@ const createStyles = (colors: ThemeColors) =>
 
   cards: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.sm,
     marginTop: 14,
   },
 
   card: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 2,
-    borderRadius: 0,
-    backgroundColor: "transparent",
+    minWidth: 0,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   label: {
@@ -648,8 +655,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: typography.size.subtitle,
+    fontWeight: typography.weight.heavy,
     color: colors.text,
   },
 
@@ -673,10 +680,11 @@ const createStyles = (colors: ThemeColors) =>
   accountCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   accountIcon: {
@@ -753,10 +761,12 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   availableCard: {
-    marginTop: 16,
-    padding: 18,
-    borderRadius: 16,
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
     backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   availableLabel: {
@@ -782,9 +792,13 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   categoryList: {
-    marginTop: 14,
-    paddingVertical: 4,
-    gap: 20,
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 14,
   },
 
   categoryRow: {},
@@ -854,10 +868,11 @@ const createStyles = (colors: ThemeColors) =>
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   recentInfo: {
@@ -930,7 +945,7 @@ const createStyles = (colors: ThemeColors) =>
 
   newTransactionButton: {
     height: 56,
-    marginTop: 28,
+    marginTop: spacing.xl,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,

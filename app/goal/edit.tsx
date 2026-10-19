@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 
 import {
     Alert,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -14,6 +16,7 @@ import { router, useLocalSearchParams } from "expo-router";
 
 import { AnimatedBlock, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { editGoal, loadGoal } from "../../src/services/goal.service";
 import { ThemeColors, useThemedStyles } from "../../src/theme";
 
@@ -155,9 +158,15 @@ export default function EditGoalScreen() {
   }
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={24}
+    >
     <ScrollView
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       <AnimatedPressable
         pressedScale={0.94}
@@ -169,9 +178,11 @@ export default function EditGoalScreen() {
       </AnimatedPressable>
 
       <AnimatedBlock delay={60}>
-        <Text style={styles.title}>Editar meta</Text>
-
-        <Text style={styles.subtitle}>Ajuste os detalhes da sua meta.</Text>
+        <ScreenHeader
+          title="Editar meta"
+          subtitle="Ajuste os detalhes da sua meta."
+          eyebrow="Planejamento"
+        />
       </AnimatedBlock>
 
       <AnimatedBlock delay={120} style={styles.form}>
@@ -248,6 +259,7 @@ export default function EditGoalScreen() {
         </AnimatedPressable>
       </AnimatedBlock>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -258,8 +270,10 @@ function formatCurrency(value: number) {
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
-    padding: 20,
-    paddingBottom: 40,
+    flexGrow: 1,
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    paddingBottom: 32,
     backgroundColor: colors.background,
   },
 
@@ -272,7 +286,9 @@ const createStyles = (colors: ThemeColors) =>
 
   backButton: {
     alignSelf: "flex-start",
-    marginBottom: 20,
+    minHeight: 44,
+    justifyContent: "center",
+    marginBottom: 12,
   },
 
   backText: {

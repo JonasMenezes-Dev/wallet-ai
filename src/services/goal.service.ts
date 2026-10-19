@@ -43,12 +43,12 @@ export async function addGoal(
     throw new Error("O nome da meta é obrigatório.");
   }
 
-  if (goal.targetAmount <= 0) {
-    throw new Error("O valor da meta deve ser maior que zero.");
+  if (!Number.isFinite(goal.targetAmount) || goal.targetAmount <= 0) {
+    throw new Error("O valor da meta deve ser um número válido maior que zero.");
   }
 
-  if (goal.currentAmount < 0) {
-    throw new Error("O valor atual não pode ser negativo.");
+  if (!Number.isFinite(goal.currentAmount) || goal.currentAmount < 0) {
+    throw new Error("O valor atual deve ser um número válido não negativo.");
   }
 
   if (goal.currentAmount > goal.targetAmount) {
@@ -65,23 +65,23 @@ export async function contributeToGoal(
   accountId: number,
   amount: number,
 ): Promise<void> {
-  if (goalId <= 0) {
+  if (!Number.isSafeInteger(goalId) || goalId <= 0) {
     throw new Error("Meta inválida.");
   }
 
-  if (accountId <= 0) {
+  if (!Number.isSafeInteger(accountId) || accountId <= 0) {
     throw new Error("Conta inválida.");
   }
 
-  if (amount <= 0) {
-    throw new Error("O valor do aporte deve ser maior que zero.");
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("O valor do aporte deve ser um número válido maior que zero.");
   }
 
   await addGoalContribution(goalId, accountId, amount);
 }
 
 export async function removeGoal(goalId: number): Promise<void> {
-  if (goalId <= 0) {
+  if (!Number.isSafeInteger(goalId) || goalId <= 0) {
     throw new Error("ID de meta inválido.");
   }
 
@@ -261,7 +261,7 @@ function roundMoney(value: number): number {
 }
 
 export async function loadGoal(goalId: number): Promise<Goal | null> {
-  if (goalId <= 0) {
+  if (!Number.isSafeInteger(goalId) || goalId <= 0) {
     throw new Error("ID de meta inválido.");
   }
 
@@ -276,7 +276,7 @@ export async function editGoal(
     deadline: string | null;
   },
 ): Promise<void> {
-  if (goalId <= 0) {
+  if (!Number.isSafeInteger(goalId) || goalId <= 0) {
     throw new Error("ID de meta inválido.");
   }
 
@@ -284,8 +284,8 @@ export async function editGoal(
     throw new Error("O nome da meta é obrigatório.");
   }
 
-  if (data.targetAmount <= 0) {
-    throw new Error("O valor da meta deve ser maior que zero.");
+  if (!Number.isFinite(data.targetAmount) || data.targetAmount <= 0) {
+    throw new Error("O valor da meta deve ser um número válido maior que zero.");
   }
 
   const currentGoal = await getGoalById(goalId);

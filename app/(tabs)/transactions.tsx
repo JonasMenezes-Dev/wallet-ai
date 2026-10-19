@@ -12,6 +12,7 @@ import {
 
 import { AnimatedListItem, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { useAccounts } from "../../src/hooks/use-accounts";
 import { useTransactions } from "../../src/hooks/use-transactions";
 import { listCategories } from "../../src/services/category.service";
@@ -87,7 +88,6 @@ function getTransactionAmountPrefix(type: string) {
   return "-";
 }
 
-import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function TransactionsScreen() {
   const { transactions, loading, error, reload } = useTransactions();
   const { accounts } = useAccounts();
@@ -287,17 +287,18 @@ export default function TransactionsScreen() {
   }
 
   return (
-    <SwipeableTabScreen routeName="transactions">
-      <View style={styles.container}>
-      <Text style={styles.title}>Transações</Text>
-
-      <Text style={styles.subtitle}>
-        {visibleTransactions.length === 0
-          ? "Nenhuma transação registrada."
-          : `${visibleTransactions.length} ${
-              visibleTransactions.length === 1 ? "transação" : "transações"
-            }`}
-      </Text>
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Transações"
+        subtitle={
+          visibleTransactions.length === 0
+            ? "Nenhuma transação registrada."
+            : `${visibleTransactions.length} ${
+                visibleTransactions.length === 1 ? "transação" : "transações"
+              }`
+        }
+        eyebrow="Movimentações"
+      />
 
       {visibleTransactions.length > 0 && (
         <View style={styles.totalsRow}>
@@ -663,9 +664,6 @@ export default function TransactionsScreen() {
 
           const isEditingCategory = editingCategoryId === item.id;
 
-          const isCardTransaction =
-            item.accountId !== null && cardAccountIds.has(item.accountId);
-
           return (
             <AnimatedListItem index={index} style={styles.transactionCard}>
               <View style={styles.transactionHeader}>
@@ -740,6 +738,9 @@ export default function TransactionsScreen() {
                           ? styles.goal
                           : styles.expense,
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.68}
                   >
                     {getTransactionAmountPrefix(item.type)}{" "}
                     {formatCurrency(item.amount)}
@@ -850,7 +851,6 @@ export default function TransactionsScreen() {
         }}
       />
     </View>
-    </SwipeableTabScreen>
   );
 }
 
@@ -858,8 +858,8 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    paddingTop: 70,
+    padding: 18,
+    paddingTop: 24,
     backgroundColor: colors.background,
   },
 
@@ -885,9 +885,9 @@ const createStyles = (colors: ThemeColors) =>
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 18,
+    marginTop: 14,
     paddingHorizontal: 14,
-    height: 50,
+    minHeight: 52,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
@@ -959,6 +959,8 @@ const createStyles = (colors: ThemeColors) =>
 
   cardButtons: {
     flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
     gap: 6,
     marginTop: 8,
   },
@@ -999,6 +1001,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   categoryOption: {
+    minHeight: 40,
+    justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
@@ -1041,6 +1045,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   filterButton: {
+    minHeight: 40,
+    justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
@@ -1064,7 +1070,7 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   list: {
-    paddingTop: 24,
+    paddingTop: 18,
     paddingBottom: 32,
     gap: 12,
   },
@@ -1125,20 +1131,25 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   transactionCard: {
-    paddingVertical: 16,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    padding: 18,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    elevation: 1,
   },
 
   transactionInfo: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 0,
+    marginRight: 8,
   },
 
   labelRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
+    gap: 4,
     marginBottom: 7,
   },
 
@@ -1191,11 +1202,15 @@ const createStyles = (colors: ThemeColors) =>
 
   transactionRight: {
     alignItems: "flex-end",
+    flexShrink: 1,
+    maxWidth: "56%",
   },
 
   transactionAmount: {
-    fontSize: 16,
+    maxWidth: "100%",
+    fontSize: 15,
     fontWeight: "700",
+    textAlign: "right",
   },
 
   income: {

@@ -21,7 +21,8 @@
       "expo-router",
       "expo-sqlite",
       "expo-updates",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-splash-screen"
     ],
     "updates": {
       "url": "https://u.expo.dev/65d50a05-d803-4da3-af32-4cdb34f1df9c",

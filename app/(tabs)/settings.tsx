@@ -1,35 +1,31 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { AppCard } from "../../src/components/AppCard";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import {
   ThemeColors,
-  useThemeColors,
   useThemePreference,
   useThemedStyles,
 } from "../../src/theme";
 
-import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function SettingsScreen() {
   const styles = useThemedStyles(createStyles);
-  const colors = useThemeColors();
   const { themeName, setThemeName } = useThemePreference();
 
   return (
-    <SwipeableTabScreen routeName="settings">
-      <ScrollView
+    <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>PREFERÊNCIAS</Text>
-        <Text style={styles.title}>Configurações</Text>
-        <Text style={styles.subtitle}>
-          Ajuste o Wallet AI para acompanhar sua rotina.
-        </Text>
-      </View>
+      <ScreenHeader
+        title="Configurações"
+        subtitle="Ajuste o Wallet AI para acompanhar sua rotina."
+        eyebrow="Preferências"
+      />
 
-      <View style={styles.section}>
+      <AppCard style={styles.section} padded={false}>
         <Text style={styles.sectionTitle}>Aparência</Text>
         <Text style={styles.sectionDescription}>
           Escolha o visual mais confortável para acompanhar suas finanças.
@@ -41,6 +37,9 @@ export default function SettingsScreen() {
             themeName === "light" && styles.themeOptionSelected,
           ]}
           pressedOpacity={0.82}
+          accessibilityRole="radio"
+          accessibilityLabel="Modo claro"
+          accessibilityState={{ selected: themeName === "light" }}
           onPress={() => void setThemeName("light")}
         >
           <View style={styles.optionCopy}>
@@ -65,6 +64,9 @@ export default function SettingsScreen() {
             themeName === "dark" && styles.themeOptionSelected,
           ]}
           pressedOpacity={0.82}
+          accessibilityRole="radio"
+          accessibilityLabel="Modo escuro"
+          accessibilityState={{ selected: themeName === "dark" }}
           onPress={() => void setThemeName("dark")}
         >
           <View style={styles.optionCopy}>
@@ -82,7 +84,7 @@ export default function SettingsScreen() {
             {themeName === "dark" && <View style={styles.radioDot} />}
           </View>
         </AnimatedPressable>
-      </View>
+      </AppCard>
 
       <View style={styles.note}>
         <Text style={styles.noteTitle}>Sua preferência fica salva</Text>
@@ -91,7 +93,6 @@ export default function SettingsScreen() {
         </Text>
       </View>
     </ScrollView>
-    </SwipeableTabScreen>
   );
 }
 
@@ -102,9 +103,9 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.background,
     },
     container: {
-      padding: 24,
-      paddingTop: 64,
-      paddingBottom: 40,
+      paddingHorizontal: 18,
+      paddingTop: 24,
+      paddingBottom: 32,
     },
     header: {
       marginBottom: 28,
@@ -129,10 +130,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     section: {
       padding: 18,
-      borderRadius: 20,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
     },
     sectionTitle: {
       fontSize: 18,
@@ -147,6 +144,7 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
     },
     themeOption: {
+      minHeight: 68,
       flexDirection: "row",
       alignItems: "center",
       padding: 14,
