@@ -10,7 +10,6 @@ import {
 
 export default function SettingsScreen() {
   const styles = useThemedStyles(createStyles);
-  const colors = useThemeColors();
   const { themeName, setThemeName } = useThemePreference();
 
   return (
