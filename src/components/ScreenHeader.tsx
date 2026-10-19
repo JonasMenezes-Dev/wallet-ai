@@ -42,18 +42,22 @@ export function ScreenHeader({
 const styles = StyleSheet.create({
   row: {
     width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: spacing.md,
+    gap: spacing.sm,
     marginBottom: spacing.xl,
   },
   copy: {
     flex: 1,
     minWidth: 0,
+    flexShrink: 1,
   },
   accessory: {
-    flexShrink: 0,
+    flexShrink: 1,
+    minWidth: 0,
     maxWidth: "42%",
     alignItems: "flex-end",
   },
