@@ -508,8 +508,8 @@ const createStyles = (colors: ThemeColors) =>
 
   container: {
     flexGrow: 1,
-    padding: 20,
-    paddingTop: 28,
+    padding: 18,
+    paddingTop: 24,
     paddingBottom: 40,
     backgroundColor: colors.background,
   },
@@ -541,8 +541,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   addButton: {
+    minHeight: 44,
+    justifyContent: "center",
     backgroundColor: colors.primary,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
   },
@@ -555,7 +557,7 @@ const createStyles = (colors: ThemeColors) =>
   goalCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 20,
+    padding: 18,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,
@@ -818,6 +820,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   quickValue: {
+    minHeight: 40,
+    justifyContent: "center",
     backgroundColor: colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -863,7 +867,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   managementButton: {
-    paddingHorizontal: 10,
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 12,
     paddingVertical: 8,
   },
 
