@@ -51,7 +51,7 @@ export async function editTransaction(
 function validateTransaction(
   amount: number,
   type: Transaction["type"],
-  accountId: number,
+  accountId: number | null,
 ): void {
   if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
     throw new Error("O valor da transação deve ser um número válido maior que zero.");
@@ -61,7 +61,7 @@ function validateTransaction(
     throw new Error("O tipo da transação é inválido.");
   }
 
-  if (!Number.isInteger(accountId) || accountId <= 0) {
+  if (typeof accountId !== "number" || !Number.isInteger(accountId) || accountId <= 0) {
     throw new Error("A conta da transação é obrigatória.");
   }
 }
