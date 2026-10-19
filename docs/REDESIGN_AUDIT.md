@@ -123,3 +123,23 @@ A edição via GitHub não executa esses comandos. Até receber os resultados do
 ## Validação local pendente
 
 As alterações foram gravadas na branch remota; a integração do GitHub não executa comandos npm nem abre o app em um dispositivo. No checkout local desta branch, rodar `npm run typecheck` e `npm run lint`, depois abrir o app e conferir os fluxos de criação/edição de transações e metas, filtros de transações, contas/cartões e persistência dos temas.
+
+## Fase 6 — acabamento visual premium
+
+- Refinada a hierarquia do cabeçalho compartilhado para acomodar títulos, subtítulos e ações sem pressionar o conteúdo em larguras menores.
+- Cartões compartilhados ganharam elevação discreta; cartões de transação e conta mantêm bordas e superfícies semânticas.
+- Ajustados espaçamentos, cartões de resumo e exibição de valores monetários no dashboard para reduzir cortes em telas compactas.
+- Ajustados os controles de busca, filtros, ações e seletores de metas/contas para uma interação mais confortável.
+- A tela de Configurações agora usa o cartão compartilhado para a seção de aparência, com rótulos de acessibilidade para seleção de tema.
+
+## Fase 7 — responsividade e acessibilidade
+
+- A barra inferior adapta o tamanho dos rótulos em telas estreitas e distribui as cinco abas sem exigir largura mínima excessiva.
+- Reduzidos os espaçamentos laterais de telas e formulários, preservando uma área confortável para o conteúdo.
+- Ações principais e opções de seleção receberam áreas de toque maiores, com alvo mínimo próximo de 44 pontos quando aplicável.
+- Formulários de criação e edição de transações/metas melhoram o comportamento com teclado, permitem dispensá-lo ao rolar e mantêm os controles utilizáveis.
+- Os valores do dashboard podem reduzir a tipografia automaticamente para evitar corte de moeda em cartões estreitos.
+
+## Validação local da fase 6/7
+
+As alterações foram aplicadas na branch remota `redesign/phase-1-design-system`. Rodar no checkout local atualizado `npm run typecheck` e `npm run lint`; depois conferir em um aparelho estreito e em tema claro/escuro a barra inferior, valores longos, filtros, opções de toque e formulários com teclado aberto. A edição via GitHub não executa esses testes.
