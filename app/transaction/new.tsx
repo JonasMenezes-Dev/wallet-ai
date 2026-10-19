@@ -328,9 +328,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   content: {
-    padding: 24,
-    paddingTop: 28,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
 
   title: {
@@ -355,7 +355,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   typeButton: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 11,
