@@ -34,21 +34,28 @@ export function ScreenHeader({
           </Text>
         ) : null}
       </View>
-      {accessory}
+      {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
+    width: "100%",
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: spacing.md,
     marginBottom: spacing.xl,
   },
   copy: {
     flex: 1,
+    minWidth: 0,
+  },
+  accessory: {
+    flexShrink: 0,
+    maxWidth: "42%",
+    alignItems: "flex-end",
   },
   eyebrow: {
     fontSize: typography.size.caption,
@@ -57,11 +64,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   title: {
+    flexShrink: 1,
     fontSize: typography.size.titleLarge,
     lineHeight: Math.round(typography.size.titleLarge * typography.lineHeight.tight),
     fontWeight: typography.weight.heavy,
   },
   subtitle: {
+    flexShrink: 1,
     marginTop: spacing.sm,
     fontSize: typography.size.body,
     lineHeight: Math.round(typography.size.body * typography.lineHeight.relaxed),
