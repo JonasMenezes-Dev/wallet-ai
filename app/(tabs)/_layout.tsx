@@ -1,24 +1,20 @@
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useThemeColors } from "../../src/theme";
+import { useThemeColors, radii, spacing, typography } from "../../src/theme";
+
+const tabSymbols: Record<string, string> = {
+  index: "⌂",
+  transactions: "↔",
+  accounts: "▤",
+  goals: "◎",
+  settings: "⚙",
+};
 
 export default function TabsLayout() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
-
-  const pageDot = (focused: boolean) => (
-    <View
-      style={{
-        width: focused ? 10 : 8,
-        height: focused ? 10 : 8,
-        borderRadius: 99,
-        backgroundColor: focused ? colors.primary : colors.textSubtle,
-        opacity: focused ? 1 : 0.65,
-      }}
-    />
-  );
 
   return (
     <Tabs
@@ -27,22 +23,30 @@ export default function TabsLayout() {
         animation: "shift",
         transitionSpec: {
           animation: "timing",
-          config: { duration: 260 },
+          config: { duration: 220 },
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSubtle,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelPosition: "below-icon",
+        tabBarLabelStyle: {
+          fontSize: typography.size.caption,
+          fontWeight: typography.weight.semibold,
+          marginTop: spacing.xxs,
+          marginBottom: 1,
+        },
         tabBarHideOnKeyboard: true,
         tabBarItemStyle: {
-          minHeight: 48,
+          minHeight: 58,
           justifyContent: "center",
           alignItems: "center",
-          paddingVertical: 0,
+          paddingTop: spacing.xs,
         },
         tabBarStyle: {
-          height: 58 + insets.bottom,
-          paddingTop: 6,
-          paddingBottom: Math.max(insets.bottom, 6),
+          height: 66 + insets.bottom,
+          paddingTop: spacing.xs,
+          paddingBottom: Math.max(insets.bottom, spacing.sm),
+          paddingHorizontal: spacing.xs,
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
@@ -55,7 +59,22 @@ export default function TabsLayout() {
         options={{
           title: "Início",
           tabBarAccessibilityLabel: "Início",
-          tabBarIcon: ({ focused }) => pageDot(focused),
+          tabBarIcon: ({ focused, color }) => (
+            <View
+              style={{
+                width: 34,
+                height: 28,
+                borderRadius: radii.sm,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: focused ? colors.accentSurface : "transparent",
+              }}
+            >
+              <Text style={{ color, fontSize: 22, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>
+                {tabSymbols.index}
+              </Text>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -63,7 +82,11 @@ export default function TabsLayout() {
         options={{
           title: "Transações",
           tabBarAccessibilityLabel: "Transações",
-          tabBarIcon: ({ focused }) => pageDot(focused),
+          tabBarIcon: ({ focused, color }) => (
+            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
+              <Text style={{ color, fontSize: 21, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.transactions}</Text>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -71,7 +94,11 @@ export default function TabsLayout() {
         options={{
           title: "Contas",
           tabBarAccessibilityLabel: "Contas",
-          tabBarIcon: ({ focused }) => pageDot(focused),
+          tabBarIcon: ({ focused, color }) => (
+            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
+              <Text style={{ color, fontSize: 19, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.accounts}</Text>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -79,15 +106,23 @@ export default function TabsLayout() {
         options={{
           title: "Metas",
           tabBarAccessibilityLabel: "Metas",
-          tabBarIcon: ({ focused }) => pageDot(focused),
+          tabBarIcon: ({ focused, color }) => (
+            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
+              <Text style={{ color, fontSize: 20, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.goals}</Text>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Configurações",
+          title: "Ajustes",
           tabBarAccessibilityLabel: "Configurações",
-          tabBarIcon: ({ focused }) => pageDot(focused),
+          tabBarIcon: ({ focused, color }) => (
+            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
+              <Text style={{ color, fontSize: 19, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.settings}</Text>
+            </View>
+          ),
         }}
       />
     </Tabs>
