@@ -67,6 +67,7 @@ function getAccountTypeLabel(type: string) {
   }
 }
 
+import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function HomeScreen() {
   const { summary, loading, error, reload } = useDashboard();
   const { settings } = useUserSettings();
@@ -129,7 +130,8 @@ export default function HomeScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <SwipeableTabScreen routeName="index">
+      <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
@@ -488,6 +490,7 @@ export default function HomeScreen() {
         </AnimatedBlock>
       </ScrollView>
     </View>
+    </SwipeableTabScreen>
   );
 }
 
@@ -603,11 +606,10 @@ const createStyles = (colors: ThemeColors) =>
 
   card: {
     flex: 1,
-    padding: 18,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 14,
+    paddingHorizontal: 2,
+    borderRadius: 0,
+    backgroundColor: "transparent",
   },
 
   label: {
@@ -671,11 +673,10 @@ const createStyles = (colors: ThemeColors) =>
   accountCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 14,
+    paddingHorizontal: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
 
   accountIcon: {
@@ -754,10 +755,8 @@ const createStyles = (colors: ThemeColors) =>
   availableCard: {
     marginTop: 16,
     padding: 18,
-    borderRadius: 18,
+    borderRadius: 16,
     backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
 
   availableLabel: {
@@ -784,12 +783,8 @@ const createStyles = (colors: ThemeColors) =>
 
   categoryList: {
     marginTop: 14,
-    padding: 18,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 14,
+    paddingVertical: 4,
+    gap: 20,
   },
 
   categoryRow: {},
@@ -859,11 +854,10 @@ const createStyles = (colors: ThemeColors) =>
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 14,
+    paddingHorizontal: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
 
   recentInfo: {

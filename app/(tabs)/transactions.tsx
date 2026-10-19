@@ -87,6 +87,7 @@ function getTransactionAmountPrefix(type: string) {
   return "-";
 }
 
+import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function TransactionsScreen() {
   const { transactions, loading, error, reload } = useTransactions();
   const { accounts } = useAccounts();
@@ -286,7 +287,8 @@ export default function TransactionsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SwipeableTabScreen routeName="transactions">
+      <View style={styles.container}>
       <Text style={styles.title}>Transações</Text>
 
       <Text style={styles.subtitle}>
@@ -723,7 +725,7 @@ export default function TransactionsScreen() {
                   <Text style={styles.transactionMeta}>
                     {formatTransactionDate(item.date)}
                     {item.accountName
-                      ? ` · ${}${item.accountName}`
+                      ? ` · ${item.accountName}`
                       : ""}
                   </Text>
                 </View>
@@ -848,6 +850,7 @@ export default function TransactionsScreen() {
         }}
       />
     </View>
+    </SwipeableTabScreen>
   );
 }
 
@@ -1122,9 +1125,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   transactionCard: {
-    padding: 18,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
 
   transactionInfo: {
