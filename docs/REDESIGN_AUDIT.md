@@ -106,3 +106,20 @@ No checkout local da branch, executar:
 - `npx expo start` e conferir as cinco abas, os dois temas, o cabeçalho e o cartão de saldo em uma tela pequena.
 
 A edição via GitHub não executa esses comandos. Até receber os resultados do checkout local, a validação de compilação e de interface permanece pendente.
+
+## Fase 4 — telas de movimentações, contas, metas e preferências
+
+- Padronizados os cabeçalhos de Transações, Contas, Metas e Configurações com o componente compartilhado `ScreenHeader`.
+- Ajustados os espaçamentos superiores para aproveitar melhor a área útil abaixo da navegação.
+- Cartões de transação e conta ganharam bordas semânticas consistentes com o restante do design system.
+- A seção de aparência em Configurações mantém a seleção e persistência dos temas claro e escuro.
+
+## Fase 5 — formulários de criação e edição
+
+- Padronizados os cabeçalhos dos formulários de nova/edição de transação e nova/edição de meta.
+- Reduzido o espaçamento superior excessivo nos formulários, mantendo rolagem, teclado, seletores, validações e ações existentes.
+- Nenhuma regra financeira, chamada de serviço, repositório ou estrutura SQLite foi alterada nesta etapa.
+
+## Validação local pendente
+
+As alterações foram gravadas na branch remota; a integração do GitHub não executa comandos npm nem abre o app em um dispositivo. No checkout local desta branch, rodar `npm run typecheck` e `npm run lint`, depois abrir o app e conferir os fluxos de criação/edição de transações e metas, filtros de transações, contas/cartões e persistência dos temas.
