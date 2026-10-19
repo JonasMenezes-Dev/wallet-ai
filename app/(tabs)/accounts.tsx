@@ -29,6 +29,7 @@ import {
   useThemeColors,
   useThemedStyles,
 } from '../../src/theme';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Account, AccountType } from '../../src/types/account';
 
 /**
@@ -252,25 +253,22 @@ export default function AccountsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Contas</Text>
-
-          <Text style={styles.subtitle}>
-            Seu dinheiro organizado por conta.
-          </Text>
-        </View>
-
-        <AnimatedPressable
-          style={styles.addButton}
-          pressedOpacity={0.85}
-          onPress={handleOpenCreate}
-        >
-          <Text style={styles.addButtonText}>
-            {showForm ? 'Fechar' : '+ Conta'}
-          </Text>
-        </AnimatedPressable>
-      </View>
+      <ScreenHeader
+        title="Contas"
+        subtitle="Seu dinheiro organizado por conta."
+        eyebrow="Patrimônio"
+        accessory={
+          <AnimatedPressable
+            style={styles.addButton}
+            pressedOpacity={0.85}
+            onPress={handleOpenCreate}
+          >
+            <Text style={styles.addButtonText}>
+              {showForm ? 'Fechar' : '+ Conta'}
+            </Text>
+          </AnimatedPressable>
+        }
+      />
 
       {showForm && (
         <FadeInView style={styles.form}>
@@ -482,7 +480,7 @@ const createStyles = (colors: ThemeColors) =>
   container: {
     flex: 1,
     padding: 24,
-    paddingTop: 70,
+    paddingTop: 28,
     backgroundColor: colors.background,
   },
 
@@ -525,10 +523,13 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   form: {
-    marginTop: 24,
+    marginTop: 8,
+    marginBottom: 8,
     padding: 18,
     borderRadius: 18,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   formTitle: {
@@ -652,8 +653,10 @@ const createStyles = (colors: ThemeColors) =>
 
   accountCard: {
     padding: 20,
-    borderRadius: 16,
+    borderRadius: 18,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   accountHeader: {
