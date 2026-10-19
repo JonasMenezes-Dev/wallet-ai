@@ -23,7 +23,6 @@ import {
 import { Account } from "../../src/types/account";
 import { Category } from "../../src/types/category";
 import { Transaction, TransactionType } from "../../src/types/transaction";
-import { toDateKey } from "../../src/types/transaction-filters";
 import { ThemeColors, useThemedStyles } from "../../src/theme";
 
 function parseMoney(value: string) {
@@ -32,15 +31,30 @@ function parseMoney(value: string) {
 
 /** Converte `YYYY-MM-DD`/ISO para um `Date` local, sem passar por UTC. */
 function parseDate(value: string): Date {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
-  if (!match) return new Date();
+  if (dateOnlyMatch) {
+    return new Date(
+      Number(dateOnlyMatch[1]),
+      Number(dateOnlyMatch[2]) - 1,
+      Number(dateOnlyMatch[3]),
+    );
+  }
 
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 function formatDateLabel(date: Date): string {
   return date.toLocaleDateString("pt-BR");
+}
+
+function formatTimeLabel(date: Date): string {
+  return date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 export default function EditTransactionScreen() {
@@ -56,6 +70,7 @@ export default function EditTransactionScreen() {
   const [accountId, setAccountId] = useState<number | null>(null);
   const [date, setDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const styles = useThemedStyles(createStyles);
 
@@ -114,7 +129,7 @@ export default function EditTransactionScreen() {
         description: description.trim() || null,
         categoryId,
         accountId,
-        date: toDateKey(date),
+        date: date.toISOString(),
       });
       router.back();
     } catch (error) {
@@ -212,7 +227,51 @@ export default function EditTransactionScreen() {
           display={Platform.OS === "ios" ? "inline" : "default"}
           onChange={(_event, selected) => {
             setShowDatePicker(Platform.OS === "ios");
-            if (selected) setDate(selected);
+            if (selected) {
+              setDate((current) => {
+                const updated = new Date(current);
+                updated.setFullYear(
+                  selected.getFullYear(),
+                  selected.getMonth(),
+                  selected.getDate(),
+                );
+                return updated;
+              });
+            }
+          }}
+        />
+      )}
+
+      <Text style={styles.label}>Horário</Text>
+      <AnimatedPressable
+        pressedScale={0.98}
+        pressedOpacity={0.8}
+        style={styles.input}
+        onPress={() => setShowTimePicker(true)}
+      >
+        <Text style={styles.dateValue}>{formatTimeLabel(date)}</Text>
+      </AnimatedPressable>
+
+      {showTimePicker && (
+        <DateTimePicker
+          value={date}
+          mode="time"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          is24Hour
+          onChange={(_event, selected) => {
+            setShowTimePicker(Platform.OS === "ios");
+            if (selected) {
+              setDate((current) => {
+                const updated = new Date(current);
+                updated.setHours(
+                  selected.getHours(),
+                  selected.getMinutes(),
+                  0,
+                  0,
+                );
+                return updated;
+              });
+            }
           }}
         />
       )}

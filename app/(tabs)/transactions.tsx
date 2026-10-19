@@ -32,35 +32,10 @@ import {
   type TransactionTypeFilter,
 } from "../../src/types/transaction-filters";
 import type { TransactionWithRelations } from "../../src/types/transaction";
+import { formatTransactionDateTime } from "../../src/utils/date-time";
 
 function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
-}
-
-/** Data curta: "Hoje", "Ontem" ou "dd/mm/aaaa" quando mais antiga. */
-function formatTransactionDate(value: string) {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-
-  if (!match) return "";
-
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-
-  if (Number.isNaN(date.getTime())) return "";
-
-  const today = new Date();
-
-  if (dateKey(date) === dateKey(today)) return "Hoje";
-
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (dateKey(date) === dateKey(yesterday)) return "Ontem";
-
-  return date.toLocaleDateString("pt-BR");
-}
-
-function dateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function getTransactionLabel(type: string) {
@@ -721,7 +696,7 @@ export default function TransactionsScreen() {
                   </Text>
 
                   <Text style={styles.transactionMeta}>
-                    {formatTransactionDate(item.date)}
+                    {formatTransactionDateTime(item.date)}
                     {item.accountName
                       ? ` · ${item.accountName}`
                       : ""}
