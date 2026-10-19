@@ -738,6 +738,9 @@ export default function TransactionsScreen() {
                           ? styles.goal
                           : styles.expense,
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.68}
                   >
                     {getTransactionAmountPrefix(item.type)}{" "}
                     {formatCurrency(item.amount)}
@@ -956,6 +959,8 @@ const createStyles = (colors: ThemeColors) =>
 
   cardButtons: {
     flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
     gap: 6,
     marginTop: 8,
   },
@@ -1136,12 +1141,15 @@ const createStyles = (colors: ThemeColors) =>
 
   transactionInfo: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 0,
+    marginRight: 8,
   },
 
   labelRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
+    gap: 4,
     marginBottom: 7,
   },
 
@@ -1194,11 +1202,15 @@ const createStyles = (colors: ThemeColors) =>
 
   transactionRight: {
     alignItems: "flex-end",
+    flexShrink: 1,
+    maxWidth: "56%",
   },
 
   transactionAmount: {
-    fontSize: 16,
+    maxWidth: "100%",
+    fontSize: 15,
     fontWeight: "700",
+    textAlign: "right",
   },
 
   income: {
