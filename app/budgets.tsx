@@ -19,7 +19,7 @@ import {
   type MonthlyBudget,
 } from "../src/services/budget.service";
 import type { Category } from "../src/types/category";
-import { useThemedStyles, spacing, radii, typography } from "../src/theme";
+import { useThemedStyles, useThemeColors, spacing, radii } from "../src/theme";
 
 function getMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -56,7 +56,7 @@ function parseAmount(value: string) {
 function createStyles(colors: import("../src/theme").ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
+    content: { padding: spacing.lg, paddingBottom: spacing["2xl"], gap: spacing.md },
     header: { flexDirection: "row", alignItems: "center", gap: spacing.md },
     backButton: {
       width: 42, height: 42, borderRadius: radii.md,
@@ -138,6 +138,7 @@ function createStyles(colors: import("../src/theme").ThemeColors) {
 
 export default function BudgetsScreen() {
   const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
   const [month, setMonth] = useState(() => getMonthKey(new Date()));
   const [budgets, setBudgets] = useState<MonthlyBudget[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -242,7 +243,7 @@ export default function BudgetsScreen() {
   if (loading && budgets.length === 0 && categories.length === 0) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color={undefined} />
+        <ActivityIndicator color={colors.primary} />
         <Text style={styles.loadingText}>Carregando orçamentos...</Text>
       </View>
     );
@@ -275,7 +276,7 @@ export default function BudgetsScreen() {
           <Text style={styles.summaryLabel}>Total orçado neste mês</Text>
           <Text style={styles.summaryValue}>{formatCurrency(totalBudget)}</Text>
           <Text style={styles.summaryMeta}>
-            {formatCurrency(totalSpent)} gastos · {formatCurrency(totalRemaining)} {totalRemaining >= 0 ? "restantes" : "acima do orçamento"}
+            {formatCurrency(totalSpent)} gastos nas categorias orçadas · {formatCurrency(Math.abs(totalRemaining))} {totalRemaining >= 0 ? "restantes no total" : "acima do total orçado"}
           </Text>
         </View>
 
@@ -372,7 +373,7 @@ export default function BudgetsScreen() {
               keyboardType="decimal-pad"
               returnKeyType="done"
               style={styles.input}
-              placeholderTextColor={undefined}
+              placeholderTextColor={colors.textSubtle}
             />
             <View style={styles.formActions}>
               <Pressable style={styles.secondaryButton} onPress={() => setFormVisible(false)} disabled={saving}>
