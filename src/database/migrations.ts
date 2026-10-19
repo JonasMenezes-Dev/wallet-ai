@@ -36,12 +36,7 @@ const migrations: Migration[] = [
   },
   {
     /*
-     * Prepara as transações automáticas (notificação, importação e,
-     * futuramente, Open Finance).
-     *
-     * `source` e `is_automatic` já existem desde o schema inicial; aqui
-     * garantimos os valores padrão e criamos os índices que as leituras
-     * do dashboard e da tela de transações realmente usam.
+     * Prepara transações automáticas e cria índices usados nas consultas.
      */
     version: 3,
     name: "automatic-transactions-readiness",
@@ -62,17 +57,13 @@ const migrations: Migration[] = [
       await database.execAsync(`
         CREATE INDEX IF NOT EXISTS idx_transactions_date
         ON transactions (date DESC);
-
         CREATE INDEX IF NOT EXISTS idx_transactions_account
         ON transactions (account_id);
-
         CREATE INDEX IF NOT EXISTS idx_transactions_category
         ON transactions (category_id);
-
         CREATE INDEX IF NOT EXISTS idx_transactions_goal
         ON transactions (goal_id)
         WHERE goal_id IS NOT NULL;
-
         CREATE INDEX IF NOT EXISTS idx_transactions_source
         ON transactions (source);
       `);
@@ -80,12 +71,7 @@ const migrations: Migration[] = [
   },
   {
     /*
-     * Prepara categorias para deixarem de ser uma lista fixa:
-     * - `color` e `icon` dão identidade visual a cada categoria;
-     * - `is_default` separa as categorias do app das criadas pelo usuário;
-     * - `updated_at` permite editar sem perder o histórico de criação.
-     *
-     * Nada é editável na UI ainda, mas o banco já fica pronto.
+     * Prepara categorias para identidade visual e personalização futura.
      */
     version: 4,
     name: "custom-categories-readiness",
@@ -104,7 +90,6 @@ const migrations: Migration[] = [
         UPDATE categories
         SET is_default = 1
         WHERE is_default = 0;
-
         CREATE INDEX IF NOT EXISTS idx_categories_name
         ON categories (name);
       `);
@@ -112,17 +97,28 @@ const migrations: Migration[] = [
   },
   {
     /*
-     * Limite de crédito das contas do tipo `credit_card`.
-     *
-     * Deliberadamente fica NULL para todas as contas já existentes:
-     * limite de crédito é um dado que o banco informa, e chutar um valor
-     * (mesmo 0) faria a UI exibir "disponível" errado. NULL significa
-     * "não informado" e a interface trata esse caso explicitamente.
+     * Limite de crédito: contas existentes permanecem sem limite informado.
      */
     version: 5,
     name: "account-credit-limit",
     up: async (database) => {
       await addColumnIfMissing(database, "accounts", "limit_amount", "REAL");
+    },
+  },
+  {
+    /*
+     * Padroniza cartões antigos para balance positivo = valor utilizado.
+     * A magnitude é preservada; só o sinal legado é normalizado.
+     */
+    version: 6,
+    name: "normalize-credit-card-balance",
+    up: async (database) => {
+      await database.runAsync(`
+        UPDATE accounts
+        SET balance = ABS(balance)
+        WHERE type = 'credit_card'
+          AND balance < 0
+      `);
     },
   },
 ];
