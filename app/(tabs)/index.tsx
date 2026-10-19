@@ -153,7 +153,14 @@ export default function HomeScreen() {
         <AnimatedBlock delay={60} style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Saldo total</Text>
 
-          <Text style={styles.balance}>{formatCurrency(summary.balance)}</Text>
+          <Text
+            style={styles.balance}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.72}
+          >
+            {formatCurrency(summary.balance)}
+          </Text>
 
           <Text style={styles.balanceMeta}>
             {summary.accounts.length}{" "}
@@ -171,7 +178,7 @@ export default function HomeScreen() {
             <View style={styles.card}>
               <Text style={styles.label}>Entradas</Text>
 
-              <Text style={styles.incomeValue}>
+              <Text style={styles.incomeValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
                 {formatCurrency(summary.monthIncome)}
               </Text>
             </View>
@@ -179,7 +186,7 @@ export default function HomeScreen() {
             <View style={styles.card}>
               <Text style={styles.label}>Gastos</Text>
 
-              <Text style={styles.expenseValue}>
+              <Text style={styles.expenseValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
                 {formatCurrency(summary.monthExpenses)}
               </Text>
             </View>
@@ -598,13 +605,14 @@ const createStyles = (colors: ThemeColors) =>
 
   cards: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.sm,
     marginTop: 14,
   },
 
   card: {
     flex: 1,
-    padding: spacing.lg,
+    minWidth: 0,
+    padding: spacing.md,
     borderRadius: radii.lg,
     backgroundColor: colors.surface,
     borderWidth: 1,
