@@ -723,7 +723,7 @@ export default function TransactionsScreen() {
                   <Text style={styles.transactionMeta}>
                     {formatTransactionDate(item.date)}
                     {item.accountName
-                      ? ` · ${isCardTransaction ? "" : ""}${item.accountName}`
+                      ? ` · ${}${item.accountName}`
                       : ""}
                   </Text>
                 </View>
