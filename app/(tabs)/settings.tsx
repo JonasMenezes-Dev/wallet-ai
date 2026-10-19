@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import {
   ThemeColors,
-  useThemeColors,
   useThemePreference,
   useThemedStyles,
 } from "../../src/theme";
