@@ -53,7 +53,7 @@ export interface DashboardGoal {
 export interface DashboardCreditCard {
   id: number;
   name: string;
-  /** Limite usado (saldo negativo do cartão em módulo). */
+  /** Valor utilizado do cartão, armazenado como número positivo. */
   usedAmount: number;
   /** Limite cadastrado, quando informado. */
   limitAmount: number | null;
@@ -343,14 +343,13 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     .reduce((total, account) => total + account.balance, 0);
 
   /*
-   * Cartões de crédito guardam o valor utilizado em `balance`.
-   * Lemos em módulo para aceitar tanto os lançamentos antigos (dívida
-   * como saldo negativo) quanto os novos (dívida como saldo positivo).
+   * A migração 6 normaliza cartões antigos. A regra oficial é balance
+   * positivo = valor utilizado/dívida em aberto.
    */
   const creditCards: DashboardCreditCard[] = accounts
     .filter((account) => account.type === "credit_card")
     .map((account) => {
-      const usedAmount = Math.abs(account.balance);
+      const usedAmount = Math.max(account.balance, 0);
       const limit = normalizeLimit(account.limitAmount);
 
       const availableAmount =
