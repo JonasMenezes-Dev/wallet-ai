@@ -154,6 +154,7 @@ const migrations: Migration[] = [
           amount REAL NOT NULL CHECK (amount > 0),
           category_id INTEGER,
           next_due_date TEXT NOT NULL,
+          due_day INTEGER NOT NULL CHECK (due_day BETWEEN 1 AND 31),
           frequency TEXT NOT NULL DEFAULT 'monthly' CHECK (frequency = 'monthly'),
           is_active INTEGER NOT NULL DEFAULT 1,
           created_at TEXT NOT NULL,
