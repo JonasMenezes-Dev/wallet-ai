@@ -135,7 +135,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
       >
         <AnimatedBlock style={styles.header}>
-          <Text style={styles.greeting}>{getGreeting()} 👋</Text>
+          <Text style={styles.greeting}>{getGreeting()}</Text>
 
           <Text style={styles.month}>{summary.currentMonthName}</Text>
 
