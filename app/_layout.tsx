@@ -5,17 +5,11 @@ import { StatusBar } from "expo-status-bar";
 
 import { screenTransition } from "../src/animations";
 import { getDatabase } from "../src/database/database";
-import { useThemeColors, useThemeName } from "../src/theme";
+import { ThemeProvider, useThemeColors, useThemeName } from "../src/theme";
 
-export default function RootLayout() {
+function RootNavigator() {
   const colors = useThemeColors();
   const themeName = useThemeName();
-
-  useEffect(() => {
-    getDatabase().catch((error) => {
-      console.error("Erro ao inicializar banco de dados:", error);
-    });
-  }, []);
 
   return (
     <>
@@ -31,5 +25,19 @@ export default function RootLayout() {
 
       <StatusBar style={themeName === "dark" ? "light" : "dark"} />
     </>
+  );
+}
+
+export default function RootLayout() {
+  useEffect(() => {
+    getDatabase().catch((error) => {
+      console.error("Erro ao inicializar banco de dados:", error);
+    });
+  }, []);
+
+  return (
+    <ThemeProvider>
+      <RootNavigator />
+    </ThemeProvider>
   );
 }

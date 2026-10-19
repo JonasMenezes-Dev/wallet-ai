@@ -310,7 +310,7 @@ export default function TransactionsScreen() {
       )}
 
       <View style={styles.searchBox}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        
 
         <TextInput
           style={styles.searchInput}
@@ -506,7 +506,7 @@ export default function TransactionsScreen() {
                   : styles.filterText
               }
             >
-              💳 Todos os cartões
+              Todos os cartões
             </Text>
           </AnimatedPressable>
 
@@ -531,7 +531,7 @@ export default function TransactionsScreen() {
                     : styles.filterText
                 }
               >
-                💳 {card.name}
+                {card.name}
               </Text>
             </AnimatedPressable>
           ))}
@@ -711,7 +711,7 @@ export default function TransactionsScreen() {
                           isAutomatic && styles.automaticBadgeText,
                         ]}
                       >
-                        {isAutomatic ? "🟢 Automática" : "🔵 Manual"}
+                        {isAutomatic ? "Automática" : "Manual"}
                       </Text>
                     </View>
                   </View>
@@ -723,7 +723,7 @@ export default function TransactionsScreen() {
                   <Text style={styles.transactionMeta}>
                     {formatTransactionDate(item.date)}
                     {item.accountName
-                      ? ` · ${isCardTransaction ? "💳 " : ""}${item.accountName}`
+                      ? ` · ${}${item.accountName}`
                       : ""}
                   </Text>
                 </View>
@@ -784,7 +784,7 @@ export default function TransactionsScreen() {
                   onPress={() => setEditingCategoryId(item.id)}
                 >
                   <Text style={styles.categoryChipText}>
-                    🏷️ {categoryName} · trocar
+                    {categoryName} · trocar
                   </Text>
                 </AnimatedPressable>
               ) : (
