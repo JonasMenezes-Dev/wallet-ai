@@ -212,7 +212,7 @@ export default function HomeScreen() {
         </AnimatedBlock>
 
         <AnimatedBlock delay={140}>
-          <Text style={styles.sectionTitle}>📊 Seus gastos</Text>
+          <Text style={styles.sectionTitle}>Seus gastos</Text>
 
           {summary.expensesByCategory.length === 0 ? (
             <View style={styles.emptyCard}>
@@ -265,7 +265,7 @@ export default function HomeScreen() {
 
         {allInsights.length > 0 && (
           <AnimatedBlock delay={180}>
-            <Text style={styles.sectionTitle}>💡 Insights</Text>
+            <Text style={styles.sectionTitle}>Insights</Text>
 
             <View style={styles.insightList}>
               {allInsights.map((insight) => (
@@ -278,7 +278,7 @@ export default function HomeScreen() {
                   ]}
                 >
                   <View style={styles.insightHeader}>
-                    <Text style={styles.insightIcon}>{insight.icon}</Text>
+                    
 
                     <Text style={styles.insightTitle}>{insight.title}</Text>
                   </View>
@@ -295,7 +295,7 @@ export default function HomeScreen() {
         {summary.featuredGoal && (
           <AnimatedBlock delay={210} style={styles.sectionHeader}>
             <View style={styles.sectionHeaderText}>
-              <Text style={styles.sectionTitle}>🎯 Sua meta</Text>
+              <Text style={styles.sectionTitle}>Sua meta</Text>
 
               <Text style={styles.sectionSubtitle}>
                 O caminho até o seu objetivo
@@ -360,7 +360,7 @@ export default function HomeScreen() {
               >
                 <View style={styles.accountIcon}>
                   <Text style={styles.accountIconText}>
-                    {account.type === "credit_card" ? "💳" : "$"}
+                    {account.type === "credit_card" ? "CC" : "$"}
                   </Text>
                 </View>
 
@@ -500,7 +500,7 @@ const createStyles = (colors: ThemeColors) =>
 
   content: {
     padding: 24,
-    paddingTop: 70,
+    paddingTop: 64,
     paddingBottom: 40,
   },
 
@@ -606,6 +606,8 @@ const createStyles = (colors: ThemeColors) =>
     padding: 18,
     borderRadius: 18,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   label: {
@@ -672,6 +674,8 @@ const createStyles = (colors: ThemeColors) =>
     padding: 16,
     borderRadius: 18,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   accountIcon: {
@@ -752,6 +756,8 @@ const createStyles = (colors: ThemeColors) =>
     padding: 18,
     borderRadius: 18,
     backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   availableLabel: {
@@ -781,6 +787,8 @@ const createStyles = (colors: ThemeColors) =>
     padding: 18,
     borderRadius: 18,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     gap: 14,
   },
 
@@ -854,6 +862,8 @@ const createStyles = (colors: ThemeColors) =>
     padding: 16,
     borderRadius: 16,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   recentInfo: {
