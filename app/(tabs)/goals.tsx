@@ -269,10 +269,15 @@ export default function GoalsScreen() {
               </View>
 
               <View style={styles.valuesRow}>
-                <View>
+                <View style={styles.valueColumn}>
                   <Text style={styles.smallLabel}>Guardado</Text>
 
-                  <Text style={styles.currentAmount}>
+                  <Text
+                    style={styles.currentAmount}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.72}
+                  >
                     {formatCurrency(goal.currentAmount)}
                   </Text>
                 </View>
@@ -280,7 +285,12 @@ export default function GoalsScreen() {
                 <View style={styles.targetArea}>
                   <Text style={styles.smallLabel}>Objetivo</Text>
 
-                  <Text style={styles.targetAmount}>
+                  <Text
+                    style={styles.targetAmount}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.72}
+                  >
                     {formatCurrency(goal.targetAmount)}
                   </Text>
                 </View>
@@ -291,7 +301,12 @@ export default function GoalsScreen() {
                   {isCompleted ? "Meta concluída" : "Ainda falta"}
                 </Text>
 
-                <Text style={styles.remainingAmount}>
+                <Text
+                  style={styles.remainingAmount}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.72}
+                >
                   {formatCurrency(progress.remainingAmount)}
                 </Text>
               </View>
@@ -317,7 +332,7 @@ export default function GoalsScreen() {
                       </Text>
                     </View>
 
-                    <Text style={styles.planValue}>
+                    <Text style={styles.planValue} numberOfLines={2}>
                       {formatCurrency(progress.plans.aggressive.monthlyAmount)}
                       /mês
                     </Text>
@@ -338,7 +353,7 @@ export default function GoalsScreen() {
                       </Text>
                     </View>
 
-                    <Text style={styles.planValue}>
+                    <Text style={styles.planValue} numberOfLines={2}>
                       {formatCurrency(progress.plans.balanced.monthlyAmount)}
                       /mês
                     </Text>
@@ -359,7 +374,7 @@ export default function GoalsScreen() {
                       </Text>
                     </View>
 
-                    <Text style={styles.planValue}>
+                    <Text style={styles.planValue} numberOfLines={2}>
                       {formatCurrency(progress.plans.comfortable.monthlyAmount)}
                       /mês
                     </Text>
@@ -428,7 +443,7 @@ export default function GoalsScreen() {
                           setAmount(value.toFixed(2).replace(".", ","))
                         }
                       >
-                        <Text>R$ {value}</Text>
+                        <Text style={styles.quickValueText}>R$ {value}</Text>
                       </AnimatedPressable>
                     ))}
                   </View>
@@ -439,7 +454,7 @@ export default function GoalsScreen() {
                       pressedOpacity={0.85}
                       onPress={closeContribution}
                     >
-                      <Text>Cancelar</Text>
+                      <Text style={styles.cancelButtonText}>Cancelar</Text>
                     </AnimatedPressable>
 
                     <AnimatedPressable
@@ -479,7 +494,7 @@ export default function GoalsScreen() {
                     })
                   }
                 >
-                  <Text>Editar</Text>
+                  <Text style={styles.managementButtonText}>Editar</Text>
                 </AnimatedPressable>
 
                 <AnimatedPressable
@@ -555,6 +570,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   goalCard: {
+    width: "100%",
+    minWidth: 0,
+    alignSelf: "stretch",
     backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 18,
@@ -571,12 +589,15 @@ const createStyles = (colors: ThemeColors) =>
 
   goalTitleArea: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 0,
+    marginRight: 8,
   },
 
   goalName: {
+    flexShrink: 1,
     fontSize: 21,
     fontWeight: "800",
+    color: colors.text,
   },
 
   deadline: {
@@ -600,8 +621,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   percentage: {
+    flexShrink: 0,
     fontSize: 20,
     fontWeight: "800",
+    color: colors.primary,
   },
 
   progressTrack: {
@@ -621,10 +644,18 @@ const createStyles = (colors: ThemeColors) =>
   valuesRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 12,
     marginTop: 14,
   },
 
+  valueColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+
   targetArea: {
+    flex: 1,
+    minWidth: 0,
     alignItems: "flex-end",
   },
 
@@ -637,15 +668,20 @@ const createStyles = (colors: ThemeColors) =>
     marginTop: 2,
     fontSize: 18,
     fontWeight: "800",
+    color: colors.text,
   },
 
   targetAmount: {
     marginTop: 2,
     fontSize: 16,
     fontWeight: "700",
+    color: colors.text,
+    textAlign: "right",
   },
 
   remainingCard: {
+    minWidth: 0,
+    gap: 8,
     backgroundColor: colors.surfaceMuted,
     borderRadius: 14,
     padding: 14,
@@ -656,13 +692,18 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   remainingLabel: {
+    flex: 1,
+    minWidth: 0,
     color: colors.textMuted,
     fontWeight: "600",
   },
 
   remainingAmount: {
+    flexShrink: 1,
+    textAlign: "right",
     fontSize: 17,
     fontWeight: "800",
+    color: colors.text,
   },
 
   plansSection: {
@@ -672,6 +713,7 @@ const createStyles = (colors: ThemeColors) =>
   plansTitle: {
     fontSize: 16,
     fontWeight: "800",
+    color: colors.text,
     marginBottom: 10,
   },
 
@@ -696,8 +738,11 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   planCard: {
+    width: "100%",
+    minWidth: 0,
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
     padding: 12,
     borderRadius: 14,
     backgroundColor: colors.surfaceMuted,
@@ -716,11 +761,13 @@ const createStyles = (colors: ThemeColors) =>
 
   planInfo: {
     flex: 1,
-    marginRight: 8,
+    minWidth: 0,
+    marginRight: 4,
   },
 
   planName: {
     fontWeight: "800",
+    color: colors.text,
   },
 
   planDescription: {
@@ -738,8 +785,12 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   planValue: {
+    flexShrink: 1,
+    maxWidth: "44%",
+    textAlign: "right",
     fontWeight: "800",
-    fontSize: 15,
+    fontSize: 14,
+    color: colors.text,
   },
 
   contributeButton: {
@@ -815,11 +866,14 @@ const createStyles = (colors: ThemeColors) =>
 
   quickValues: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginTop: 12,
   },
 
   quickValue: {
+    flexGrow: 1,
+    minWidth: 0,
     minHeight: 40,
     justifyContent: "center",
     backgroundColor: colors.surface,
@@ -857,6 +911,24 @@ const createStyles = (colors: ThemeColors) =>
   confirmButtonText: {
     color: colors.onPrimary,
     fontWeight: "700",
+    textAlign: "center",
+  },
+
+  quickValueText: {
+    color: colors.text,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  cancelButtonText: {
+    color: colors.text,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  managementButtonText: {
+    color: colors.text,
+    fontWeight: "600",
   },
 
   managementRow: {
@@ -895,6 +967,7 @@ const createStyles = (colors: ThemeColors) =>
     fontSize: 20,
     fontWeight: "800",
     marginTop: 12,
+    color: colors.text,
   },
 
   emptyText: {
