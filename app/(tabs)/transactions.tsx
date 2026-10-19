@@ -1125,9 +1125,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   transactionCard: {
-    padding: 18,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
 
   transactionInfo: {
