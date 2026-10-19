@@ -87,6 +87,7 @@ function getTransactionAmountPrefix(type: string) {
   return "-";
 }
 
+import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function TransactionsScreen() {
   const { transactions, loading, error, reload } = useTransactions();
   const { accounts } = useAccounts();
@@ -286,7 +287,8 @@ export default function TransactionsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SwipeableTabScreen routeName="transactions">
+      <View style={styles.container}>
       <Text style={styles.title}>Transações</Text>
 
       <Text style={styles.subtitle}>
@@ -848,6 +850,7 @@ export default function TransactionsScreen() {
         }}
       />
     </View>
+    </SwipeableTabScreen>
   );
 }
 
