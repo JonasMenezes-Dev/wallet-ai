@@ -14,23 +14,12 @@ export async function listTransactions(): Promise<TransactionWithRelations[]> {
 export async function addTransaction(
   transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
 ): Promise<number> {
-  if (transaction.amount <= 0) {
-    throw new Error("O valor da transação deve ser maior que zero.");
-  }
-
-  if (!transaction.type) {
-    throw new Error("O tipo da transação é obrigatório.");
-  }
-
-  if (!transaction.accountId) {
-    throw new Error("A conta da transação é obrigatória.");
-  }
-
+  validateTransaction(transaction.amount, transaction.type, transaction.accountId);
   return createTransaction(transaction);
 }
 
 export async function removeTransaction(id: number): Promise<void> {
-  if (id <= 0) {
+  if (!Number.isInteger(id) || id <= 0) {
     throw new Error("ID de transação inválido.");
   }
 
@@ -51,17 +40,28 @@ export async function editTransaction(
   id: number,
   transaction: TransactionEditPayload,
 ): Promise<void> {
-  if (id <= 0) {
+  if (!Number.isInteger(id) || id <= 0) {
     throw new Error("ID de transação inválido.");
   }
 
-  if (transaction.amount <= 0) {
-    throw new Error("O valor da transação deve ser maior que zero.");
+  validateTransaction(transaction.amount, transaction.type, transaction.accountId);
+  await updateTransaction(id, transaction);
+}
+
+function validateTransaction(
+  amount: number,
+  type: Transaction["type"],
+  accountId: number,
+): void {
+  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+    throw new Error("O valor da transação deve ser um número válido maior que zero.");
   }
 
-  if (!transaction.accountId) {
+  if (type !== "income" && type !== "expense" && type !== "transfer") {
+    throw new Error("O tipo da transação é inválido.");
+  }
+
+  if (!Number.isInteger(accountId) || accountId <= 0) {
     throw new Error("A conta da transação é obrigatória.");
   }
-
-  await updateTransaction(id, transaction);
 }
