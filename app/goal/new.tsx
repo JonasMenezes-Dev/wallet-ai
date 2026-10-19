@@ -15,6 +15,7 @@ import { router } from "expo-router";
 
 import { AnimatedBlock, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { addGoal } from "../../src/services/goal.service";
 import {
     ThemeColors,
@@ -115,11 +116,11 @@ export default function NewGoalScreen() {
         </AnimatedPressable>
 
         <AnimatedBlock delay={60}>
-          <Text style={styles.title}>Nova meta</Text>
-
-          <Text style={styles.subtitle}>
-            Crie um objetivo para acompanhar seu progresso financeiro.
-          </Text>
+          <ScreenHeader
+            title="Nova meta"
+            subtitle="Crie um objetivo para acompanhar seu progresso financeiro."
+            eyebrow="Planejamento"
+          />
         </AnimatedBlock>
 
         <AnimatedBlock delay={120} style={styles.form}>
@@ -216,7 +217,7 @@ const createStyles = (colors: ThemeColors) =>
 
   content: {
     padding: 24,
-    paddingTop: 60,
+    paddingTop: 28,
     paddingBottom: 40,
   },
 
