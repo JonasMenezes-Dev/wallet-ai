@@ -1,56 +1,55 @@
-# Welcome to your Expo app 👋
+# Wallet.ai — Beta 0.1
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo pessoal de finanças para Android, com armazenamento local SQLite. A versão beta não exige backend próprio para cadastro de contas, transações e metas.
 
-## Get started
+## O que funciona sem servidor próprio
 
-1. Install dependencies
+- Contas, cartões e limite de crédito.
+- Registro e consulta local de transações.
+- Metas e aportes.
+- Dashboard e resumos calculados a partir do banco local.
+- Os dados de cada instalação ficam separados no próprio dispositivo.
 
-   ```bash
-   npm install
-   ```
+## Limitações atuais do beta
 
-2. Start the app
+- Os dados não são sincronizados automaticamente entre celulares.
+- Desinstalar o app pode apagar os dados locais. Faça backup antes de remover ou reinstalar.
+- Open Finance real e leitura automática de notificações bancárias em segundo plano não são considerados disponíveis apenas por existir código de preparação para essas fontes.
+- Fatura, fechamento e vencimento de cartão não fazem parte desta versão.
+- Atualizações remotas do app exigem configuração e publicação próprias no EAS Update; não são automáticas só por enviar código ao GitHub.
 
-   ```bash
-   npx expo start
-   ```
+## Desenvolvimento
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Requer uma versão de Node.js compatível com o Expo SDK do projeto.
 
 ```bash
-npm run reset-project
+npm ci
+npm run typecheck
+npm run lint
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Gerar APK de teste para Android
 
-### Other setup steps
+1. Instale/entre na CLI do EAS: `npx eas-cli login`.
+2. Verifique a configuração: `npx eas-cli project:info`.
+3. Gere o APK: `npx eas-cli build --platform android --profile preview`.
+4. Quando o build terminar, abra o link fornecido pelo EAS no celular e instale o APK.
+5. Teste criação/edição/exclusão de contas, transações e metas, feche e reabra o app e repita o teste sem internet.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Não compartilhe o APK publicamente enquanto não concluir os testes em dispositivo real. Cada pessoa que instalar terá o próprio banco local.
 
-## Learn more
+## Checklist antes de chamar de beta
 
-To learn more about developing your project with Expo, look at the following resources:
+- [ ] `npm ci` conclui sem erro.
+- [ ] `npm run typecheck` passa.
+- [ ] `npm run lint` passa sem novos erros.
+- [ ] APK preview gera sem erro.
+- [ ] App abre sem Metro, Expo Go ou servidor local.
+- [ ] Dados persistem depois de fechar e reabrir.
+- [ ] Fluxos financeiros básicos foram testados com valores conhecidos.
+- [ ] Backup/restauração foi definido antes de guardar dados importantes.
+- [ ] Nenhuma credencial, chave privada ou segredo foi commitado.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Privacidade e beta
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Use dados de teste inicialmente. Este app ainda não deve ser tratado como sistema bancário oficial ou como substituto de extratos fornecidos pela instituição financeira.
