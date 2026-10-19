@@ -101,7 +101,8 @@ export default function NewGoalScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={24}
     >
       <ScrollView
         contentContainerStyle={styles.content}
@@ -111,6 +112,7 @@ export default function NewGoalScreen() {
           pressedScale={0.94}
           pressedOpacity={0.7}
           onPress={() => router.back()}
+          style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}
         >
           <Text style={styles.back}>← Voltar</Text>
         </AnimatedPressable>
@@ -216,9 +218,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   content: {
-    padding: 24,
-    paddingTop: 28,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
 
   back: {
