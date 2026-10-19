@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Text, View } from "react-native";
+import { Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useThemeColors, radii, spacing, typography } from "../../src/theme";
@@ -15,6 +15,8 @@ const tabSymbols: Record<string, string> = {
 export default function TabsLayout() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const tabLabelSize = width < 360 ? 10 : 11;
 
   return (
     <Tabs
@@ -30,20 +32,25 @@ export default function TabsLayout() {
         tabBarShowLabel: true,
         tabBarLabelPosition: "below-icon",
         tabBarLabelStyle: {
-          fontSize: typography.size.caption,
+          fontSize: tabLabelSize,
           fontWeight: typography.weight.semibold,
+          textAlign: "center",
           marginTop: spacing.xxs,
           marginBottom: 1,
         },
         tabBarHideOnKeyboard: true,
         tabBarItemStyle: {
-          minHeight: 58,
+          flex: 1,
+          minWidth: 0,
+          minHeight: 60,
           justifyContent: "center",
           alignItems: "center",
+          paddingHorizontal: 0,
           paddingTop: spacing.xs,
         },
         tabBarStyle: {
           height: 66 + insets.bottom,
+          minHeight: 66 + insets.bottom,
           paddingTop: spacing.xs,
           paddingBottom: Math.max(insets.bottom, spacing.sm),
           paddingHorizontal: spacing.xs,
