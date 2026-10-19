@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import { useColorScheme } from "react-native";
 
 import { getDatabase } from "../database/database";
 
@@ -65,16 +73,21 @@ export const themes = {
 } as const;
 
 export type ThemeName = keyof typeof themes;
+export type ThemePreference = ThemeName | "system";
 
 type ThemeContextValue = {
+  /** Tema efetivo usado nas cores e na barra de status. */
   themeName: ThemeName;
-  setThemeName: (theme: ThemeName) => Promise<void>;
+  /** Preferência selecionada pelo usuário, incluindo o modo automático. */
+  themePreference: ThemePreference;
+  setThemePreference: (preference: ThemePreference) => Promise<void>;
   loading: boolean;
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
   themeName: "light",
-  setThemeName: async () => undefined,
+  themePreference: "system",
+  setThemePreference: async () => undefined,
   loading: true,
 });
 
@@ -83,12 +96,21 @@ type ThemeProviderProps = {
 };
 
 /**
- * Tema visual do app. A preferência fica salva no SQLite local, sem alterar
- * os dados financeiros nem depender do tema configurado no sistema.
+ * O modo automático acompanha o tema do sistema em tempo real. Preferências
+ * manuais continuam salvas no SQLite e prevalecem sobre a aparência do celular.
  */
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [themeName, setThemeNameState] = useState<ThemeName>("light");
+  const systemColorScheme = useColorScheme();
+  const [themePreference, setThemePreferenceState] =
+    useState<ThemePreference>("system");
   const [loading, setLoading] = useState(true);
+
+  const themeName: ThemeName =
+    themePreference === "system"
+      ? systemColorScheme === "dark"
+        ? "dark"
+        : "light"
+      : themePreference;
 
   useEffect(() => {
     let mounted = true;
@@ -110,9 +132,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
         if (
           mounted &&
-          (preference?.value === "light" || preference?.value === "dark")
+          (preference?.value === "light" ||
+            preference?.value === "dark" ||
+            preference?.value === "system")
         ) {
-          setThemeNameState(preference.value);
+          setThemePreferenceState(preference.value);
         }
       } catch (error) {
         console.error("Não foi possível carregar o tema:", error);
@@ -128,30 +152,40 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     };
   }, []);
 
-  const setThemeName = useCallback(async (nextTheme: ThemeName) => {
-    setThemeNameState(nextTheme);
+  const setThemePreference = useCallback(
+    async (nextPreference: ThemePreference) => {
+      setThemePreferenceState(nextPreference);
 
-    try {
-      const database = await getDatabase();
+      try {
+        const database = await getDatabase();
 
-      await database.execAsync(`
-        CREATE TABLE IF NOT EXISTS app_preferences (
-          key TEXT PRIMARY KEY NOT NULL,
-          value TEXT NOT NULL
+        await database.execAsync(`
+          CREATE TABLE IF NOT EXISTS app_preferences (
+            key TEXT PRIMARY KEY NOT NULL,
+            value TEXT NOT NULL
+          );
+        `);
+
+        await database.runAsync(
+          "INSERT INTO app_preferences (key, value) VALUES ('theme', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+          nextPreference,
         );
-      `);
-
-      await database.runAsync(
-        "INSERT INTO app_preferences (key, value) VALUES ('theme', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-        nextTheme,
-      );
-    } catch (error) {
-      console.error("Não foi possível salvar o tema:", error);
-    }
-  }, []);
+      } catch (error) {
+        console.error("Não foi possível salvar o tema:", error);
+      }
+    },
+    [],
+  );
 
   return (
-    <ThemeContext.Provider value={{ themeName, setThemeName, loading }}>
+    <ThemeContext.Provider
+      value={{
+        themeName,
+        themePreference,
+        setThemePreference,
+        loading,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
