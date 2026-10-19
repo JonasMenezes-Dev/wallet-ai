@@ -7,11 +7,34 @@ import {
   ThemeColors,
   useThemePreference,
   useThemedStyles,
+  type ThemePreference,
 } from "../../src/theme";
+
+const themeOptions: {
+  value: ThemePreference;
+  title: string;
+  description: string;
+}[] = [
+  {
+    value: "system",
+    title: "Automático",
+    description: "Acompanha o modo claro ou escuro do seu celular.",
+  },
+  {
+    value: "light",
+    title: "Modo claro",
+    description: "Fundo suave, leitura leve e contraste confortável.",
+  },
+  {
+    value: "dark",
+    title: "Modo escuro",
+    description: "Tons profundos para ambientes com pouca iluminação.",
+  },
+];
 
 export default function SettingsScreen() {
   const styles = useThemedStyles(createStyles);
-  const { themeName, setThemeName } = useThemePreference();
+  const { themePreference, setThemePreference } = useThemePreference();
 
   return (
     <ScrollView
@@ -31,65 +54,47 @@ export default function SettingsScreen() {
           Escolha o visual mais confortável para acompanhar suas finanças.
         </Text>
 
-        <AnimatedPressable
-          style={[
-            styles.themeOption,
-            themeName === "light" && styles.themeOptionSelected,
-          ]}
-          pressedOpacity={0.82}
-          accessibilityRole="radio"
-          accessibilityLabel="Modo claro"
-          accessibilityState={{ selected: themeName === "light" }}
-          onPress={() => void setThemeName("light")}
-        >
-          <View style={styles.optionCopy}>
-            <Text style={styles.optionTitle}>Modo claro</Text>
-            <Text style={styles.optionDescription}>
-              Fundo suave, leitura leve e contraste confortável.
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.radio,
-              themeName === "light" && styles.radioSelected,
-            ]}
-          >
-            {themeName === "light" && <View style={styles.radioDot} />}
-          </View>
-        </AnimatedPressable>
+        {themeOptions.map((option) => {
+          const selected = themePreference === option.value;
 
-        <AnimatedPressable
-          style={[
-            styles.themeOption,
-            themeName === "dark" && styles.themeOptionSelected,
-          ]}
-          pressedOpacity={0.82}
-          accessibilityRole="radio"
-          accessibilityLabel="Modo escuro"
-          accessibilityState={{ selected: themeName === "dark" }}
-          onPress={() => void setThemeName("dark")}
-        >
-          <View style={styles.optionCopy}>
-            <Text style={styles.optionTitle}>Modo escuro</Text>
-            <Text style={styles.optionDescription}>
-              Tons profundos para ambientes com pouca iluminação.
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.radio,
-              themeName === "dark" && styles.radioSelected,
-            ]}
-          >
-            {themeName === "dark" && <View style={styles.radioDot} />}
-          </View>
-        </AnimatedPressable>
+          return (
+            <AnimatedPressable
+              key={option.value}
+              style={[
+                styles.themeOption,
+                selected && styles.themeOptionSelected,
+              ]}
+              pressedOpacity={0.82}
+              accessibilityRole="radio"
+              accessibilityLabel={option.title}
+              accessibilityState={{ selected }}
+              onPress={() => void setThemePreference(option.value)}
+            >
+              <View style={styles.optionCopy}>
+                <Text style={styles.optionTitle}>{option.title}</Text>
+                <Text style={styles.optionDescription}>
+                  {option.description}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.radio,
+                  selected && styles.radioSelected,
+                ]}
+              >
+                {selected && <View style={styles.radioDot} />}
+              </View>
+            </AnimatedPressable>
+          );
+        })}
       </AppCard>
 
       <View style={styles.note}>
         <Text style={styles.noteTitle}>Sua preferência fica salva</Text>
         <Text style={styles.noteText}>
-          O tema escolhido será mantido quando você fechar e abrir o aplicativo.
+          O modo automático acompanha as mudanças de aparência do celular. Se
+          escolher claro ou escuro manualmente, o Wallet AI mantém sua escolha
+          mesmo quando o tema do sistema mudar.
         </Text>
       </View>
     </ScrollView>
@@ -106,27 +111,6 @@ const createStyles = (colors: ThemeColors) =>
       paddingHorizontal: 18,
       paddingTop: 24,
       paddingBottom: 32,
-    },
-    header: {
-      marginBottom: 28,
-    },
-    eyebrow: {
-      fontSize: 11,
-      fontWeight: "700",
-      letterSpacing: 1.3,
-      color: colors.primary,
-    },
-    title: {
-      marginTop: 8,
-      fontSize: 30,
-      fontWeight: "800",
-      color: colors.text,
-    },
-    subtitle: {
-      marginTop: 8,
-      fontSize: 14,
-      lineHeight: 21,
-      color: colors.textMuted,
     },
     section: {
       padding: 18,
