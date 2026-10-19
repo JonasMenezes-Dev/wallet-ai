@@ -8,13 +8,15 @@ import {
   useThemedStyles,
 } from "../../src/theme";
 
+import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function SettingsScreen() {
   const styles = useThemedStyles(createStyles);
   const colors = useThemeColors();
   const { themeName, setThemeName } = useThemePreference();
 
   return (
-    <ScrollView
+    <SwipeableTabScreen routeName="settings">
+      <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
@@ -89,6 +91,7 @@ export default function SettingsScreen() {
         </Text>
       </View>
     </ScrollView>
+    </SwipeableTabScreen>
   );
 }
 
