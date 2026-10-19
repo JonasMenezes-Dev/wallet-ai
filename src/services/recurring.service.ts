@@ -157,7 +157,12 @@ export async function advanceRecurringItem(id: number): Promise<void> {
   if (!item) throw new Error("Essa recorrência não foi encontrada.");
 
   const current = parseDate(item.next_due_date);
-  const next = monthlyDate(current.getFullYear(), current.getMonth() + 1, item.due_day);
+  let next = monthlyDate(current.getFullYear(), current.getMonth() + 1, item.due_day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  while (dateKey(next) <= dateKey(today)) {
+    next = monthlyDate(next.getFullYear(), next.getMonth() + 1, item.due_day);
+  }
   const result = await database.runAsync(`
     UPDATE recurring_items
     SET next_due_date = $nextDueDate, updated_at = $now
