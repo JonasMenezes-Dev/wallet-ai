@@ -13,6 +13,7 @@ import { router } from "expo-router";
 
 import { AnimatedBlock, AnimatedListItem, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { useAccounts } from "../../src/hooks/use-accounts";
 import { useGoals } from "../../src/hooks/use-goals";
 
@@ -179,21 +180,20 @@ export default function GoalsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <AnimatedBlock style={styles.header}>
-        <View>
-          <Text style={styles.title}>Metas</Text>
-
-          <Text style={styles.subtitle}>
-            Planeje o que você quer conquistar.
-          </Text>
-        </View>
-
-        <AnimatedPressable
-          style={styles.addButton}
-          pressedOpacity={0.85}
-          onPress={() => router.push("/goal/new")}
-        >
-          <Text style={styles.addButtonText}>+ Nova</Text>
-        </AnimatedPressable>
+        <ScreenHeader
+          title="Metas"
+          subtitle="Planeje o que você quer conquistar."
+          eyebrow="Seus objetivos"
+          accessory={
+            <AnimatedPressable
+              style={styles.addButton}
+              pressedOpacity={0.85}
+              onPress={() => router.push("/goal/new")}
+            >
+              <Text style={styles.addButtonText}>+ Nova</Text>
+            </AnimatedPressable>
+          }
+        />
       </AnimatedBlock>
 
       {goals.length === 0 ? (
@@ -509,7 +509,7 @@ const createStyles = (colors: ThemeColors) =>
   container: {
     flexGrow: 1,
     padding: 20,
-    paddingTop: 70,
+    paddingTop: 28,
     paddingBottom: 40,
     backgroundColor: colors.background,
   },
@@ -555,8 +555,8 @@ const createStyles = (colors: ThemeColors) =>
   goalCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 18,
-    marginBottom: 18,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,
   },
