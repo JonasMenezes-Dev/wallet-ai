@@ -14,6 +14,7 @@ import { router, useLocalSearchParams } from "expo-router";
 
 import { AnimatedBlock, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { editGoal, loadGoal } from "../../src/services/goal.service";
 import { ThemeColors, useThemedStyles } from "../../src/theme";
 
@@ -169,9 +170,11 @@ export default function EditGoalScreen() {
       </AnimatedPressable>
 
       <AnimatedBlock delay={60}>
-        <Text style={styles.title}>Editar meta</Text>
-
-        <Text style={styles.subtitle}>Ajuste os detalhes da sua meta.</Text>
+        <ScreenHeader
+          title="Editar meta"
+          subtitle="Ajuste os detalhes da sua meta."
+          eyebrow="Planejamento"
+        />
       </AnimatedBlock>
 
       <AnimatedBlock delay={120} style={styles.form}>
