@@ -121,6 +121,27 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 7,
+    name: "monthly-category-budgets",
+    up: async (database) => {
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS monthly_budgets (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category_id INTEGER NOT NULL,
+          month_key TEXT NOT NULL,
+          amount REAL NOT NULL CHECK (amount > 0),
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          UNIQUE (category_id, month_key),
+          FOREIGN KEY (category_id) REFERENCES categories(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_monthly_budgets_month
+        ON monthly_budgets (month_key);
+      `);
+    },
+  },
 ];
 
 export async function runMigrations(
