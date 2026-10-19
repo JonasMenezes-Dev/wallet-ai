@@ -67,6 +67,7 @@ function getAccountTypeLabel(type: string) {
   }
 }
 
+import { SwipeableTabScreen } from "../../src/components/SwipeableTabScreen";
 export default function HomeScreen() {
   const { summary, loading, error, reload } = useDashboard();
   const { settings } = useUserSettings();
@@ -129,7 +130,8 @@ export default function HomeScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <SwipeableTabScreen routeName="index">
+      <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
@@ -488,6 +490,7 @@ export default function HomeScreen() {
         </AnimatedBlock>
       </ScrollView>
     </View>
+    </SwipeableTabScreen>
   );
 }
 
