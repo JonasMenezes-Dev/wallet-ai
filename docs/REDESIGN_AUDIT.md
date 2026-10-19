@@ -79,3 +79,30 @@ Decisões de segurança:
 Os arquivos foram gravados na branch remota `redesign/phase-1-design-system`. O conector GitHub permite inspecionar e editar os arquivos, mas não executa `npm run typecheck`, `npm run lint` nem abre o app em um emulador. Portanto, esses checks continuam pendentes no checkout local e não devem ser considerados aprovados.
 
 Esta auditoria foi feita a partir dos arquivos acessíveis na branch remota; não representa execução local dos comandos ou teste em dispositivo.
+
+
+## Fase 2 — componentes visuais compartilhados
+
+Criados na branch:
+- `src/components/AppCard.tsx`: superfície reutilizável com borda, raio e preenchimento coerentes com o tema.
+- `src/components/AppButton.tsx`: botão primário, secundário ou discreto, com estados de acessibilidade e feedback de toque.
+- `src/components/ScreenHeader.tsx`: cabeçalho padronizado com título, subtítulo, eyebrow e espaço opcional para ação.
+- `src/components/SectionHeader.tsx`: cabeçalho compacto para seções e listas.
+
+Os componentes consultam as cores do tema no momento da renderização e usam os tokens compartilhados. Não foram introduzidas dependências.
+
+## Fase 3 — navegação e início
+
+- A barra inferior agora exibe rótulos e símbolos por aba, com destaque visual discreto para a rota ativa.
+- Os nomes acessíveis das cinco abas foram mantidos; o rótulo visual de Configurações foi encurtado para “Ajustes”.
+- A tela Início passou a usar tokens compartilhados para espaçamento, raios e hierarquia tipográfica em pontos-chave, reduzindo diferenças entre estilos.
+- Nenhum cálculo, hook de dados, serviço, repositório ou esquema SQLite foi alterado.
+
+## Validação local necessária após as fases 2 e 3
+
+No checkout local da branch, executar:
+- `npm run typecheck`
+- `npm run lint`
+- `npx expo start` e conferir as cinco abas, os dois temas, o cabeçalho e o cartão de saldo em uma tela pequena.
+
+A edição via GitHub não executa esses comandos. Até receber os resultados do checkout local, a validação de compilação e de interface permanece pendente.
