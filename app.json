@@ -24,7 +24,7 @@
       "@react-native-community/datetimepicker"
     ],
     "updates": {
-      "url": "https://u.expo.dev/REPLACE_WITH_PROJECT_ID",
+      "url": "https://u.expo.dev/65d50a05-d803-4da3-af32-4cdb34f1df9c",
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0

@@ -5,13 +5,12 @@ export interface Account {
   name: string;
   type: AccountType;
   /**
-   * Para contas comuns: o dinheiro disponível.
+   * Para contas comuns: dinheiro disponível.
    *
-   * Para `credit_card`: nesta primeira versão o sinal é o do lançamento —
-   * ou seja, o valor **utilizado/dívida** do cartão (negativo quando há
-   * gasto em aberto). Fatura, fechamento e vencimento ficam para a etapa
-   * de Cartões 3.0; por isso o limite de crédito mora em `limitAmount`,
-   * separado do saldo, para não misturar crédito com dinheiro real.
+   * Para `credit_card`: valor utilizado/dívida em aberto, armazenado como
+   * número positivo. Uma despesa aumenta esse valor e uma entrada (como
+   * pagamento/estorno) reduz. O limite fica separado em `limitAmount`.
+   * Fatura, fechamento e vencimento ficam para Cartões 3.0.
    */
   balance: number;
   /**
