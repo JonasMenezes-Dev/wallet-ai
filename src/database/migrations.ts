@@ -142,6 +142,31 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 8,
+    name: "recurring-cashflow-items",
+    up: async (database) => {
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS recurring_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+          amount REAL NOT NULL CHECK (amount > 0),
+          category_id INTEGER,
+          next_due_date TEXT NOT NULL,
+          due_day INTEGER NOT NULL CHECK (due_day BETWEEN 1 AND 31),
+          frequency TEXT NOT NULL DEFAULT 'monthly' CHECK (frequency = 'monthly'),
+          is_active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY (category_id) REFERENCES categories(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_recurring_items_due
+        ON recurring_items (is_active, next_due_date);
+      `);
+    },
+  },
 ];
 
 export async function runMigrations(
