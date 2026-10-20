@@ -9,7 +9,10 @@
     "android": {
       "package": "com.walletai.app",
       "versionCode": 3,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.walletai.app"
