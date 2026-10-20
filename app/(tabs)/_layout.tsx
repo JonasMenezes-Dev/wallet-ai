@@ -19,7 +19,7 @@ export default function TabsLayout() {
         animation: "shift",
         transitionSpec: {
           animation: "timing",
-          config: { duration: 240 },
+          config: { duration: 200 },
         },
         sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
