@@ -30,6 +30,10 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
 async function initializeDatabase() {
   const database = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
+  // SQLite não aplica chaves estrangeiras por padrão em cada conexão.
+  // Ative antes de criar tabelas, migrar ou executar qualquer operação.
+  await database.execAsync("PRAGMA foreign_keys = ON;");
+
   await database.execAsync(`
     PRAGMA journal_mode = WAL;
 
