@@ -24,7 +24,7 @@ type AnimatedListItemProps = {
 export function AnimatedListItem({
   children,
   index = 0,
-  delayStep = 45,
+  delayStep = 30,
   style,
 }: AnimatedListItemProps) {
   return (
