@@ -38,16 +38,18 @@ export function parseFinancialNotification(item: CapturedFinancialNotification) 
   // A notificação pode exibir o valor da compra e também o saldo restante.
   // Sem contexto bancário específico, escolher o último valor é perigoso:
   // importe apenas quando existe um único valor monetário reconhecível.
+  const isRejected = /não autorizado|nao autorizado|compra recusada|transação recusada|transacao recusada|compra não realizada|compra nao realizada|transação não realizada|transacao nao realizada|pagamento recusado|pagamento não concluído|pagamento nao concluido/i.test(text);
   const raw = matches.length === 1 ? matches[0].replace(/R\$\s*/i, "").trim() : "";
   const normalized = normalizeBrazilianAmount(raw);
   const parsed = normalized === null ? NaN : Number(normalized);
-  const amount = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  const amount = !isRejected && Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   const type = /recebeu|recebido|pix recebido|transfer[eê]ncia recebida|cr[eé]dito em conta/i.test(text)
     ? "income"
     : "expense";
 
   return {
     amount,
+    isRejected,
     type: type as "income" | "expense",
     description: (item.text.replace(/R\$\s*[0-9][0-9.,]*/gi, "").trim() || item.title || "Movimentação bancária").slice(0, 120),
     confidence: amount === null ? "low" as const : "high" as const,
