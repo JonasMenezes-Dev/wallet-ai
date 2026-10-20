@@ -297,13 +297,15 @@ export async function deleteTransaction(id: number): Promise<void> {
       type: Transaction["type"];
       account_id: number | null;
       goal_id: number | null;
+      transfer_id: string | null;
     }>(
       `
         SELECT
           amount,
           type,
           account_id,
-          goal_id
+          goal_id,
+          transfer_id
         FROM transactions
         WHERE id = $id
       `,
@@ -315,6 +317,42 @@ export async function deleteTransaction(id: number): Promise<void> {
     }
 
     const now = new Date().toISOString();
+
+    if (transaction.transfer_id) {
+      const entries = await database.getAllAsync<{
+        amount: number;
+        type: "income" | "expense";
+        account_id: number;
+      }>(
+        "SELECT amount, type, account_id FROM transactions WHERE transfer_id = $transferId",
+        { $transferId: transaction.transfer_id },
+      );
+      if (entries.length !== 2) {
+        throw new Error("A transferência está incompleta; os saldos não foram alterados.");
+      }
+
+      for (const entry of entries) {
+        const account = await database.getFirstAsync<{ balance: number; type: Account["type"] }>(
+          "SELECT balance, type FROM accounts WHERE id = $id",
+          { $id: entry.account_id },
+        );
+        if (!account) throw new Error("Uma conta da transferência não foi encontrada.");
+        const restored = applyTransactionToAccount(account.balance, account.type, entry.type, -entry.amount);
+        if (isBalanceInvalid(restored, account.type)) {
+          throw new Error("Não foi possível estornar a transferência com segurança.");
+        }
+        await database.runAsync(
+          "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
+          { $balance: restored, $now: now, $id: entry.account_id },
+        );
+      }
+
+      await database.runAsync(
+        "DELETE FROM transactions WHERE transfer_id = $transferId",
+        { $transferId: transaction.transfer_id },
+      );
+      return;
+    }
 
     /*
      * Aporte para uma meta
