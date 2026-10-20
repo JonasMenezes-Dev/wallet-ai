@@ -15,6 +15,7 @@ export async function addTransaction(
   transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
 ): Promise<number> {
   validateTransaction(transaction.amount, transaction.type, transaction.accountId);
+  validateTransactionPurpose(transaction.type, transaction.goalId);
   return createTransaction(transaction);
 }
 
@@ -46,6 +47,22 @@ export async function editTransaction(
 
   validateTransaction(transaction.amount, transaction.type, transaction.accountId);
   await updateTransaction(id, transaction);
+}
+
+function validateTransactionPurpose(
+  type: Transaction["type"],
+  goalId: number | null,
+): void {
+  // "transfer" ainda representa exclusivamente um aporte para meta.
+  // Transferências entre contas precisam de origem e destino próprios;
+  // não devem ser gravadas como um lançamento neutro que não altera saldo.
+  if (type === "transfer" && (!Number.isInteger(goalId) || (goalId ?? 0) <= 0)) {
+    throw new Error("Aporte para meta precisa estar vinculado a uma meta válida. Transferências entre contas ainda não estão disponíveis.");
+  }
+
+  if (type !== "transfer" && goalId !== null) {
+    throw new Error("Uma meta só pode ser vinculada a uma transação do tipo aporte.");
+  }
 }
 
 function validateTransaction(
