@@ -15,6 +15,8 @@ import {
 } from "../../src/services/financial-insights.service";
 import type { DashboardInsight } from "../../src/services/dashboard.service";
 import { formatTransactionDateTime } from "../../src/utils/date-time";
+import { WalletSymbol } from "../../src/components/WalletSymbol";
+import { useThemeColors } from "../../src/theme";
 
 function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
@@ -52,6 +54,8 @@ export default function HomeScreen() {
   const { summary, loading, error, reload } = useDashboard();
   const { settings } = useUserSettings();
   const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
+  const [balanceVisible, setBalanceVisible] = useState(true);
 
   const [extraInsights, setExtraInsights] = useState<FinancialInsight[]>([]);
 
@@ -115,24 +119,38 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <AnimatedBlock style={styles.header}>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-
-          <Text style={styles.month}>{summary.currentMonthName}</Text>
-
-          <Text style={styles.subtitle}>
-            {summary.monthTransactionCount === 0
-              ? "Nenhuma movimentação neste mês ainda"
-              : `${summary.monthTransactionCount} ${
-                  summary.monthTransactionCount === 1
-                    ? "movimentação"
-                    : "movimentações"
-                } neste mês`}
-          </Text>
+        <AnimatedBlock style={styles.headerRow}>
+          <View style={styles.headerCopy}>
+            <Text style={styles.greeting}>{getGreeting()} 👋</Text>
+            <Text style={styles.pageTitle}>Seu dinheiro, no controle.</Text>
+            <Text style={styles.subtitle}>
+              {summary.currentMonthName} · {summary.monthTransactionCount} {summary.monthTransactionCount === 1 ? "movimentação" : "movimentações"}
+            </Text>
+          </View>
+          <AnimatedPressable
+            style={styles.headerAction}
+            accessibilityLabel="Abrir alertas financeiros"
+            onPress={() => router.push("/alerts")}
+          >
+            <WalletSymbol name="alerts" color={colors.primary} size={22} />
+          </AnimatedPressable>
         </AnimatedBlock>
 
         <AnimatedBlock delay={60} style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Saldo total</Text>
+          <View style={styles.heroOrb} />
+          <View style={styles.heroOrbSecondary} />
+          <View style={styles.balanceHeader}>
+            <View style={styles.balanceLabelRow}>
+              <WalletSymbol name="accounts" color={colors.onPrimary} size={18} />
+              <Text style={styles.balanceLabel}>Saldo total</Text>
+            </View>
+            <AnimatedPressable
+              style={styles.balanceToggle}
+              onPress={() => setBalanceVisible((value) => !value)}
+            >
+              <Text style={styles.balanceToggleText}>{balanceVisible ? "Ocultar" : "Mostrar"}</Text>
+            </AnimatedPressable>
+          </View>
 
           <Text
             style={styles.balance}
@@ -140,7 +158,7 @@ export default function HomeScreen() {
             adjustsFontSizeToFit
             minimumFontScale={0.72}
           >
-            {formatCurrency(summary.balance)}
+            {balanceVisible ? formatCurrency(summary.balance) : "R$ ••••••"}
           </Text>
 
           <Text style={styles.balanceMeta}>
@@ -150,6 +168,25 @@ export default function HomeScreen() {
               ? ` · ${formatCurrency(summary.creditCardUsedTotal)} em cartão`
               : ""}
           </Text>
+
+          <View style={styles.heroActions}>
+            <AnimatedPressable
+              style={styles.heroPrimaryAction}
+              pressedScale={0.98}
+              onPress={() => router.push("/transaction/new")}
+            >
+              <WalletSymbol name="plus" color={colors.primary} size={18} />
+              <Text style={styles.heroPrimaryActionText}>Adicionar</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.heroSecondaryAction}
+              pressedScale={0.98}
+              onPress={() => router.push("/(tabs)/accounts")}
+            >
+              <WalletSymbol name="accounts" color={colors.onPrimary} size={18} />
+              <Text style={styles.heroSecondaryActionText}>Minhas contas</Text>
+            </AnimatedPressable>
+          </View>
         </AnimatedBlock>
 
         <AnimatedBlock delay={100}>
@@ -157,7 +194,12 @@ export default function HomeScreen() {
 
           <View style={styles.cards}>
             <View style={styles.card}>
-              <Text style={styles.label}>Entradas</Text>
+              <View style={styles.metricHeader}>
+                <View style={[styles.metricIcon, styles.incomeIcon]}>
+                  <WalletSymbol name="income" color={colors.income} size={17} />
+                </View>
+                <Text style={styles.label}>Entradas</Text>
+              </View>
 
               <Text style={styles.incomeValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
                 {formatCurrency(summary.monthIncome)}
@@ -165,7 +207,12 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.label}>Gastos</Text>
+              <View style={styles.metricHeader}>
+                <View style={[styles.metricIcon, styles.expenseIcon]}>
+                  <WalletSymbol name="expense" color={colors.expense} size={17} />
+                </View>
+                <Text style={styles.label}>Gastos</Text>
+              </View>
 
               <Text style={styles.expenseValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
                 {formatCurrency(summary.monthExpenses)}
@@ -174,7 +221,15 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.availableCard}>
-            <Text style={styles.availableLabel}>Disponível no mês</Text>
+            <View style={styles.availableHeader}>
+              <View style={styles.availableIcon}>
+                <WalletSymbol name="budget" color={colors.primary} size={20} />
+              </View>
+              <View style={styles.availableCopy}>
+                <Text style={styles.availableLabel}>Disponível no mês</Text>
+                <Text style={styles.availableHint}>Entradas menos despesas registradas</Text>
+              </View>
+            </View>
 
             <Text
               style={[
@@ -199,38 +254,45 @@ export default function HomeScreen() {
           </View>
         </AnimatedBlock>
 
-        <AnimatedBlock delay={120}>
-          <AnimatedPressable
-            style={styles.inlineButton}
-            pressedScale={0.97}
-            pressedOpacity={0.8}
-            onPress={() => router.push("/budgets")}
-          >
-            <Text style={styles.inlineButtonText}>▤  Planejar gastos do mês</Text>
-          </AnimatedPressable>
-        </AnimatedBlock>
-
-        <AnimatedBlock delay={130}>
-          <AnimatedPressable
-            style={styles.inlineButton}
-            pressedScale={0.97}
-            pressedOpacity={0.8}
-            onPress={() => router.push("/recurring")}
-          >
-            <Text style={styles.inlineButtonText}>↻  Contas recorrentes e previsão</Text>
-          </AnimatedPressable>
-        </AnimatedBlock>
-
-        <AnimatedBlock delay={135}>
-          <View style={{ gap: spacing.sm }}>
-            <AnimatedPressable style={styles.inlineButton} pressedScale={0.97} onPress={() => router.push("/notification-import")}>
-              <Text style={styles.inlineButtonText}>↳  Importar notificações bancárias</Text>
-            </AnimatedPressable>
-            <AnimatedPressable style={styles.inlineButton} pressedScale={0.97} onPress={() => router.push("/reports")}>
-              <Text style={styles.inlineButtonText}>▥  Relatórios financeiros</Text>
-            </AnimatedPressable>
-            <AnimatedPressable style={styles.inlineButton} pressedScale={0.97} onPress={() => router.push("/alerts")}>
-              <Text style={styles.inlineButtonText}>♧  Alertas de gastos e vencimentos</Text>
+        <AnimatedBlock delay={120} style={styles.sectionBlock}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderText}>
+              <Text style={styles.sectionTitle}>Acesso rápido</Text>
+              <Text style={styles.sectionSubtitle}>Suas ferramentas financeiras</Text>
+            </View>
+          </View>
+          <View style={styles.quickGrid}>
+            <View style={styles.quickRow}>
+              <AnimatedPressable style={styles.quickAction} pressedScale={0.98} onPress={() => router.push("/budgets")}>
+                <View style={styles.quickIcon}><WalletSymbol name="budget" color={colors.primary} size={20} /></View>
+                <Text style={styles.quickTitle}>Planejar gastos</Text>
+                <Text style={styles.quickDescription}>Orçamentos mensais</Text>
+              </AnimatedPressable>
+              <AnimatedPressable style={styles.quickAction} pressedScale={0.98} onPress={() => router.push("/recurring")}>
+                <View style={styles.quickIcon}><WalletSymbol name="recurring" color={colors.primary} size={20} /></View>
+                <Text style={styles.quickTitle}>Contas recorrentes</Text>
+                <Text style={styles.quickDescription}>Vencimentos e previsão</Text>
+              </AnimatedPressable>
+            </View>
+            <View style={styles.quickRow}>
+              <AnimatedPressable style={styles.quickAction} pressedScale={0.98} onPress={() => router.push("/notification-import")}>
+                <View style={styles.quickIcon}><WalletSymbol name="notification" color={colors.primary} size={20} /></View>
+                <Text style={styles.quickTitle}>Importar gastos</Text>
+                <Text style={styles.quickDescription}>Notificações bancárias</Text>
+              </AnimatedPressable>
+              <AnimatedPressable style={styles.quickAction} pressedScale={0.98} onPress={() => router.push("/reports")}>
+                <View style={styles.quickIcon}><WalletSymbol name="reports" color={colors.primary} size={20} /></View>
+                <Text style={styles.quickTitle}>Relatórios</Text>
+                <Text style={styles.quickDescription}>Veja seus resultados</Text>
+              </AnimatedPressable>
+            </View>
+            <AnimatedPressable style={styles.alertShortcut} pressedScale={0.99} onPress={() => router.push("/alerts")}>
+              <View style={styles.quickIcon}><WalletSymbol name="alerts" color={colors.primary} size={20} /></View>
+              <View style={styles.alertShortcutCopy}>
+                <Text style={styles.quickTitle}>Alertas financeiros</Text>
+                <Text style={styles.quickDescription}>Orçamentos e vencimentos próximos</Text>
+              </View>
+              <WalletSymbol name="more" color={colors.textSubtle} size={20} />
             </AnimatedPressable>
           </View>
         </AnimatedBlock>
@@ -383,9 +445,7 @@ export default function HomeScreen() {
                 style={styles.accountCard}
               >
                 <View style={styles.accountIcon}>
-                  <Text style={styles.accountIconText}>
-                    {account.type === "credit_card" ? "CC" : "$"}
-                  </Text>
+                  <WalletSymbol name={account.type === "credit_card" ? "card" : "bank"} color={colors.primary} size={21} />
                 </View>
 
                 <View style={styles.accountInfo}>
@@ -459,6 +519,18 @@ export default function HomeScreen() {
                 delay={320 + index * 40}
                 style={styles.recentRow}
               >
+                <View
+                  style={[
+                    styles.recentIcon,
+                    item.type === "income" ? styles.incomeIcon : item.type === "transfer" ? styles.transferIcon : styles.expenseIcon,
+                  ]}
+                >
+                  <WalletSymbol
+                    name={item.type === "income" ? "income" : item.type === "transfer" ? "transfer" : "expense"}
+                    color={item.type === "income" ? colors.income : item.type === "transfer" ? colors.primary : colors.expense}
+                    size={19}
+                  />
+                </View>
                 <View style={styles.recentInfo}>
                   <Text style={styles.recentDescription} numberOfLines={1}>
                     {item.description}
@@ -517,461 +589,119 @@ export default function HomeScreen() {
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing["4xl"],
-  },
-
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-    backgroundColor: colors.background,
-  },
-
-  loadingText: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-
-  errorText: {
-    fontSize: 14,
-    textAlign: "center",
-    color: colors.expense,
-  },
-
-  retryButton: {
-    marginTop: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-  },
-
-  retryButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.onPrimary,
-  },
-
-  header: {},
-
-  greeting: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-
-  month: {
-    marginTop: 6,
-    fontSize: 30,
-    fontWeight: "800",
-    color: colors.text,
-    textTransform: "capitalize",
-  },
-
-  subtitle: {
-    marginTop: 5,
-    fontSize: 13,
-    color: colors.textSubtle,
-  },
-
-  balanceCard: {
-    marginTop: spacing.xl,
-    padding: spacing.xl,
-    borderRadius: radii.xl,
-    backgroundColor: colors.primary,
-  },
-
-  balanceLabel: {
-    fontSize: 14,
-    color: colors.onPrimary,
-    opacity: 0.85,
-  },
-
-  balance: {
-    marginTop: spacing.sm,
-    fontSize: typography.size.display,
-    lineHeight: 42,
-    fontWeight: typography.weight.heavy,
-    color: colors.onPrimary,
-  },
-
-  balanceMeta: {
-    marginTop: 8,
-    fontSize: 13,
-    color: colors.onPrimary,
-    opacity: 0.85,
-  },
-
-  sectionLabel: {
-    marginTop: 32,
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    color: colors.textSubtle,
-  },
-
-  cards: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: 14,
-  },
-
-  card: {
-    flex: 1,
-    minWidth: 0,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  label: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-
-  incomeValue: {
-    marginTop: 8,
-    fontSize: 19,
-    fontWeight: "700",
-    color: colors.income,
-  },
-
-  expenseValue: {
-    marginTop: 8,
-    fontSize: 19,
-    fontWeight: "700",
-    color: colors.expense,
-  },
-
-  transferValue: {
-    color: colors.primary,
-  },
-
-  sectionHeaderText: {
-    flex: 1,
-    marginRight: 12,
-  },
-
-  sectionHeader: {
-    marginTop: 32,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  sectionTitle: {
-    fontSize: typography.size.subtitle,
-    fontWeight: typography.weight.heavy,
-    color: colors.text,
-  },
-
-  sectionSubtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    color: colors.textSubtle,
-  },
-
-  seeAll: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-
-  accountsList: {
-    marginTop: 14,
-    gap: 10,
-  },
-
-  accountCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  accountIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.accentSurface,
-  },
-
-  accountIconText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: colors.primary,
-  },
-
-  accountInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  accountName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-  },
-
-  accountType: {
-    marginTop: 3,
-    fontSize: 12,
-    color: colors.textSubtle,
-  },
-
-  accountBalance: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-  },
-
-  emptyCard: {
-    marginTop: 14,
-    padding: 20,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-  },
-
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-
-  emptyText: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-  },
-
-  inlineButton: {
-    marginTop: 16,
-    alignSelf: "flex-start",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: colors.accentSurface,
-  },
-
-  inlineButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-
-  availableCard: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  availableLabel: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-
-  availableValue: {
-    marginTop: 6,
-    fontSize: 26,
-    fontWeight: "800",
-    color: colors.income,
-  },
-
-  availableNegative: {
-    color: colors.expense,
-  },
-
-  comparison: {
-    marginTop: 6,
-    fontSize: 12,
-    color: colors.textSubtle,
-  },
-
-  categoryList: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 14,
-  },
-
-  categoryRow: {},
-
-  categoryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  categoryName: {
-    flex: 1,
-    marginRight: 12,
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-  },
-
-  categoryValue: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-  },
-
-  categoryTrack: {
-    height: 6,
-    marginTop: 8,
-    borderRadius: 6,
-    overflow: "hidden",
-    backgroundColor: colors.surfaceMuted,
-  },
-
-  categoryFill: {
-    height: "100%",
-    borderRadius: 6,
-    backgroundColor: colors.primary,
-  },
-
-  categoryShare: {
-    marginTop: 6,
-    fontSize: 12,
-    color: colors.textSubtle,
-  },
-
-  categoryFooter: {
-    fontSize: 12,
-    color: colors.textSubtle,
-  },
-
-  accountsHint: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: colors.textSubtle,
-  },
-
-  insightList: {
-    marginTop: 14,
-    gap: 10,
-  },
-
-  recentList: {
-    marginTop: 14,
-    gap: 10,
-  },
-
-  recentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  recentInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-
-  recentDescription: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.text,
-  },
-
-  recentMeta: {
-    marginTop: 3,
-    fontSize: 12,
-    color: colors.textSubtle,
-  },
-
-  recentAmount: {
-    fontSize: 15,
-    fontWeight: "700",
-  },
-
-  insightCard: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: colors.accentSurface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  insightPositive: {
-    backgroundColor: colors.incomeSurface,
-  },
-
-  insightWarning: {
-    backgroundColor: colors.warningSurface,
-  },
-
-  insightHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  insightIcon: {
-    fontSize: 16,
-  },
-
-  insightTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "800",
-    color: colors.text,
-  },
-
-  insightText: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-  },
-
-  transactions: {
-    marginTop: 24,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-
-  newTransactionButton: {
-    height: 56,
-    marginTop: spacing.xl,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-  },
-
-  newTransactionButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.onPrimary,
-  },
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing["4xl"], gap: spacing.xl },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: colors.background },
+    loadingText: { fontSize: 14, color: colors.textMuted },
+    errorText: { fontSize: 14, textAlign: "center", color: colors.expense },
+    retryButton: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary },
+    retryButtonText: { fontSize: 14, fontWeight: "700", color: colors.onPrimary },
+
+    headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md },
+    headerCopy: { flex: 1 },
+    header: {},
+    greeting: { fontSize: 13, fontWeight: "700", color: colors.textMuted },
+    pageTitle: { marginTop: 5, fontSize: 22, lineHeight: 28, fontWeight: "800", letterSpacing: -0.5, color: colors.text },
+    month: { marginTop: 6, fontSize: 30, fontWeight: "800", color: colors.text, textTransform: "capitalize" },
+    subtitle: { marginTop: 5, fontSize: 12, color: colors.textSubtle, textTransform: "capitalize" },
+    headerAction: { width: 46, height: 46, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+
+    balanceCard: { position: "relative", overflow: "hidden", marginTop: -spacing.xs, padding: spacing.xl, borderRadius: 28, backgroundColor: colors.primary },
+    heroOrb: { position: "absolute", top: -56, right: -38, width: 170, height: 170, borderRadius: 100, borderWidth: 28, borderColor: colors.onPrimary, opacity: 0.07 },
+    heroOrbSecondary: { position: "absolute", bottom: -76, right: 85, width: 135, height: 135, borderRadius: 100, backgroundColor: colors.onPrimary, opacity: 0.05 },
+    balanceHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    balanceLabelRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    balanceLabel: { fontSize: 14, color: colors.onPrimary, opacity: 0.88, fontWeight: "600" },
+    balanceToggle: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: radii.pill, backgroundColor: colors.onPrimary + "18" },
+    balanceToggleText: { color: colors.onPrimary, fontSize: 11, fontWeight: "700" },
+    balance: { marginTop: spacing.md, fontSize: 34, lineHeight: 42, fontWeight: "800", letterSpacing: -0.8, color: colors.onPrimary },
+    balanceMeta: { marginTop: 5, fontSize: 12, color: colors.onPrimary, opacity: 0.78 },
+    heroActions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xl },
+    heroPrimaryAction: { minHeight: 46, flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: spacing.sm, borderRadius: 15, backgroundColor: colors.surface },
+    heroPrimaryActionText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+    heroSecondaryAction: { minHeight: 46, flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: spacing.sm, borderRadius: 15, borderWidth: 1, borderColor: colors.onPrimary + "45", backgroundColor: "transparent" },
+    heroSecondaryActionText: { color: colors.onPrimary, fontSize: 13, fontWeight: "700" },
+
+    sectionLabel: { marginTop: 24, fontSize: 13, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase", color: colors.textSubtle },
+    cards: { flexDirection: "row", gap: spacing.sm, marginTop: 12 },
+    card: { flex: 1, minWidth: 0, padding: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    metricHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    metricIcon: { width: 34, height: 34, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+    incomeIcon: { backgroundColor: colors.incomeSurface },
+    expenseIcon: { backgroundColor: colors.expenseSurface },
+    transferIcon: { backgroundColor: colors.accentSurface },
+    label: { flexShrink: 1, fontSize: 12, color: colors.textMuted, fontWeight: "600" },
+    incomeValue: { marginTop: spacing.md, fontSize: 18, fontWeight: "800", color: colors.income },
+    expenseValue: { marginTop: spacing.md, fontSize: 18, fontWeight: "800", color: colors.expense },
+    transferValue: { color: colors.primary },
+
+    availableCard: { padding: spacing.lg, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    availableHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    availableIcon: { width: 42, height: 42, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentSurface },
+    availableCopy: { flex: 1 },
+    availableLabel: { fontSize: 13, color: colors.textMuted, fontWeight: "600" },
+    availableHint: { marginTop: 3, fontSize: 11, color: colors.textSubtle },
+    availableValue: { marginTop: spacing.sm, fontSize: 27, lineHeight: 34, fontWeight: "800", color: colors.income },
+    availableNegative: { color: colors.expense },
+    comparison: { marginTop: 4, fontSize: 12, lineHeight: 18, color: colors.textSubtle },
+
+    sectionBlock: { gap: spacing.md },
+    sectionHeaderText: { flex: 1, marginRight: spacing.sm },
+    sectionHeader: { marginTop: spacing.xl, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+    sectionTitle: { fontSize: typography.size.subtitle, fontWeight: "800", letterSpacing: -0.25, color: colors.text },
+    sectionSubtitle: { marginTop: 4, fontSize: 12, lineHeight: 17, color: colors.textSubtle },
+    seeAll: { fontSize: 12, fontWeight: "800", color: colors.primary },
+    quickGrid: { gap: spacing.sm },
+    quickRow: { flexDirection: "row", gap: spacing.sm },
+    quickAction: { flex: 1, minWidth: 0, padding: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    quickIcon: { width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentSurface, marginBottom: spacing.sm },
+    quickTitle: { fontSize: 13, lineHeight: 17, fontWeight: "800", color: colors.text },
+    quickDescription: { marginTop: 4, fontSize: 11, lineHeight: 15, color: colors.textSubtle },
+    alertShortcut: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    alertShortcutCopy: { flex: 1 },
+
+    accountsList: { marginTop: 12, gap: spacing.sm },
+    accountCard: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    accountIcon: { width: 43, height: 43, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentSurface },
+    accountIconText: { fontSize: 18, fontWeight: "800", color: colors.primary },
+    accountInfo: { flex: 1, minWidth: 0, marginLeft: spacing.xs },
+    accountName: { fontSize: 13, fontWeight: "800", color: colors.text },
+    accountType: { marginTop: 3, fontSize: 11, color: colors.textSubtle },
+    accountBalance: { maxWidth: "42%", fontSize: 13, fontWeight: "800", color: colors.text },
+
+    emptyCard: { marginTop: 12, padding: spacing.xl, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "flex-start" },
+    emptyTitle: { fontSize: 15, fontWeight: "800", color: colors.text },
+    emptyText: { marginTop: spacing.xs, fontSize: 13, lineHeight: 20, color: colors.textMuted },
+    inlineButton: { marginTop: spacing.md, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.accentSurface },
+    inlineButtonText: { fontSize: 13, fontWeight: "800", color: colors.primary },
+    categoryList: { marginTop: 12, padding: spacing.lg, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: spacing.lg },
+    categoryRow: { gap: 3 },
+    categoryHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+    categoryName: { flex: 1, marginRight: spacing.sm, fontSize: 13, fontWeight: "700", color: colors.text },
+    categoryValue: { fontSize: 13, fontWeight: "800", color: colors.text },
+    categoryTrack: { height: 8, marginTop: spacing.sm, borderRadius: radii.pill, overflow: "hidden", backgroundColor: colors.surfaceMuted },
+    categoryFill: { height: "100%", borderRadius: radii.pill, backgroundColor: colors.primary },
+    categoryShare: { marginTop: 5, fontSize: 11, color: colors.textSubtle },
+    categoryFooter: { fontSize: 12, color: colors.textMuted, fontWeight: "700" },
+    accountsHint: { fontSize: 12, lineHeight: 18, color: colors.textSubtle },
+
+    insightList: { marginTop: 12, gap: spacing.sm },
+    insightCard: { padding: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    insightPositive: { backgroundColor: colors.incomeSurface, borderColor: colors.incomeSurface },
+    insightWarning: { backgroundColor: colors.warningSurface, borderColor: colors.warningSurface },
+    insightHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    insightIcon: { fontSize: 17 },
+    insightTitle: { flex: 1, fontSize: 13, fontWeight: "800", color: colors.text },
+    insightText: { marginTop: spacing.sm, fontSize: 12, lineHeight: 18, color: colors.textMuted },
+
+    recentList: { marginTop: 12, gap: spacing.sm },
+    recentRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    recentIcon: { width: 42, height: 42, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+    recentInfo: { flex: 1, minWidth: 0, marginRight: spacing.xs },
+    recentDescription: { fontSize: 13, fontWeight: "800", color: colors.text },
+    recentMeta: { marginTop: 4, fontSize: 10, color: colors.textSubtle },
+    recentAmount: { maxWidth: "44%", fontSize: 12, fontWeight: "800", textAlign: "right" },
+    transactions: { marginTop: spacing.md, fontSize: 12, color: colors.textSubtle, textAlign: "center" },
+    newTransactionButton: { minHeight: 54, marginTop: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, borderRadius: radii.lg, backgroundColor: colors.primary },
+    newTransactionButtonText: { fontSize: 15, fontWeight: "800", color: colors.onPrimary },
   });
