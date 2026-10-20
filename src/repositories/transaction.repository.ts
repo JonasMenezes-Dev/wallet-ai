@@ -15,6 +15,7 @@ export async function getAllTransactions(): Promise<
   const rows = await database.getAllAsync<{
     id: number;
     goal_id: number | null;
+    transfer_id: string | null;
     goal_name: string | null;
     category_name: string | null;
     account_name: string | null;
@@ -36,6 +37,7 @@ export async function getAllTransactions(): Promise<
   }>(`
     SELECT
       transactions.*,
+      transactions.transfer_id AS transfer_id,
       goals.name AS goal_name,
       categories.name AS category_name,
       accounts.name AS account_name
@@ -52,11 +54,13 @@ export async function getAllTransactions(): Promise<
   return rows.map((row) => ({
     id: row.id,
     amount: row.amount,
-    type: row.type,
+    type: row.transfer_id ? "transfer" : row.type,
     description:
-      row.type === "transfer" && row.goal_name
-        ? `Aporte para: ${row.goal_name}`
-        : row.description,
+      row.transfer_id
+        ? row.description
+        : row.type === "transfer" && row.goal_name
+          ? `Aporte para: ${row.goal_name}`
+          : row.description,
     merchant: row.merchant,
     date: row.date,
     categoryId: row.category_id,
@@ -66,6 +70,7 @@ export async function getAllTransactions(): Promise<
     paymentMethod: row.payment_method,
     goalId: row.goal_id,
     goalName: row.goal_name,
+    transferId: row.transfer_id,
     isAutomatic: row.is_automatic === 1,
     source: row.source,
     externalId: row.external_id,
