@@ -1,5 +1,11 @@
 import { getDatabase } from "../database/database";
 
+function isValidMonth(value: string): boolean {
+  if (!/^\\d{4}-(0[1-9]|1[0-2])$/.test(value)) return false;
+  const [year, month] = value.split("-").map(Number);
+  return Number.isInteger(year) && year >= 1 && month >= 1 && month <= 12;
+}
+
 export interface MonthlyBudget {
   id: number;
   categoryId: number;
@@ -12,6 +18,8 @@ export interface MonthlyBudget {
 }
 
 export async function listMonthlyBudgets(month: string): Promise<MonthlyBudget[]> {
+  if (!isValidMonth(month)) throw new Error("O mês selecionado é inválido.");
+
   const database = await getDatabase();
 
   const rows = await database.getAllAsync<{
