@@ -112,3 +112,24 @@ test("flags negative or non-finite account balances", () => {
   assert.equal(isBalanceInvalid(Number.NaN, "bank"), true);
   assert.equal(isBalanceInvalid(0, "bank"), false);
 });
+
+test("restores a bank balance when an expense is reversed", () => {
+  const afterExpense = applyTransactionToAccount(100, "bank", "expense", 35.5);
+  const restored = applyTransactionToAccount(afterExpense, "bank", "expense", -35.5);
+  assert.equal(restored, 100);
+});
+
+test("restores used credit-card debt when an expense is reversed", () => {
+  const afterExpense = applyTransactionToAccount(200, "credit_card", "expense", 49.9);
+  const restored = applyTransactionToAccount(afterExpense, "credit_card", "expense", -49.9);
+  assert.equal(restored, 200);
+});
+
+test("income reduces used credit-card debt", () => {
+  assert.equal(applyTransactionToAccount(120, "credit_card", "income", 45), 75);
+});
+
+test("transfers do not alter either bank or credit-card balance", () => {
+  assert.equal(applyTransactionToAccount(80, "bank", "transfer", 20), 80);
+  assert.equal(applyTransactionToAccount(160, "credit_card", "transfer", 20), 160);
+});
