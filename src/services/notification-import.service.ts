@@ -52,13 +52,17 @@ export function parseFinancialNotification(item: CapturedFinancialNotification) 
   const contextualMoneyMatches = [
     ...text.matchAll(/\\b(?:saldo(?: atual| disponível| disponivel)?|limite(?: disponível| disponivel)?|valor total|total da fatura)\\s*:?\\s*(?:R\\$\\s*)?([0-9][0-9.,]*)/gi),
   ];
-  const distinctContextValues = new Set(
-    contextualMoneyMatches.map((match) => normalizeBrazilianAmount(match[1] ?? "")).filter((value): value is string => value !== null),
-  );
-  const hasConflictingContextValue =
-    distinctContextValues.size > 0 &&
-    (moneyMatches.length !== 1 ||
-      [...distinctContextValues][0] !== normalizeBrazilianAmount(moneyMatches[0]?.[1] ?? ""));
+  const hasConflictingContextValue = contextualMoneyMatches.some((contextMatch) => {
+    const rawContextValue = contextMatch[1] ?? "";
+    if (normalizeBrazilianAmount(rawContextValue) === null) return false;
+    const valueOffset = (contextMatch.index ?? 0) + contextMatch[0].lastIndexOf(rawContextValue);
+    // Não contar duas vezes o mesmo número quando o rótulo já contém "R$".
+    const isSameMoneyMatch = moneyMatches.some((moneyMatch) => {
+      const start = moneyMatch.index ?? 0;
+      return valueOffset >= start && valueOffset < start + moneyMatch[0].length;
+    });
+    return !isSameMoneyMatch;
+  });
 
   const raw = moneyMatches.length === 1 ? (moneyMatches[0]?.[1] ?? "") : "";
   const normalized = normalizeBrazilianAmount(raw);
