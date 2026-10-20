@@ -1,60 +1,77 @@
-# Wallet.ai — Beta 0.2
+# Wallet.ai
 
-Aplicativo pessoal de finanças para Android, com armazenamento local SQLite. As funções principais continuam funcionando sem backend próprio.
+Aplicativo de controle financeiro pessoal para Android, desenvolvido com **Expo, React Native e SQLite**. O objetivo é reunir contas, movimentações, metas e acompanhamento mensal em uma experiência simples, com dados armazenados localmente no dispositivo.
 
-## Funcionalidades
+> **Status: beta privado / em validação.** O app ainda está sendo testado. Não use como única fonte de informação financeira e confira os lançamentos com o aplicativo ou extrato oficial do banco.
 
-- Contas, cartões e limite de crédito.
-- Registro e consulta local de transações.
-- Metas e aportes.
-- Dashboard com resumos calculados a partir do banco local.
-- Orçamentos mensais por categoria.
-- Contas recorrentes e previsão de fluxo de caixa.
-- Relatórios mensais com comparação e despesas por categoria.
-- Alertas no app para limites de orçamento e contas próximas/vencidas.
-- Importação revisada de notificações financeiras compatíveis no Android.
+## O que já existe
 
-## Privacidade e limitações
+- **Contas e cartões:** cadastro de contas, cartões e limites de crédito.
+- **Movimentações:** registro, consulta, edição e exclusão de entradas e despesas.
+- **Metas:** acompanhamento de objetivos e aportes.
+- **Dashboard:** resumo financeiro calculado a partir dos dados locais.
+- **Orçamentos:** limites mensais por categoria.
+- **Contas recorrentes:** acompanhamento de vencimentos e previsão de fluxo de caixa.
+- **Relatórios:** visão mensal, comparação entre períodos e despesas por categoria.
+- **Alertas internos:** avisos relacionados a orçamento e contas próximas do vencimento ou vencidas.
+- **Importação de notificações bancárias:** captura local de notificações compatíveis do Android, com revisão dos dados antes de criar uma movimentação.
+- **Tema:** suporte a aparência clara/escura conforme a configuração disponível no app/dispositivo.
 
-- Os dados de cada instalação ficam separados no próprio dispositivo; não existe sincronização entre celulares.
-- Desinstalar o app pode apagar os dados locais. Faça backup antes de remover ou reinstalar.
-- A importação de notificações exige permissão explícita do Android e funciona apenas em APK compilado com o módulo nativo, não no Expo Go nem na versão web.
-- A captura é filtrada localmente para uma lista de aplicativos bancários e termos financeiros conhecidos. O formato varia por banco; algumas notificações podem não conter o valor e não serão importáveis.
-- O Wallet mostra os dados extraídos para revisão. Confirme conta, categoria, tipo e valor antes de registrar.
-- Os alertas de orçamento e vencimento estão disponíveis dentro do app nesta versão; notificações do sistema em segundo plano podem ser adicionadas depois.
-- Open Finance real ainda não está integrado.
-- Fatura, fechamento e vencimento de cartão ainda não fazem parte da versão atual.
-- Atualizações remotas exigem configuração e publicação próprias no EAS Update; não são automáticas só por enviar código ao GitHub.
+## Importante antes de testar
 
-## Desenvolvimento
+- **Armazenamento local:** os dados ficam no próprio dispositivo. Não há sincronização entre celulares; duas instalações não compartilham os mesmos lançamentos.
+- **Preservação dos dados:** desinstalar pode apagar o banco local. Ao atualizar o beta, instale o novo APK por cima da versão anterior e não desinstale o app.
+- **Permissão de notificações:** a importação exige que o usuário conceda acesso nas configurações do Android. Só habilite se compreender essa permissão.
+- **Compatibilidade:** notificações variam entre bancos e versões. Alguns avisos podem não ser reconhecidos ou podem não conter um valor confiável; revise tudo antes de confirmar.
+- **Sem Open Finance:** não há integração oficial com contas bancárias.
+- **Cartões:** recursos completos de fatura, fechamento e vencimento de cartão ainda não estão disponíveis.
+- **Alertas:** os alertas internos do app não significam que notificações do sistema em segundo plano estejam garantidas.
+- **Atualizações:** publicar código no GitHub não atualiza automaticamente um APK instalado. A distribuição e eventuais atualizações EAS precisam ser configuradas e validadas separadamente.
 
-Requer uma versão de Node.js compatível com o Expo SDK do projeto.
+## Gerar o APK de teste
+
+Pré-requisito: Node.js compatível com a versão do projeto e acesso à conta Expo/EAS.
 
 ```bash
 npm ci
 npm run typecheck
 npm run lint
+npx eas-cli login
+npx eas-cli build --platform android --profile preview
 ```
 
-## Checklist de validação antes de distribuir
+O perfil `preview` está configurado para gerar um APK de distribuição interna. Quando o EAS terminar, abra o link de instalação no Android.
 
-- [ ] Criar uma conta comum com saldo de R$ 100,00; lançar despesa de R$ 20,00 e conferir R$ 80,00.
-- [ ] Editar essa despesa para R$ 30,00 e conferir R$ 70,00; excluí-la e conferir retorno a R$ 100,00.
-- [ ] Lançar uma entrada de R$ 15,00 e conferir R$ 115,00; tentar uma despesa maior que o saldo e confirmar que não grava.
-- [ ] Criar cartão com limite de R$ 1.000,00; lançar compra de R$ 200,00 e conferir R$ 800,00 disponíveis; excluir a compra e conferir restauração.
-- [ ] Fazer aporte para uma meta e conferir que o saldo da conta diminui e o valor guardado aumenta; excluir o aporte e conferir que ambos são revertidos.
-- [ ] Conferir orçamento em 80% e 100%, vencimentos recorrentes, comparação entre meses e relatório de um mês com valores conhecidos.
-- [ ] Testar notificação com um único valor, notificação com valor e saldo juntos, tentativa recusada e repetição da mesma notificação. Valores ambíguos/recusados não devem gerar lançamento.
-- [ ] Fechar e reabrir o app; conferir persistência, modo claro/escuro, navegação e animações.
-- [ ] Instalar a nova versão por cima da anterior para preservar os dados locais. Não desinstalar o app durante a atualização.
+## Validação do beta
 
-## Gerar APK de teste para Android
+Use dados fictícios ou movimentações pequenas e controladas. Confira cada resultado com os valores esperados e com a fonte financeira original.
 
-1. Instale/entre na CLI do EAS: `npx eas-cli login`.
-2. Verifique a configuração: `npx eas-cli project:info`.
-3. Gere o APK: `npx eas-cli build --platform android --profile preview`.
-4. Quando o build terminar, abra o link fornecido pelo EAS no celular e instale o APK.
-5. Para testar a leitura, abra **Importar notificações bancárias**, ative o acesso nas configurações do Android e volte ao Wallet. Faça uma movimentação de teste em um banco compatível, confira os dados extraídos e confirme o lançamento.
-6. Teste também orçamento acima de 80%/100%, contas recorrentes com vencimento próximo e relatórios de meses com dados conhecidos.
+Consulte o [plano de testes do beta](docs/BETA_TEST_PLAN.md) para o roteiro de validação e o [histórico de alterações](CHANGELOG.md) para acompanhar a evolução do projeto.
 
-Não compartilhe o APK publicamente enquanto não concluir os testes em dispositivo real. Use dados de teste inicialmente; este app não substitui extratos oficiais da instituição financeira.
+## Desenvolvimento local
+
+```bash
+npm ci
+npm run typecheck
+npm run lint
+npx expo start
+```
+
+Comandos disponíveis no projeto:
+
+| Comando | Finalidade |
+| --- | --- |
+| `npm run typecheck` | Verifica os tipos TypeScript |
+| `npm run lint` | Executa o ESLint |
+| `npx expo start` | Inicia o servidor de desenvolvimento |
+| `npx eas-cli build --platform android --profile preview` | Solicita a geração do APK beta |
+
+O projeto utiliza Expo Router para navegação e SQLite para persistência local. A importação de notificações depende do módulo nativo e deve ser testada em um APK Android compilado; o Expo Go e a versão web não substituem esse teste.
+
+## Contribuição e segurança
+
+Antes de abrir uma alteração, execute typecheck e lint e descreva o comportamento validado. Não publique APKs nem dados financeiros pessoais em issues, logs ou commits. Problemas de segurança devem ser reportados sem incluir credenciais, extratos ou informações identificáveis.
+
+---
+
+Feito para evoluir com testes reais, correções pequenas e validação cuidadosa.
