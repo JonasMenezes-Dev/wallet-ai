@@ -13,6 +13,7 @@ import { router } from "expo-router";
 
 import { AnimatedBlock, AnimatedListItem, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { AnimatedProgressFill } from "../../src/components/AnimatedProgressFill";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { useAccounts } from "../../src/hooks/use-accounts";
 import { useGoals } from "../../src/hooks/use-goals";
@@ -258,13 +259,10 @@ export default function GoalsScreen() {
               </View>
 
               <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${progress.progressPercentage}%`,
-                    },
-                  ]}
+                <AnimatedProgressFill
+                  progress={progress.progressPercentage / 100}
+                  delay={80 + index * 45}
+                  style={styles.progressFill}
                 />
               </View>
 

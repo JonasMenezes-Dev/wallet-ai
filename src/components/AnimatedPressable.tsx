@@ -13,7 +13,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 
-import { durations, spring } from "../animations";
+import { durations, easings, spring } from "../animations";
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
@@ -52,12 +52,12 @@ export function AnimatedPressable({
   // Handlers criados fora do JSX para que o React Compiler não trate a
   // escrita em `progress.value` como mutação de uma variável imutável.
   const pressIn = useCallback((event: GestureResponderEvent) => {
-    progress.set(withSpring(1, spring.press));
+    progress.set(withTiming(1, { duration: durations.instant, easing: easings.out }));
     onPressIn?.(event);
   }, [progress, onPressIn]);
 
   const pressOut = useCallback((event: GestureResponderEvent) => {
-    progress.set(withTiming(0, { duration: durations.fast }));
+    progress.set(withSpring(0, spring.press));
     onPressOut?.(event);
   }, [progress, onPressOut]);
 

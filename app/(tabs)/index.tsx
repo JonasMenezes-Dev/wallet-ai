@@ -5,6 +5,7 @@ import { router } from "expo-router";
 
 import { AnimatedBlock, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { AnimatedProgressFill } from "../../src/components/AnimatedProgressFill";
 import { GoalProgressCard } from "../../src/components/GoalProgressCard";
 import { useDashboard } from "../../src/hooks/use-dashboard";
 import { useUserSettings } from "../../src/hooks/use-user-settings";
@@ -303,7 +304,7 @@ export default function HomeScreen() {
             </View>
           ) : (
             <View style={styles.categoryList}>
-              {summary.expensesByCategory.map((category) => (
+              {summary.expensesByCategory.map((category, index) => (
                 <View key={category.name} style={styles.categoryRow}>
                   <View style={styles.categoryHeader}>
                     <Text style={styles.categoryName}>{category.name}</Text>
@@ -314,17 +315,10 @@ export default function HomeScreen() {
                   </View>
 
                   <View style={styles.categoryTrack}>
-                    <View
-                      style={[
-                        styles.categoryFill,
-                        {
-                          width: `${
-                            categoryMax > 0
-                              ? (category.total / categoryMax) * 100
-                              : 0
-                          }%`,
-                        },
-                      ]}
+                    <AnimatedProgressFill
+                      progress={categoryMax > 0 ? category.total / categoryMax : 0}
+                      delay={80 + index * 35}
+                      style={styles.categoryFill}
                     />
                   </View>
 
