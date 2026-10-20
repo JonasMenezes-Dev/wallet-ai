@@ -1,12 +1,14 @@
 import { Tabs } from "expo-router";
 import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useReducedMotion } from "react-native-reanimated";
 
 import { AnimatedTabIcon } from "../../src/components/AnimatedTabIcon";
 import { useThemeColors, spacing, typography } from "../../src/theme";
 
 export default function TabsLayout() {
   const colors = useThemeColors();
+  const reduceMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const tabLabelSize = width < 360 ? 10 : 11;
@@ -16,10 +18,10 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         // Desliza o conteúdo entre abas sem apagar a tela com um fade branco.
-        animation: "shift",
+        animation: reduceMotion ? "none" : "shift",
         transitionSpec: {
           animation: "timing",
-          config: { duration: 200 },
+          config: { duration: reduceMotion ? 0 : 200 },
         },
         sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
