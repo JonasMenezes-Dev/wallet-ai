@@ -1,11 +1,12 @@
 import { Stack } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { screenTransition } from "../src/animations";
+import { WalletSymbol } from "../src/components/WalletSymbol";
 import { getDatabase } from "../src/database/database";
 import {
   ThemeProvider,
@@ -32,9 +33,35 @@ function RootNavigator() {
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: colors.background,
+              gap: 14,
             }}
           >
-            <ActivityIndicator color={colors.primary} />
+            <View
+              accessibilityLabel="Wallet.ai"
+              style={{
+                width: 82,
+                height: 82,
+                borderRadius: 26,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.accentSurface,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <WalletSymbol name="accounts" color={colors.primary} size={44} />
+            </View>
+            <Text
+              style={{
+                color: colors.text,
+                fontSize: 24,
+                fontWeight: "800",
+                letterSpacing: -0.7,
+              }}
+            >
+              wallet<Text style={{ color: "#00B894" }}>.ai</Text>
+            </Text>
+            <ActivityIndicator color={colors.primary} style={{ marginTop: 4 }} />
           </View>
         </SafeAreaView>
         <StatusBar style={themeName === "dark" ? "light" : "dark"} />

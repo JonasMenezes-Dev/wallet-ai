@@ -21,6 +21,8 @@ export interface Transaction {
   paymentMethod: string | null;
   goalId: number | null;
   goalName?: string | null;
+  /** Identificador compartilhado pelos dois lados de uma transferência entre contas. */
+  transferId?: string | null;
   isAutomatic: boolean;
   source: TransactionSource;
   /**
@@ -45,6 +47,9 @@ export interface TransactionRelations {
   categoryName: string | null;
   /** Nome da conta. `null` se a conta foi removida. */
   accountName: string | null;
+  /** Other side of a grouped account transfer; absent on ordinary transactions. */
+  counterpartyAccountId?: number | null;
+  counterpartyAccountName?: string | null;
 }
 
 /** Transação como a listagem consome: já com os nomes resolvidos. */

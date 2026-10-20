@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   ScrollView,
@@ -38,7 +39,8 @@ function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
 }
 
-function getTransactionLabel(type: string) {
+function getTransactionLabel(type: string, isAccountTransfer = false) {
+  if (type === "transfer" && isAccountTransfer) return "Transferência";
   switch (type) {
     case "income":
       return "Entrada";
@@ -195,7 +197,8 @@ export default function TransactionsScreen() {
   }
 
   function handleDelete(transaction: TransactionWithRelations) {
-    const isGoalContribution = transaction.type === "transfer" || transaction.goalId !== null;
+    const isGoalContribution = transaction.type === "transfer" && transaction.goalId !== null;
+    const isAccountTransfer = Boolean(transaction.transferId);
 
     const isCardTransaction =
       transaction.accountId !== null &&
@@ -210,6 +213,8 @@ export default function TransactionsScreen() {
      */
     const impactMessage = isGoalContribution
       ? "O valor será devolvido ao saldo da conta e retirado da meta."
+      : isAccountTransfer
+        ? "A transferência inteira será removida e os saldos das duas contas serão restaurados."
       : isCardTransaction
         ? "O valor sairá do limite usado do cartão, liberando limite disponível."
         : "O valor será devolvido ao saldo da conta.";
@@ -248,6 +253,7 @@ export default function TransactionsScreen() {
   if (loading) {
     return (
       <FadeInView style={styles.center}>
+        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel="Carregando transações" />
         <Text>Carregando transações...</Text>
       </FadeInView>
     );
@@ -255,9 +261,12 @@ export default function TransactionsScreen() {
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text>{error}</Text>
-      </View>
+      <FadeInView style={styles.center}>
+        <Text style={styles.errorText}>{error}</Text>
+        <AnimatedPressable style={styles.retryButton} onPress={reload}>
+          <Text style={styles.retryButtonText}>Tentar novamente</Text>
+        </AnimatedPressable>
+      </FadeInView>
     );
   }
 
@@ -320,7 +329,7 @@ export default function TransactionsScreen() {
           ["all", "Todas"],
           ["income", "Entradas"],
           ["expense", "Gastos"],
-          ["transfer", "Aportes"],
+          ["transfer", "Transferências"],
         ] as [TransactionTypeFilter, string][]).map(([value, label]) => (
           <AnimatedPressable
             key={value}
@@ -627,6 +636,7 @@ export default function TransactionsScreen() {
 
           const isGoalContribution =
             item.type === "transfer" && item.goalId !== null;
+          const isAccountTransfer = Boolean(item.transferId);
 
           const isAutomatic = item.isAutomatic;
 
@@ -664,7 +674,7 @@ export default function TransactionsScreen() {
                               : styles.expenseBadgeText,
                         ]}
                       >
-                        {getTransactionLabel(item.type)}
+                        {getTransactionLabel(item.type, isAccountTransfer)}
                       </Text>
                     </View>
 
@@ -700,6 +710,7 @@ export default function TransactionsScreen() {
                     {item.accountName
                       ? ` · ${item.accountName}`
                       : ""}
+                    {item.counterpartyAccountName ? ` ↔ ${item.counterpartyAccountName}` : ""}
                   </Text>
                 </View>
 
@@ -709,7 +720,7 @@ export default function TransactionsScreen() {
                       styles.transactionAmount,
                       isIncome
                         ? styles.income
-                        : isGoalContribution
+                        : isGoalContribution || isAccountTransfer
                           ? styles.goal
                           : styles.expense,
                     ]}
@@ -722,7 +733,7 @@ export default function TransactionsScreen() {
                   </Text>
 
                   <View style={styles.cardButtons}>
-                    {!isGoalContribution && (
+                    {!isGoalContribution && !isAccountTransfer && (
                       <AnimatedPressable
                         style={styles.editButton}
                         pressedScale={0.93}
@@ -750,9 +761,9 @@ export default function TransactionsScreen() {
 
               {/* Edição rápida de categoria: o ajuste mais frequente do dia
                   a dia, sem abrir a tela de edição completa. */}
-              {isGoalContribution ? (
+              {isGoalContribution || isAccountTransfer ? (
                 <Text style={styles.goalHint}>
-                  Aporte para a meta {item.goalName ?? ""}
+                  {isAccountTransfer ? "Transferência entre contas" : `Aporte para a meta ${item.goalName ?? ""}`}
                 </Text>
               ) : !isEditingCategory ? (
                 <AnimatedPressable
@@ -838,6 +849,9 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.background,
   },
 
+  errorText: { fontSize: 14, textAlign: "center", color: colors.expense, marginHorizontal: 24 },
+  retryButton: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary },
+  retryButtonText: { fontSize: 14, fontWeight: "700", color: colors.onPrimary },
   center: {
     flex: 1,
     alignItems: "center",

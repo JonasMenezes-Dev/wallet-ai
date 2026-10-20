@@ -167,6 +167,18 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 9,
+    name: "linked-account-transfers",
+    up: async (database) => {
+      await addColumnIfMissing(database, "transactions", "transfer_id", "TEXT");
+      await database.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_transactions_transfer
+        ON transactions (transfer_id)
+        WHERE transfer_id IS NOT NULL;
+      `);
+    },
+  },
 ];
 
 export async function runMigrations(

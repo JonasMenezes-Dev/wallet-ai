@@ -1,19 +1,14 @@
 import { Tabs } from "expo-router";
-import { Text, View, useWindowDimensions } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useReducedMotion } from "react-native-reanimated";
 
-import { useThemeColors, radii, spacing, typography } from "../../src/theme";
-
-const tabSymbols: Record<string, string> = {
-  index: "⌂",
-  transactions: "↔",
-  accounts: "▤",
-  goals: "◎",
-  settings: "⚙",
-};
+import { AnimatedTabIcon } from "../../src/components/AnimatedTabIcon";
+import { useThemeColors, spacing, typography } from "../../src/theme";
 
 export default function TabsLayout() {
   const colors = useThemeColors();
+  const reduceMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const tabLabelSize = width < 360 ? 10 : 11;
@@ -22,11 +17,13 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        animation: "shift",
+        // Desliza o conteúdo entre abas sem apagar a tela com um fade branco.
+        animation: reduceMotion ? "none" : "shift",
         transitionSpec: {
           animation: "timing",
-          config: { duration: 220 },
+          config: { duration: reduceMotion ? 0 : 200 },
         },
+        sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSubtle,
         tabBarShowLabel: true,
@@ -67,20 +64,12 @@ export default function TabsLayout() {
           title: "Início",
           tabBarAccessibilityLabel: "Início",
           tabBarIcon: ({ focused, color }) => (
-            <View
-              style={{
-                width: 34,
-                height: 28,
-                borderRadius: radii.sm,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: focused ? colors.accentSurface : "transparent",
-              }}
-            >
-              <Text style={{ color, fontSize: 22, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>
-                {tabSymbols.index}
-              </Text>
-            </View>
+            <AnimatedTabIcon
+              name="home"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
@@ -90,9 +79,12 @@ export default function TabsLayout() {
           title: "Transações",
           tabBarAccessibilityLabel: "Transações",
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <Text style={{ color, fontSize: 21, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.transactions}</Text>
-            </View>
+            <AnimatedTabIcon
+              name="transactions"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
@@ -102,9 +94,12 @@ export default function TabsLayout() {
           title: "Contas",
           tabBarAccessibilityLabel: "Contas",
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <Text style={{ color, fontSize: 19, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.accounts}</Text>
-            </View>
+            <AnimatedTabIcon
+              name="accounts"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
@@ -114,9 +109,12 @@ export default function TabsLayout() {
           title: "Metas",
           tabBarAccessibilityLabel: "Metas",
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <Text style={{ color, fontSize: 20, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.goals}</Text>
-            </View>
+            <AnimatedTabIcon
+              name="goals"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
@@ -126,9 +124,12 @@ export default function TabsLayout() {
           title: "Ajustes",
           tabBarAccessibilityLabel: "Configurações",
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <Text style={{ color, fontSize: 19, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.settings}</Text>
-            </View>
+            <AnimatedTabIcon
+              name="settings"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />

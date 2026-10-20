@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import { router } from "expo-router";
 
 import { AnimatedBlock, AnimatedListItem, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { AnimatedProgressFill } from "../../src/components/AnimatedProgressFill";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { useAccounts } from "../../src/hooks/use-accounts";
 import { useGoals } from "../../src/hooks/use-goals";
@@ -23,7 +25,7 @@ import {
   removeGoal,
 } from "../../src/services/goal.service";
 
-import { ThemeColors, useThemedStyles } from "../../src/theme";
+import { ThemeColors, useThemeColors, useThemedStyles } from "../../src/theme";
 
 function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
@@ -55,6 +57,7 @@ export default function GoalsScreen() {
 
   const { accounts, reload: reloadAccounts } = useAccounts();
   const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
 
   const [contributingGoalId, setContributingGoalId] = useState<number | null>(
     null,
@@ -152,6 +155,7 @@ export default function GoalsScreen() {
   if (goalsLoading) {
     return (
       <FadeInView style={styles.center}>
+        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel="Carregando metas" />
         <Text style={styles.loadingText}>Carregando metas...</Text>
       </FadeInView>
     );
@@ -228,7 +232,7 @@ export default function GoalsScreen() {
             <AnimatedListItem
               key={goal.id}
               index={index}
-              delayStep={70}
+              delayStep={30}
               style={styles.goalCard}
             >
               <View style={styles.goalHeader}>
@@ -258,13 +262,10 @@ export default function GoalsScreen() {
               </View>
 
               <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${progress.progressPercentage}%`,
-                    },
-                  ]}
+                <AnimatedProgressFill
+                  progress={progress.progressPercentage / 100}
+                  delay={80 + Math.min(index * 30, 150)}
+                  style={styles.progressFill}
                 />
               </View>
 

@@ -1,4 +1,4 @@
-import { getDatabase } from "../database/database";
+import { getDatabase, withTransferTransaction } from "../database/database";
 
 import {
   applyTransactionToAccount,
@@ -15,6 +15,7 @@ export async function getAllTransactions(): Promise<
   const rows = await database.getAllAsync<{
     id: number;
     goal_id: number | null;
+    transfer_id: string | null;
     goal_name: string | null;
     category_name: string | null;
     account_name: string | null;
@@ -36,6 +37,7 @@ export async function getAllTransactions(): Promise<
   }>(`
     SELECT
       transactions.*,
+      transactions.transfer_id AS transfer_id,
       goals.name AS goal_name,
       categories.name AS category_name,
       accounts.name AS account_name
@@ -49,23 +51,35 @@ export async function getAllTransactions(): Promise<
     ORDER BY transactions.date DESC, transactions.id DESC
   `);
 
-  return rows.map((row) => ({
+  const transferSides = new Map(
+    rows.filter((row) => row.transfer_id).map((row) => [`${row.transfer_id}:${row.type}`, row]),
+  );
+  const mapped = rows.map((row) => ({
     id: row.id,
     amount: row.amount,
-    type: row.type,
+    type: row.transfer_id ? "transfer" : row.type,
     description:
-      row.type === "transfer" && row.goal_name
-        ? `Aporte para: ${row.goal_name}`
-        : row.description,
+      row.transfer_id
+        ? row.description
+        : row.type === "transfer" && row.goal_name
+          ? `Aporte para: ${row.goal_name}`
+          : row.description,
     merchant: row.merchant,
     date: row.date,
     categoryId: row.category_id,
     categoryName: row.category_name,
     accountId: row.account_id,
     accountName: row.account_name,
+    counterpartyAccountId: row.transfer_id
+      ? transferSides.get(`${row.transfer_id}:${row.type === "income" ? "expense" : "income"}`)?.account_id ?? null
+      : null,
+    counterpartyAccountName: row.transfer_id
+      ? transferSides.get(`${row.transfer_id}:${row.type === "income" ? "expense" : "income"}`)?.account_name ?? null
+      : null,
     paymentMethod: row.payment_method,
     goalId: row.goal_id,
     goalName: row.goal_name,
+    transferId: row.transfer_id,
     isAutomatic: row.is_automatic === 1,
     source: row.source,
     externalId: row.external_id,
@@ -74,18 +88,33 @@ export async function getAllTransactions(): Promise<
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));
+
+  const seenTransfers = new Set<string>();
+  return mapped.filter((transaction) => {
+    if (!transaction.transferId) return true;
+    if (seenTransfers.has(transaction.transferId)) return false;
+    seenTransfers.add(transaction.transferId);
+    return true;
+  });
 }
 
 export async function createTransaction(
   transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
 ): Promise<number> {
-  const database = await getDatabase();
-
   const now = new Date().toISOString();
 
   let transactionId = 0;
 
-  await database.withTransactionAsync(async () => {
+  await withTransferTransaction(async (database) => {
+    if (transaction.externalId && transaction.provider && transaction.institution) {
+      const duplicate = await database.getFirstAsync<{ id: number }>(
+        `SELECT id FROM transactions
+         WHERE external_id = $externalId AND provider = $provider AND institution = $institution`,
+        { $externalId: transaction.externalId, $provider: transaction.provider, $institution: transaction.institution },
+      );
+      if (duplicate) throw new Error("Esta notificação já foi registrada.");
+    }
+
     const account = await database.getFirstAsync<{
       id: number;
       balance: number;
@@ -116,6 +145,9 @@ export async function createTransaction(
           payment_method,
           is_automatic,
           source,
+          external_id,
+          provider,
+          institution,
           created_at,
           updated_at
         )
@@ -130,6 +162,9 @@ export async function createTransaction(
           $paymentMethod,
           $isAutomatic,
           $source,
+          $externalId,
+          $provider,
+          $institution,
           $createdAt,
           $updatedAt
         )
@@ -145,6 +180,9 @@ export async function createTransaction(
         $paymentMethod: transaction.paymentMethod,
         $isAutomatic: transaction.isAutomatic ? 1 : 0,
         $source: transaction.source,
+        $externalId: transaction.externalId,
+        $provider: transaction.provider,
+        $institution: transaction.institution,
         $createdAt: now,
         $updatedAt: now,
       },
@@ -188,22 +226,115 @@ export async function createTransaction(
   return transactionId;
 }
 
-export async function deleteTransaction(id: number): Promise<void> {
-  const database = await getDatabase();
+interface LinkedMovementInput {
+  amount: number;
+  fromAccountId: number;
+  toAccountId: number;
+  description: string | null;
+  date: string;
+}
 
-  await database.withTransactionAsync(async () => {
+export function createAccountTransfer(input: LinkedMovementInput): Promise<string> {
+  return createLinkedMovement(input, false);
+}
+
+export function createCardPayment(input: LinkedMovementInput): Promise<string> {
+  return createLinkedMovement(input, true);
+}
+
+async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boolean): Promise<string> {
+  const now = new Date().toISOString();
+  const transferId = `transfer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  if (input.fromAccountId === input.toAccountId) {
+    throw new Error("Escolha duas contas diferentes para a transferência.");
+  }
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new Error("O valor da transferência deve ser maior que zero.");
+  }
+  const cents = Math.round(input.amount * 100);
+  if (!Number.isSafeInteger(cents) || cents <= 0 || Math.abs(input.amount * 100 - cents) > 0.000001) {
+    throw new Error("Informe um valor em centavos, com até duas casas decimais.");
+  }
+
+  await withTransferTransaction(async (database) => {
+    const from = await database.getFirstAsync<{ id: number; balance: number; type: Account["type"] }>(
+      "SELECT id, balance, type FROM accounts WHERE id = $id",
+      { $id: input.fromAccountId },
+    );
+    const to = await database.getFirstAsync<{ id: number; balance: number; type: Account["type"] }>(
+      "SELECT id, balance, type FROM accounts WHERE id = $id",
+      { $id: input.toAccountId },
+    );
+
+    if (!from || !to) throw new Error("Uma das contas selecionadas não existe.");
+    if (from.type === "credit_card" || (!cardPayment && to.type === "credit_card")) {
+      throw new Error("Transferências entre contas não podem envolver cartão de crédito. Registre o pagamento da fatura separadamente.");
+    }
+    if (cardPayment && to.type !== "credit_card") {
+      throw new Error("O destino do pagamento precisa ser um cartão de crédito.");
+    }
+    const sourceBalance = (Math.round(from.balance * 100) - cents) / 100;
+    const destinationBalance = (Math.round(to.balance * 100) + (cardPayment ? -cents : cents)) / 100;
+    if (isBalanceInvalid(sourceBalance, from.type) || isBalanceInvalid(destinationBalance, to.type)) {
+      throw new Error("Saldo insuficiente na conta de origem ou valor inválido.");
+    }
+
+    for (const entry of [
+      { accountId: from.id, type: "expense", description: input.description?.trim() || (cardPayment ? "Pagamento de cartão" : "Transferência enviada") },
+      { accountId: to.id, type: "income", description: input.description?.trim() || (cardPayment ? "Pagamento de cartão" : "Transferência recebida") },
+    ] as const) {
+      await database.runAsync(
+        `INSERT INTO transactions (
+          amount, type, description, merchant, date, category_id, account_id,
+          payment_method, is_automatic, source, external_id, provider, institution,
+          created_at, updated_at, transfer_id
+        ) VALUES (
+          $amount, $type, $description, NULL, $date, NULL, $accountId,
+          NULL, 0, 'manual', NULL, NULL, NULL, $createdAt, $updatedAt, $transferId
+        )`,
+        {
+          $amount: input.amount,
+          $type: entry.type,
+          $description: entry.description,
+          $date: input.date,
+          $accountId: entry.accountId,
+          $createdAt: now,
+          $updatedAt: now,
+          $transferId: transferId,
+        },
+      );
+    }
+
+    await database.runAsync(
+      "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
+      { $balance: sourceBalance, $now: now, $id: from.id },
+    );
+    await database.runAsync(
+      "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
+      { $balance: destinationBalance, $now: now, $id: to.id },
+    );
+  });
+
+  return transferId;
+}
+
+export async function deleteTransaction(id: number): Promise<void> {
+  await withTransferTransaction(async (database) => {
     const transaction = await database.getFirstAsync<{
       amount: number;
       type: Transaction["type"];
       account_id: number | null;
       goal_id: number | null;
+      transfer_id: string | null;
     }>(
       `
         SELECT
           amount,
           type,
           account_id,
-          goal_id
+          goal_id,
+          transfer_id
         FROM transactions
         WHERE id = $id
       `,
@@ -215,6 +346,47 @@ export async function deleteTransaction(id: number): Promise<void> {
     }
 
     const now = new Date().toISOString();
+
+    if (transaction.transfer_id) {
+      const entries = await database.getAllAsync<{
+        amount: number;
+        type: "income" | "expense";
+        account_id: number;
+      }>(
+        "SELECT amount, type, account_id FROM transactions WHERE transfer_id = $transferId",
+        { $transferId: transaction.transfer_id },
+      );
+      const outgoing = entries.find((entry) => entry.type === "expense");
+      const incoming = entries.find((entry) => entry.type === "income");
+      if (entries.length !== 2 || !outgoing || !incoming ||
+          outgoing.account_id === incoming.account_id ||
+          !Number.isFinite(outgoing.amount) || outgoing.amount <= 0 ||
+          outgoing.amount !== incoming.amount) {
+        throw new Error("A transferência está incompleta; os saldos não foram alterados.");
+      }
+
+      for (const entry of entries) {
+        const account = await database.getFirstAsync<{ balance: number; type: Account["type"] }>(
+          "SELECT balance, type FROM accounts WHERE id = $id",
+          { $id: entry.account_id },
+        );
+        if (!account || (account.type === "credit_card" && entry.type !== "income")) throw new Error("Uma conta da transferência não foi encontrada ou é incompatível.");
+        const restored = Math.round(applyTransactionToAccount(account.balance, account.type, entry.type, -entry.amount) * 100) / 100;
+        if (isBalanceInvalid(restored, account.type)) {
+          throw new Error("Não foi possível estornar a transferência com segurança.");
+        }
+        await database.runAsync(
+          "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
+          { $balance: restored, $now: now, $id: entry.account_id },
+        );
+      }
+
+      await database.runAsync(
+        "DELETE FROM transactions WHERE transfer_id = $transferId",
+        { $transferId: transaction.transfer_id },
+      );
+      return;
+    }
 
     /*
      * Aporte para uma meta
@@ -317,6 +489,9 @@ export async function deleteTransaction(id: number): Promise<void> {
           transaction.type,
           -transaction.amount,
         );
+        if (isBalanceInvalid(newBalance, account.type)) {
+          throw new Error("Não foi possível estornar sem deixar saldo ou dívida negativos.");
+        }
 
         await database.runAsync(
           `
@@ -357,19 +532,22 @@ export async function updateTransaction(
     date?: string;
   },
 ): Promise<void> {
-  const database = await getDatabase();
+  if (transaction.type === "transfer") {
+    throw new Error("Use o fluxo de transferência ou aporte para movimentar entre contas ou metas.");
+  }
   const now = new Date().toISOString();
 
-  await database.withTransactionAsync(async () => {
+  await withTransferTransaction(async (database) => {
     const current = await database.getFirstAsync<{
       amount: number;
       type: Transaction["type"];
       account_id: number | null;
       goal_id: number | null;
+      transfer_id: string | null;
       date: string;
     }>(
       `
-        SELECT amount, type, account_id, goal_id, date
+        SELECT amount, type, account_id, goal_id, transfer_id, date
         FROM transactions
         WHERE id = $id
       `,
@@ -378,6 +556,10 @@ export async function updateTransaction(
 
     if (!current) {
       throw new Error("Transação não encontrada.");
+    }
+
+    if (current.transfer_id) {
+      throw new Error("Transferências entre contas não podem ser editadas individualmente. Exclua a transferência completa e registre-a novamente.");
     }
 
     if (current.goal_id || current.type === "transfer") {
@@ -433,13 +615,12 @@ export async function updateTransaction(
     );
 
     /*
-     * Só conta comum pode ficar negativa. No cartão o valor "negativo"
-     * representa dívida e é aceito normalmente. As duas checagens ficam
-     * antes de qualquer gravação, dentro da mesma transação do banco:
-     * ou tudo passa, ou nada é alterado.
+     * Na mesma conta, apenas o saldo final será gravado. Ao trocar de
+     * conta, o saldo restaurado também precisa ser válido. Nem saldo
+     * disponível nem dívida utilizada podem ficar negativos.
      */
     if (
-      isBalanceInvalid(restoredOldBalance, oldAccount.type) ||
+      (!isSameAccount && isBalanceInvalid(restoredOldBalance, oldAccount.type)) ||
       isBalanceInvalid(updatedBalance, newAccount.type)
     ) {
       throw new Error("Saldo insuficiente na conta.");

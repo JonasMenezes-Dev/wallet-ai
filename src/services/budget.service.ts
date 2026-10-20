@@ -1,5 +1,14 @@
 import { getDatabase } from "../database/database";
 
+function isValidMonth(value: string): boolean {
+  const parts = value.split("-");
+  if (parts.length !== 2 || parts[0].length !== 4 || parts[1].length !== 2) return false;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  return Number.isInteger(year) && year >= 1 && String(year) === parts[0] &&
+    month >= 1 && month <= 12 && String(month).padStart(2, "0") === parts[1];
+}
+
 export interface MonthlyBudget {
   id: number;
   categoryId: number;
@@ -12,6 +21,8 @@ export interface MonthlyBudget {
 }
 
 export async function listMonthlyBudgets(month: string): Promise<MonthlyBudget[]> {
+  if (!isValidMonth(month)) throw new Error("O mês selecionado é inválido.");
+
   const database = await getDatabase();
 
   const rows = await database.getAllAsync<{
@@ -41,7 +52,8 @@ export async function listMonthlyBudgets(month: string): Promise<MonthlyBudget[]
         SELECT category_id, SUM(amount) AS total
         FROM transactions
         WHERE type = 'expense'
-          AND strftime('%Y-%m', date) = $month
+          AND transfer_id IS NULL
+          AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = $month
         GROUP BY category_id
       ) AS spending
         ON spending.category_id = budgets.category_id
@@ -72,7 +84,7 @@ export async function saveMonthlyBudget(
     throw new Error("Selecione uma categoria válida.");
   }
 
-  if (!/^\d{4}-\d{2}$/.test(month)) {
+  if (!isValidMonth(month)) {
     throw new Error("O mês selecionado é inválido.");
   }
 

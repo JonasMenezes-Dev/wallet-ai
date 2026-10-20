@@ -143,7 +143,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income'
+              WHEN type = 'income' AND transfer_id IS NULL
               THEN amount
               ELSE 0
             END
@@ -154,7 +154,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense'
+              WHEN type = 'expense' AND transfer_id IS NULL
               THEN amount
               ELSE 0
             END
@@ -162,14 +162,14 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           0
         ) AS totalExpenses,
 
-        COUNT(*) AS transactionCount,
+        COUNT(DISTINCT COALESCE(transfer_id, 'transaction-' || id)) AS transactionCount,
 
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income'
-              AND strftime('%Y-%m', date)
-                = strftime('%Y-%m', 'now')
+              WHEN type = 'income' AND transfer_id IS NULL
+              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+                = strftime('%Y-%m', 'now', 'localtime')
               THEN amount
               ELSE 0
             END
@@ -180,9 +180,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense'
-              AND strftime('%Y-%m', date)
-                = strftime('%Y-%m', 'now')
+              WHEN type = 'expense' AND transfer_id IS NULL
+              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+                = strftime('%Y-%m', 'now', 'localtime')
               THEN amount
               ELSE 0
             END
@@ -190,20 +190,18 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           0
         ) AS monthExpenses,
 
-        COUNT(
-          CASE
-            WHEN strftime('%Y-%m', date)
-              = strftime('%Y-%m', 'now')
-            THEN 1
-          END
-        ) AS monthTransactionCount,
+        COUNT(DISTINCT CASE
+          WHEN (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+            = strftime('%Y-%m', 'now', 'localtime')
+          THEN COALESCE(transfer_id, 'transaction-' || id)
+        END) AS monthTransactionCount,
 
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income'
-              AND strftime('%Y-%m', date)
-                = strftime('%Y-%m', 'now', '-1 month')
+              WHEN type = 'income' AND transfer_id IS NULL
+              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+                = strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month')
               THEN amount
               ELSE 0
             END
@@ -214,9 +212,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense'
-              AND strftime('%Y-%m', date)
-                = strftime('%Y-%m', 'now', '-1 month')
+              WHEN type = 'expense' AND transfer_id IS NULL
+              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+                = strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month')
               THEN amount
               ELSE 0
             END
@@ -252,8 +250,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       LEFT JOIN categories
         ON categories.id = transactions.category_id
       WHERE transactions.type = 'expense'
-        AND strftime('%Y-%m', transactions.date)
-          = strftime('%Y-%m', 'now')
+        AND transactions.transfer_id IS NULL
+        AND (CASE WHEN length(transactions.date) = 10 THEN substr(transactions.date, 1, 7) ELSE strftime('%Y-%m', transactions.date, 'localtime') END)
+          = strftime('%Y-%m', 'now', 'localtime')
       GROUP BY transactions.category_id
       ORDER BY total DESC
     `,
@@ -274,12 +273,13 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         transactions.description AS description,
         goals.name AS goal_name,
         transactions.amount AS amount,
-        transactions.type AS type,
+        CASE WHEN transactions.transfer_id IS NOT NULL THEN 'transfer' ELSE transactions.type END AS type,
         transactions.source AS source,
         transactions.date AS date
       FROM transactions
       LEFT JOIN goals
         ON goals.id = transactions.goal_id
+      WHERE transactions.transfer_id IS NULL OR transactions.type = 'expense'
       ORDER BY transactions.date DESC, transactions.id DESC
       LIMIT $limit
     `,
@@ -456,6 +456,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       creditCardUsedTotal,
       creditCards,
       transactionCount: transactions?.transactionCount ?? 0,
+      previousMonthExpenses,
     }),
 
     currentMonthName: getCurrentMonthName(),
@@ -520,6 +521,7 @@ interface InsightInput {
   creditCardUsedTotal: number;
   creditCards: DashboardCreditCard[];
   transactionCount: number;
+  previousMonthExpenses: number;
 }
 
 /**
@@ -536,6 +538,7 @@ function buildInsights({
   creditCardUsedTotal,
   creditCards,
   transactionCount,
+  previousMonthExpenses,
 }: InsightInput): DashboardInsight[] {
   const insights: DashboardInsight[] = [];
 
@@ -563,7 +566,7 @@ function buildInsights({
           : `Você gastou ${variation}% mais`,
       description:
         expensesChangeRatio <= 0
-          ? `Comparado ao mês anterior, sobraram ${formatCurrency(monthExpenses * Math.abs(expensesChangeRatio))} no seu orçamento.`
+          ? `Comparado ao mês anterior, sobraram ${formatCurrency(previousMonthExpenses - monthExpenses)} no seu orçamento.`
           : `São ${formatCurrency(monthExpenses - monthExpenses / (1 + expensesChangeRatio))} a mais que no mês anterior.`,
       tone: expensesChangeRatio <= 0 ? "positive" : "warning",
     });

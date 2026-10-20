@@ -1,13 +1,18 @@
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useBottomTabBarHeight } from 'expo-router/js-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedListItem, FadeInView } from '../../src/components/AnimatedListItem';
 import { AnimatedPressable } from '../../src/components/AnimatedPressable';
@@ -17,6 +22,7 @@ import {
 } from '../../src/components/CreditCardSummary';
 
 import { useAccounts } from '../../src/hooks/use-accounts';
+import { payCreditCard } from '../../src/services/transaction.service';
 
 import {
   addAccount,
@@ -55,6 +61,8 @@ export default function AccountsScreen() {
   const { accounts, loading, error, reload } = useAccounts();
   const styles = useThemedStyles(createStyles);
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [showForm, setShowForm] = useState(false);
 
@@ -70,6 +78,12 @@ export default function AccountsScreen() {
    * A conversão para número acontece só no momento de salvar.
    */
   const [limitAmount, setLimitAmount] = useState('');
+  const [paymentCardId, setPaymentCardId] = useState<number | null>(null);
+  const [paymentSourceId, setPaymentSourceId] = useState<number | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paying, setPaying] = useState(false);
+  const paymentPending = useRef(false);
+  const paymentSources = accounts.filter(account => account.type !== 'credit_card' && account.id !== paymentCardId);
 
   const isEditing = editingId !== null;
   const isCreditCard = type === 'credit_card';
@@ -84,6 +98,8 @@ export default function AccountsScreen() {
   }
 
   function handleOpenCreate() {
+    if (paymentPending.current) return;
+    setPaymentCardId(null);
     if (showForm && !isEditing) {
       resetForm();
       return;
@@ -98,6 +114,8 @@ export default function AccountsScreen() {
   }
 
   function handleOpenEdit(account: Account) {
+    if (paymentPending.current) return;
+    setPaymentCardId(null);
     setName(account.name);
     setBalance(account.balance.toFixed(2).replace('.', ','));
     setType(account.type);
@@ -235,9 +253,54 @@ export default function AccountsScreen() {
     );
   }
 
+  function handleOpenPayment(card: Account) {
+    if (paymentPending.current) return;
+    setShowForm(false);
+    setPaymentCardId(card.id);
+    setPaymentSourceId(accounts.find(account => account.type !== 'credit_card' && account.id !== card.id)?.id ?? null);
+    setPaymentAmount(card.balance.toFixed(2).replace('.', ','));
+  }
+
+  async function handlePayment() {
+    if (paymentPending.current) return;
+    const card = accounts.find(account => account.id === paymentCardId && account.type === 'credit_card');
+    const source = paymentSources.find(account => account.id === paymentSourceId);
+    if (!card || !source) {
+      Alert.alert('Conta obrigatória', 'Selecione uma conta de origem diferente do cartão.');
+      return;
+    }
+    const amount = toNumber(paymentAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      Alert.alert('Valor inválido', 'Informe um valor maior que zero.');
+      return;
+    }
+    paymentPending.current = true;
+    setPaying(true);
+    try {
+      await payCreditCard({
+        amount, fromAccountId: source.id, toAccountId: card.id, description: null,
+      });
+      setPaymentCardId(null);
+      setPaymentAmount('');
+      try {
+        await reload();
+      } catch {
+        Alert.alert('Pagamento realizado', 'O pagamento foi registrado. Recarregue a tela para atualizar os saldos.');
+        return;
+      }
+      Alert.alert('Pagamento realizado', 'O saldo da conta e o valor devido do cartão foram atualizados.');
+    } catch (paymentError) {
+      Alert.alert('Não foi possível pagar', paymentError instanceof Error ? paymentError.message : 'Tente novamente.');
+    } finally {
+      paymentPending.current = false;
+      setPaying(false);
+    }
+  }
+
   if (loading) {
     return (
       <FadeInView style={styles.center}>
+        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel="Carregando contas" />
         <Text>Carregando contas...</Text>
       </FadeInView>
     );
@@ -246,13 +309,24 @@ export default function AccountsScreen() {
   if (error) {
     return (
       <FadeInView style={styles.center}>
-        <Text>{error}</Text>
+        <Text style={styles.errorText}>{error}</Text>
+        <AnimatedPressable style={styles.retryButton} onPress={reload}>
+          <Text style={styles.retryButtonText}>Tentar novamente</Text>
+        </AnimatedPressable>
       </FadeInView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={insets.top}
+    >
+      <FlatList
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        ListHeaderComponent={<>
       <ScreenHeader
         title="Contas"
         subtitle="Seu dinheiro organizado por conta."
@@ -262,6 +336,7 @@ export default function AccountsScreen() {
             style={styles.addButton}
             pressedOpacity={0.85}
             onPress={handleOpenCreate}
+            disabled={paying}
           >
             <Text style={styles.addButtonText}>
               {showForm ? 'Fechar' : '+ Conta'}
@@ -384,16 +459,17 @@ export default function AccountsScreen() {
         </FadeInView>
       )}
 
-      <FlatList
+        </>}
         data={accounts}
         keyExtractor={(item) =>
           item.id.toString()
         }
-        contentContainerStyle={
-          accounts.length === 0
+        contentContainerStyle={[
+          accounts.length === 0 && !showForm
             ? styles.emptyList
-            : styles.list
-        }
+            : styles.list,
+          { paddingBottom: Math.max(insets.bottom, tabBarHeight) + 18 },
+        ]}
         renderItem={({ item, index }) => {
           const isCard = item.type === 'credit_card';
 
@@ -426,10 +502,21 @@ export default function AccountsScreen() {
                   )}
 
                   <View style={styles.cardButtons}>
+                    {isCard && (
+                      <AnimatedPressable
+                        style={styles.editButton}
+                        pressedScale={0.93}
+                        disabled={paying || item.balance <= 0}
+                        onPress={() => handleOpenPayment(item)}
+                      >
+                        <Text style={styles.editButtonText}>Pagar cartão</Text>
+                      </AnimatedPressable>
+                    )}
                     <AnimatedPressable
                       style={styles.editButton}
                       pressedScale={0.93}
                       onPress={() => handleOpenEdit(item)}
+                      disabled={paying}
                     >
                       <Text style={styles.editButtonText}>
                         Editar
@@ -438,6 +525,7 @@ export default function AccountsScreen() {
 
                     <AnimatedPressable
                       style={styles.deleteButton}
+                      disabled={paying}
                       pressedScale={0.93}
                       onPress={() =>
                         handleDeleteAccount(item.id, item.name)
@@ -467,6 +555,52 @@ export default function AccountsScreen() {
                   limitAmount={item.limitAmount}
                 />
               )}
+              {isCard && paymentCardId === item.id && (
+                <View style={styles.form}>
+                  <Text style={styles.formTitle}>Pagar {item.name}</Text>
+                  <Text style={styles.helper}>Valor devido: {formatCurrency(item.balance)}</Text>
+                  <Text style={styles.label}>Conta de origem</Text>
+                  <View style={styles.typeList}>
+                    {paymentSources.map(source => (
+                      <AnimatedPressable
+                        key={source.id}
+                        style={[styles.typeOption, paymentSourceId === source.id && styles.typeOptionActive]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: paymentSourceId === source.id }}
+                        disabled={paying}
+                        onPress={() => setPaymentSourceId(source.id)}
+                      >
+                        <Text style={[styles.typeOptionText, paymentSourceId === source.id && styles.typeOptionTextActive]}>{source.name}</Text>
+                      </AnimatedPressable>
+                    ))}
+                  </View>
+                  {paymentSources.length === 0 && <Text style={styles.helper}>Cadastre uma conta sem cartão de crédito para pagar.</Text>}
+                  <Text style={styles.label}>Valor do pagamento</Text>
+                  <TextInput
+                    style={styles.input}
+                    accessibilityLabel="Valor do pagamento"
+                    keyboardType="decimal-pad"
+                    value={paymentAmount}
+                    onChangeText={setPaymentAmount}
+                    editable={!paying}
+                  />
+                  <AnimatedPressable
+                    style={styles.saveButton}
+                    disabled={paying || !paymentSources.some(source => source.id === paymentSourceId)}
+                    onPress={handlePayment}
+                  >
+                    {paying && <ActivityIndicator color={colors.onPrimary} size="small" />}
+                    <Text style={styles.saveButtonText}>{paying ? 'Processando...' : 'Confirmar pagamento'}</Text>
+                  </AnimatedPressable>
+                  <AnimatedPressable
+                    style={styles.editButton}
+                    disabled={paying}
+                    onPress={() => { if (!paymentPending.current) setPaymentCardId(null); }}
+                  >
+                    <Text style={styles.editButtonText}>Cancelar pagamento</Text>
+                  </AnimatedPressable>
+                </View>
+              )}
             </AnimatedListItem>
           );
         }}
@@ -476,7 +610,7 @@ export default function AccountsScreen() {
           </Text>
         }
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -489,6 +623,9 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.background,
   },
 
+  errorText: { fontSize: 14, textAlign: 'center', color: colors.expense, marginHorizontal: 24 },
+  retryButton: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary },
+  retryButtonText: { fontSize: 14, fontWeight: '700', color: colors.onPrimary },
   center: {
     flex: 1,
     alignItems: 'center',

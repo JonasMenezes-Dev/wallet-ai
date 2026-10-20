@@ -114,7 +114,8 @@ export async function saveRecurringItem(input: {
       UPDATE recurring_items
       SET title = $title, type = $type, amount = $amount,
           category_id = $categoryId, next_due_date = $nextDueDate,
-          due_day = $dueDay, updated_at = $now
+          due_day = CASE WHEN next_due_date = $nextDueDate THEN due_day ELSE $dueDay END,
+          updated_at = $now
       WHERE id = $id AND is_active = 1
     `, {
       $title: title, $type: input.type, $amount: input.amount,
@@ -174,6 +175,10 @@ export async function advanceRecurringItem(id: number): Promise<void> {
 }
 
 export async function getCashflowForecast(horizonDays = 30): Promise<CashflowForecast> {
+  if (!Number.isSafeInteger(horizonDays) || horizonDays < 0 || horizonDays > 3650) {
+    throw new Error("Informe um horizonte entre 0 e 3650 dias.");
+  }
+
   const database = await getDatabase();
   const balances = await database.getFirstAsync<{ current_balance: number | null }>(`
     SELECT COALESCE(SUM(

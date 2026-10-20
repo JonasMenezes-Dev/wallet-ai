@@ -118,7 +118,8 @@ export function filterTransactions(
 
     if (
       filters.accountId !== null &&
-      transaction.accountId !== filters.accountId
+      transaction.accountId !== filters.accountId &&
+      transaction.counterpartyAccountId !== filters.accountId
     ) {
       return false;
     }
@@ -219,6 +220,7 @@ function matchesSearch(
       transaction.merchant ?? "",
       transaction.categoryName ?? "",
       transaction.accountName ?? "",
+      transaction.counterpartyAccountName ?? "",
       transaction.goalName ?? "",
       transaction.institution ?? "",
     ].join(" "),

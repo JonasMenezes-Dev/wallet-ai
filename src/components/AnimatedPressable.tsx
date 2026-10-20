@@ -7,13 +7,14 @@ import {
 
 import Animated, {
     interpolate,
+    useReducedMotion,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
     withTiming,
 } from "react-native-reanimated";
 
-import { durations, spring } from "../animations";
+import { easings, spring } from "../animations";
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
@@ -25,9 +26,9 @@ type AnimatedPressableProps = PressableProps & {
 };
 
 /**
- * Pressable com feedback suave de toque (escala + opacidade com spring).
- * Usado em todos os botões, chips, filtros e cards clicáveis do app para
- * manter a mesma sensação de resposta ao toque.
+ * Pressable com feedback de "pop": compressão curta no toque e retorno
+ * elástico ao soltar. Sem variar opacidade, evitando piscadas visuais.
+ * Usado em botões, chips, filtros e cards clicáveis do app.
  */
 export function AnimatedPressable({
   children,
@@ -39,6 +40,11 @@ export function AnimatedPressable({
   ...props
 }: AnimatedPressableProps) {
   const progress = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
+
+  // Mantém compatibilidade com chamadas antigas, mas o feedback agora é só
+  // movimento: variar opacidade causava a piscada que queremos evitar.
+  void pressedOpacity;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -46,20 +52,32 @@ export function AnimatedPressable({
         scale: interpolate(progress.value, [0, 1], [1, pressedScale]),
       },
     ],
-    opacity: interpolate(progress.value, [0, 1], [1, pressedOpacity]),
   }));
 
   // Handlers criados fora do JSX para que o React Compiler não trate a
   // escrita em `progress.value` como mutação de uma variável imutável.
   const pressIn = useCallback((event: GestureResponderEvent) => {
-    progress.set(withSpring(1, spring.press));
+    progress.set(
+      reduceMotion
+        ? 1
+        : withTiming(1, {
+            duration: 80,
+            easing: easings.out,
+          }),
+    );
     onPressIn?.(event);
-  }, [progress, onPressIn]);
+  }, [progress, onPressIn, reduceMotion]);
 
   const pressOut = useCallback((event: GestureResponderEvent) => {
-    progress.set(withTiming(0, { duration: durations.fast }));
+    progress.set(
+      reduceMotion
+        ? 0
+        : withSpring(0, {
+            ...spring.press,
+          }),
+    );
     onPressOut?.(event);
-  }, [progress, onPressOut]);
+  }, [progress, onPressOut, reduceMotion]);
 
   return (
     <AnimatedPressableBase

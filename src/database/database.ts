@@ -27,8 +27,29 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   }
 }
 
+/** Keep unrelated async writes out of a transfer's commit/rollback. */
+export async function withTransferTransaction(
+  task: (database: SQLite.SQLiteDatabase) => Promise<void>,
+): Promise<void> {
+  await getDatabase();
+  const database = await SQLite.openDatabaseAsync(DATABASE_NAME, {
+    useNewConnection: true,
+  });
+  try {
+    // Connection-local; must be enabled before BEGIN, including on web.
+    await database.execAsync("PRAGMA foreign_keys = ON;");
+    await database.withTransactionAsync(() => task(database));
+  } finally {
+    await database.closeAsync();
+  }
+}
+
 async function initializeDatabase() {
   const database = await SQLite.openDatabaseAsync(DATABASE_NAME);
+
+  // SQLite não aplica chaves estrangeiras por padrão em cada conexão.
+  // Ative antes de criar tabelas, migrar ou executar qualquer operação.
+  await database.execAsync("PRAGMA foreign_keys = ON;");
 
   await database.execAsync(`
     PRAGMA journal_mode = WAL;

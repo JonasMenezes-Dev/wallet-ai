@@ -1,7 +1,7 @@
 {
   "name": "wallet-ai",
   "main": "expo-router/entry",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "dependencies": {
     "@expo/ui": "~57.0.25",
     "@react-native-community/datetimepicker": "9.1.0",
@@ -38,10 +38,11 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"

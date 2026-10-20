@@ -1,13 +1,14 @@
 import { ReactNode } from "react";
 
 import Animated, {
+  useReducedMotion,
   FadeIn,
   FadeInDown,
   FadeOut,
   LinearTransition,
 } from "react-native-reanimated";
 
-import { durations, staggerDelay } from "../animations";
+import { durations, easings, staggerDelay } from "../animations";
 
 type AnimatedListItemProps = {
   children: ReactNode;
@@ -24,16 +25,17 @@ type AnimatedListItemProps = {
 export function AnimatedListItem({
   children,
   index = 0,
-  delayStep = 45,
+  delayStep = 30,
   style,
 }: AnimatedListItemProps) {
+  const reduceMotion = useReducedMotion();
   return (
     <Animated.View
-      layout={LinearTransition.duration(durations.base).build()}
-      entering={FadeInDown.delay(staggerDelay(index, delayStep)).duration(
-        durations.smooth,
-      )}
-      exiting={FadeOut.duration(durations.fast)}
+      layout={reduceMotion ? undefined : LinearTransition.duration(durations.base).easing(easings.inOut).build()}
+      entering={reduceMotion ? undefined : FadeInDown.delay(staggerDelay(index, delayStep))
+        .duration(durations.smooth)
+        .easing(easings.out)}
+      exiting={reduceMotion ? undefined : FadeOut.duration(durations.fast).easing(easings.in)}
       style={style}
     >
       {children}
@@ -51,9 +53,11 @@ export function AnimatedBlock({
   delay?: number;
   style?: React.ComponentProps<typeof Animated.View>["style"];
 }) {
+  const reduceMotion = useReducedMotion();
   return (
     <Animated.View
-      entering={FadeInDown.delay(delay).duration(durations.smooth)}
+      entering={reduceMotion ? undefined : FadeInDown.delay(delay).duration(durations.smooth).easing(easings.out)}
+      exiting={reduceMotion ? undefined : FadeOut.duration(durations.fast).easing(easings.in)}
       style={style}
     >
       {children}
@@ -71,10 +75,11 @@ export function FadeInView({
   delay?: number;
   style?: React.ComponentProps<typeof Animated.View>["style"];
 }) {
+  const reduceMotion = useReducedMotion();
   return (
     <Animated.View
-      entering={FadeIn.delay(delay).duration(durations.base)}
-      exiting={FadeOut.duration(durations.fast)}
+      entering={reduceMotion ? undefined : FadeIn.delay(delay).duration(durations.base).easing(easings.out)}
+      exiting={reduceMotion ? undefined : FadeOut.duration(durations.fast).easing(easings.in)}
       style={style}
     >
       {children}

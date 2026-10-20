@@ -2,14 +2,19 @@
   "expo": {
     "name": "Wallet AI",
     "slug": "wallet-ai",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "scheme": "walletai",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.walletai.app",
-      "versionCode": 2,
-      "predictiveBackGestureEnabled": false
+      "versionCode": 3,
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["POST_NOTIFICATIONS"],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/wallet-icon.png",
+        "backgroundColor": "#0B0F14"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.walletai.app"
@@ -22,7 +27,18 @@
       "expo-sqlite",
       "expo-updates",
       "@react-native-community/datetimepicker",
-      "expo-splash-screen"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/Captura de tela 2026-10-20 103242.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B0F14",
+          "dark": {
+            "backgroundColor": "#0B0F14"
+          }
+        }
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/65d50a05-d803-4da3-af32-4cdb34f1df9c",
@@ -43,6 +59,7 @@
         "projectId": "65d50a05-d803-4da3-af32-4cdb34f1df9c"
       }
     },
-    "owner": "jonas_menezes"
+    "owner": "jonas_menezes",
+    "icon": "./assets/wallet-icon.png"
   }
 }

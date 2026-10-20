@@ -87,12 +87,14 @@ export async function addGoalContribution(
       id: number;
       balance: number;
       name: string;
+      type: string;
     }>(
       `
         SELECT
           id,
           balance,
-          name
+          name,
+          type
         FROM accounts
         WHERE id = $accountId
       `,
@@ -101,6 +103,10 @@ export async function addGoalContribution(
 
     if (!account) {
       throw new Error('Conta não encontrada.');
+    }
+
+    if (account.type === 'credit_card') {
+      throw new Error('Não é possível usar cartão de crédito para aportar em uma meta.');
     }
 
     if (amount <= 0) {
