@@ -57,7 +57,7 @@ export default function NotificationImportScreen() {
       return;
     }
     const categoryId = categoryByKey[item.key] ?? categoryByKey.default ?? categories[0]?.id ?? null;
-    const institution = item.title.slice(0, 120) || item.packageName;
+    const institution = item.packageName;
     try {
       setSavingKey(item.key);
       await addTransaction({
