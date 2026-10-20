@@ -15,11 +15,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        animation: "fade",
-        transitionSpec: {
-          animation: "timing",
-          config: { duration: 180 },
-        },
+        // Desliza o conteúdo entre abas sem apagar a tela com um fade branco.
+        animation: "shift",
+        animationDuration: 240,
+        sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSubtle,
         tabBarShowLabel: true,
