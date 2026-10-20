@@ -257,9 +257,12 @@ export default function TransactionsScreen() {
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text>{error}</Text>
-      </View>
+      <FadeInView style={styles.center}>
+        <Text style={styles.errorText}>{error}</Text>
+        <AnimatedPressable style={styles.retryButton} onPress={reload}>
+          <Text style={styles.retryButtonText}>Tentar novamente</Text>
+        </AnimatedPressable>
+      </FadeInView>
     );
   }
 
@@ -840,6 +843,9 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.background,
   },
 
+  errorText: { fontSize: 14, textAlign: "center", color: colors.expense, marginHorizontal: 24 },
+  retryButton: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary },
+  retryButtonText: { fontSize: 14, fontWeight: "700", color: colors.onPrimary },
   center: {
     flex: 1,
     alignItems: "center",
