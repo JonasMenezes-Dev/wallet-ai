@@ -174,6 +174,10 @@ export async function advanceRecurringItem(id: number): Promise<void> {
 }
 
 export async function getCashflowForecast(horizonDays = 30): Promise<CashflowForecast> {
+  if (!Number.isSafeInteger(horizonDays) || horizonDays < 0) {
+    throw new Error("O período da previsão deve ser um número inteiro não negativo.");
+  }
+
   const database = await getDatabase();
   const balances = await database.getFirstAsync<{ current_balance: number | null }>(`
     SELECT COALESCE(SUM(
