@@ -70,7 +70,7 @@ export default function NewTransactionScreen() {
 
         if (accountsData.length > 0) {
           setSelectedAccountId(accountsData[0].id);
-          setSelectedDestinationAccountId(accountsData[1]?.id ?? null);
+          setSelectedDestinationAccountId(accountsData.find((account) => account.id !== accountsData[0].id && account.type !== 'credit_card')?.id ?? null);
         }
       } catch (error) {
         console.error('Erro ao carregar dados da transação:', error);
@@ -308,7 +308,7 @@ export default function NewTransactionScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.options}
         >
-          {accounts.map((account) => {
+          {accounts.filter((account) => type !== 'transfer' || account.type !== 'credit_card').map((account) => {
             const isCard = account.type === 'credit_card';
 
             return (
