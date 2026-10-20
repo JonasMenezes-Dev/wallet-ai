@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, PermissionsAndroid, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { AnimatedPressable } from "../src/components/AnimatedPressable";
 import { ScreenHeader } from "../src/components/ScreenHeader";
@@ -7,7 +7,7 @@ import { listAccounts } from "../src/services/account.service";
 import { listCategories } from "../src/services/category.service";
 import { addTransaction } from "../src/services/transaction.service";
 import {
-  dismissCapturedNotification, hasNotificationAccess, isNotificationListenerAvailable,
+  dismissCapturedNotification, hasNotificationAccess, isNotificationListenerAvailable, notifyRecordedExpense,
   listCapturedNotifications, openNotificationAccessSettings, parseFinancialNotification,
   type CapturedFinancialNotification,
 } from "../src/services/notification-import.service";
@@ -80,6 +80,26 @@ export default function NotificationImportScreen() {
         provider: "android_notification_listener",
         institution,
       });
+      if (parsed.type === "expense" && isNotificationListenerAvailable()) {
+        let notificationsAllowed = true;
+        if (Platform.OS === "android" && Number(Platform.Version) >= 33) {
+          try {
+            const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+            notificationsAllowed = result === PermissionsAndroid.RESULTS.GRANTED;
+          } catch (permissionError) {
+            notificationsAllowed = false;
+            console.warn("Permissão de notificações não concedida:", permissionError);
+          }
+        }
+        if (notificationsAllowed) {
+          const categoryName = categories.find((category) => category.id === categoryId)?.name ?? "Sem categoria";
+          try {
+            notifyRecordedExpense(parsed.amount, categoryName);
+          } catch (notificationError) {
+            console.warn("Não foi possível mostrar a confirmação do gasto:", notificationError);
+          }
+        }
+      }
       dismissCapturedNotification(item.key);
       await reload();
       Alert.alert("Movimentação importada", "Confira os dados na tela Transações.");
