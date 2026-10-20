@@ -33,7 +33,7 @@ export const dismissCapturedNotification = (key: string) => bridge?.removeCaptur
 
 export function parseFinancialNotification(item: CapturedFinancialNotification) {
   const text = `${item.title} ${item.text}`;
-  const matches = text.match(/R\$\s*[0-9][0-9.,]*/gi) ?? [];
+  const matches = text.match(/R\$\s*[0-9]+(?:[.,][0-9]{1,3})*/gi) ?? [];
 
   // A notificação pode exibir o valor da compra e também o saldo restante.
   // Sem contexto bancário específico, escolher o último valor é perigoso:
@@ -51,7 +51,7 @@ export function parseFinancialNotification(item: CapturedFinancialNotification) 
     amount,
     isRejected,
     type: type as "income" | "expense",
-    description: (item.text.replace(/R\$\s*[0-9][0-9.,]*/gi, "").trim() || item.title || "Movimentação bancária").slice(0, 120),
+    description: (item.text.replace(/R\$\s*[0-9]+(?:[.,][0-9]{1,3})*/gi, "").trim() || item.title || "Movimentação bancária").slice(0, 120),
     confidence: amount === null ? "low" as const : "high" as const,
   };
 }
