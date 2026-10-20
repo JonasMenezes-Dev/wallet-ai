@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useEffect, useState } from "react";
 
 import { router } from "expo-router";
@@ -67,6 +67,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <FadeInView style={styles.center}>
+        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel="Carregando resumo financeiro" />
         <Text style={styles.loadingText}>Carregando seu resumo...</Text>
       </FadeInView>
     );
