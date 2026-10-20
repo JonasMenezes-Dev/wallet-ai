@@ -1,8 +1,8 @@
-# Wallet.ai
+# Wallet.ai — Android Beta 1.0.2
 
 Aplicativo de controle financeiro pessoal para Android, desenvolvido com **Expo, React Native e SQLite**. O objetivo é reunir contas, movimentações, metas e acompanhamento mensal em uma experiência simples, com dados armazenados localmente no dispositivo.
 
-> **Status: beta privado / em validação.** O app ainda está sendo testado. Não use como única fonte de informação financeira e confira os lançamentos com o aplicativo ou extrato oficial do banco.
+> **Status: beta Android 1.0.2 (versionCode 3), APK preview gerado via EAS; validação no aparelho real ainda pendente.** O app ainda está sendo testado. Não use como única fonte de informação financeira e confira os lançamentos com o aplicativo ou extrato oficial do banco.
 
 ## O que já existe
 
@@ -17,6 +17,12 @@ Aplicativo de controle financeiro pessoal para Android, desenvolvido com **Expo,
 - **Importação de notificações bancárias:** captura local de notificações compatíveis do Android, com revisão dos dados antes de criar uma movimentação.
 - **Tema:** suporte a aparência clara/escura conforme a configuração disponível no app/dispositivo.
 
+## Evolução da confirmação de notificações (build beta 1.0.2)
+
+No APK beta gerado em 20/10/2026, a Central de revisão permite conferir uma notificação capturada e **confirmar explicitamente** uma receita, despesa ou transferência, revisando conta, categoria, valor, data e hora antes de gravar. A data/hora são sugeridas a partir da notificação no fuso local, e permanecem editáveis. Notificações sem horário válido exigem preenchimento manual. A implementação inclui mecanismos de prevenção de duplicidade e de recuperação de confirmações interrompidas.
+
+**Atenção à sincronização do código:** estas últimas alterações foram validadas no projeto local usado para gerar o APK (229 testes automatizados informados, TypeScript e ESLint aprovados), mas **ainda não estão integralmente publicadas nesta branch remota**. Não considere o código no GitHub equivalente ao APK até incorporar os commits locais finais. O APK também ainda não foi validado no aparelho real sem Metro.
+
 ## Importante antes de testar
 
 - **Armazenamento local:** os dados ficam no próprio dispositivo. Não há sincronização entre celulares; duas instalações não compartilham os mesmos lançamentos.
@@ -27,6 +33,14 @@ Aplicativo de controle financeiro pessoal para Android, desenvolvido com **Expo,
 - **Cartões:** recursos completos de fatura, fechamento e vencimento de cartão ainda não estão disponíveis.
 - **Alertas:** os alertas internos do app não significam que notificações do sistema em segundo plano estejam garantidas.
 - **Atualizações:** publicar código no GitHub não atualiza automaticamente um APK instalado. A distribuição e eventuais atualizações EAS precisam ser configuradas e validadas separadamente.
+
+## APK beta 1.0.2
+
+- Distribuição: EAS Build, perfil `preview`, Android APK assinado (116,9 MB reportados).
+- Application ID: `com.walletai.app`.
+- Build de 20/10/2026: [APK beta 1.0.2 no Expo](https://expo.dev/artifacts/eas/K32-f8dcnNa5WnEjLNUp4-w2Qcvd7mXEyJoTgtoVEH4.apk).
+- Não há sincronização automática entre aparelhos nem backup/restauração validado.
+- A existência do APK não substitui testes em Android real (notificações, permissões, persistência, saldos e atualização sem perder dados).
 
 ## Gerar o APK de teste
 
