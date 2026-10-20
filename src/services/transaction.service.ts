@@ -1,4 +1,5 @@
 import {
+  createAccountTransfer,
   createTransaction,
   deleteTransaction,
   getAllTransactions,
@@ -17,6 +18,29 @@ export async function addTransaction(
   validateTransaction(transaction.amount, transaction.type, transaction.accountId);
   validateTransactionPurpose(transaction.type, transaction.goalId);
   return createTransaction(transaction);
+}
+
+export async function transferBetweenAccounts(input: {
+  amount: number;
+  fromAccountId: number;
+  toAccountId: number;
+  description: string | null;
+  date?: string;
+}): Promise<string> {
+  if (!Number.isInteger(input.fromAccountId) || input.fromAccountId <= 0 ||
+      !Number.isInteger(input.toAccountId) || input.toAccountId <= 0) {
+    throw new Error("Selecione as contas de origem e destino.");
+  }
+  if (input.fromAccountId === input.toAccountId) {
+    throw new Error("A origem e o destino precisam ser contas diferentes.");
+  }
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new Error("Informe um valor maior que zero.");
+  }
+  return createAccountTransfer({
+    ...input,
+    date: input.date ?? new Date().toISOString(),
+  });
 }
 
 export async function removeTransaction(id: number): Promise<void> {
