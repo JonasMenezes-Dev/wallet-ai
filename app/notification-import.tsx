@@ -47,6 +47,10 @@ export default function NotificationImportScreen() {
 
   async function importItem(item: CapturedFinancialNotification) {
     const parsed = parseFinancialNotification(item);
+    if (parsed.isRejected) {
+      Alert.alert("Movimentação não confirmada", "A notificação indica uma tentativa recusada ou não concluída. Ela não será importada como transação.");
+      return;
+    }
     if (!parsed.amount) {
       Alert.alert("Valor não identificado", "A notificação não contém um valor único e seguro. Ela pode mostrar o valor da compra e também o saldo; registre manualmente para evitar um saldo incorreto.");
       return;
