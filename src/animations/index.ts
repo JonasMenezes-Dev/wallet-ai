@@ -6,18 +6,18 @@ import { Easing } from "react-native-reanimated";
  * interações (botões, cards, troca de página, listas) tenham o mesmo "feel".
  */
 export const durations = {
-  instant: 120,
-  fast: 180,
-  base: 240,
-  smooth: 320,
-  slow: 420,
+  instant: 90,
+  fast: 150,
+  base: 210,
+  smooth: 280,
+  slow: 380,
 } as const;
 
 export const spring = {
   /** Toque em botões/chips — resposta rápida e firme. */
-  press: { damping: 18, stiffness: 300, mass: 0.6 },
+  press: { damping: 20, stiffness: 320, mass: 0.55 },
   /** Movimentos maiores (cards, progresso). */
-  gentle: { damping: 16, stiffness: 180, mass: 0.8 },
+  gentle: { damping: 18, stiffness: 200, mass: 0.75 },
 } as const;
 
 export const easings = {
@@ -26,7 +26,7 @@ export const easings = {
   /** Para saídas. */
   in: Easing.in(Easing.cubic),
   /** In-out para movimentos contínuos. */
-  inOut: Easing.inOut(Easing.quad),
+  inOut: Easing.inOut(Easing.cubic),
 } as const;
 
 /** Como cada tela entra ao ser empilhada. */
