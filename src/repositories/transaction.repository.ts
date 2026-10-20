@@ -86,6 +86,15 @@ export async function createTransaction(
   let transactionId = 0;
 
   await database.withTransactionAsync(async () => {
+    if (transaction.externalId && transaction.provider && transaction.institution) {
+      const duplicate = await database.getFirstAsync<{ id: number }>(
+        `SELECT id FROM transactions
+         WHERE external_id = $externalId AND provider = $provider AND institution = $institution`,
+        { $externalId: transaction.externalId, $provider: transaction.provider, $institution: transaction.institution },
+      );
+      if (duplicate) throw new Error("Esta notificação já foi registrada.");
+    }
+
     const account = await database.getFirstAsync<{
       id: number;
       balance: number;
@@ -116,6 +125,9 @@ export async function createTransaction(
           payment_method,
           is_automatic,
           source,
+          external_id,
+          provider,
+          institution,
           created_at,
           updated_at
         )
@@ -130,6 +142,9 @@ export async function createTransaction(
           $paymentMethod,
           $isAutomatic,
           $source,
+          $externalId,
+          $provider,
+          $institution,
           $createdAt,
           $updatedAt
         )
@@ -145,6 +160,9 @@ export async function createTransaction(
         $paymentMethod: transaction.paymentMethod,
         $isAutomatic: transaction.isAutomatic ? 1 : 0,
         $source: transaction.source,
+        $externalId: transaction.externalId,
+        $provider: transaction.provider,
+        $institution: transaction.institution,
         $createdAt: now,
         $updatedAt: now,
       },
