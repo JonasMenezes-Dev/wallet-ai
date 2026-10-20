@@ -32,7 +32,7 @@ type AnimatedPressableProps = PressableProps & {
 export function AnimatedPressable({
   children,
   style,
-  pressedScale = 0.94,
+  pressedScale = 0.97,
   pressedOpacity = 1,
   onPressIn,
   onPressOut,
@@ -57,7 +57,7 @@ export function AnimatedPressable({
   const pressIn = useCallback((event: GestureResponderEvent) => {
     progress.set(
       withTiming(1, {
-        duration: 65,
+        duration: 80,
         easing: easings.out,
       }),
     );
@@ -68,9 +68,6 @@ export function AnimatedPressable({
     progress.set(
       withSpring(0, {
         ...spring.press,
-        damping: 13,
-        stiffness: 420,
-        mass: 0.45,
       }),
     );
     onPressOut?.(event);
