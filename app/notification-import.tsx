@@ -18,7 +18,6 @@ import { useThemeColors, useThemedStyles, spacing, radii } from "../src/theme";
 const currency = (value: number) => `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function NotificationImportScreen() {
-  const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
   const [available, setAvailable] = useState(isNotificationListenerAvailable());
   const [permission, setPermission] = useState(false);
