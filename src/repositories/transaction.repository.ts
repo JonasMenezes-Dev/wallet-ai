@@ -211,6 +211,83 @@ export async function createTransaction(
   return transactionId;
 }
 
+export async function createAccountTransfer(input: {
+  amount: number;
+  fromAccountId: number;
+  toAccountId: number;
+  description: string | null;
+  date: string;
+}): Promise<string> {
+  const database = await getDatabase();
+  const now = new Date().toISOString();
+  const transferId = `transfer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  if (input.fromAccountId === input.toAccountId) {
+    throw new Error("Escolha duas contas diferentes para a transferência.");
+  }
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new Error("O valor da transferência deve ser maior que zero.");
+  }
+
+  await database.withTransactionAsync(async () => {
+    const from = await database.getFirstAsync<{ id: number; balance: number; type: Account["type"] }>(
+      "SELECT id, balance, type FROM accounts WHERE id = $id",
+      { $id: input.fromAccountId },
+    );
+    const to = await database.getFirstAsync<{ id: number; balance: number; type: Account["type"] }>(
+      "SELECT id, balance, type FROM accounts WHERE id = $id",
+      { $id: input.toAccountId },
+    );
+
+    if (!from || !to) throw new Error("Uma das contas selecionadas não existe.");
+    if (from.type === "credit_card" || to.type === "credit_card") {
+      throw new Error("Transferências entre contas não podem envolver cartão de crédito. Registre o pagamento da fatura separadamente.");
+    }
+    const sourceBalance = from.balance - input.amount;
+    const destinationBalance = to.balance + input.amount;
+    if (!Number.isFinite(sourceBalance) || sourceBalance < 0 || !Number.isFinite(destinationBalance)) {
+      throw new Error("Saldo insuficiente na conta de origem ou valor inválido.");
+    }
+
+    for (const entry of [
+      { accountId: from.id, type: "expense", description: input.description?.trim() || "Transferência enviada" },
+      { accountId: to.id, type: "income", description: input.description?.trim() || "Transferência recebida" },
+    ] as const) {
+      await database.runAsync(
+        `INSERT INTO transactions (
+          amount, type, description, merchant, date, category_id, account_id,
+          payment_method, is_automatic, source, external_id, provider, institution,
+          created_at, updated_at, transfer_id
+        ) VALUES (
+          $amount, $type, $description, NULL, $date, NULL, $accountId,
+          NULL, 0, 'manual', NULL, NULL, NULL, $createdAt, $updatedAt, $transferId
+        )`,
+        {
+          $amount: input.amount,
+          $type: entry.type,
+          $description: entry.description,
+          $date: input.date,
+          $accountId: entry.accountId,
+          $createdAt: now,
+          $updatedAt: now,
+          $transferId: transferId,
+        },
+      );
+    }
+
+    await database.runAsync(
+      "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
+      { $balance: sourceBalance, $now: now, $id: from.id },
+    );
+    await database.runAsync(
+      "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
+      { $balance: destinationBalance, $now: now, $id: to.id },
+    );
+  });
+
+  return transferId;
+}
+
 export async function deleteTransaction(id: number): Promise<void> {
   const database = await getDatabase();
 
