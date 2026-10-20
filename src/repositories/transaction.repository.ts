@@ -51,7 +51,7 @@ export async function getAllTransactions(): Promise<
     ORDER BY transactions.date DESC, transactions.id DESC
   `);
 
-  return rows.map((row) => ({
+  const mapped = rows.map((row) => ({
     id: row.id,
     amount: row.amount,
     type: row.transfer_id ? "transfer" : row.type,
@@ -79,6 +79,14 @@ export async function getAllTransactions(): Promise<
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));
+
+  const seenTransfers = new Set<string>();
+  return mapped.filter((transaction) => {
+    if (!transaction.transferId) return true;
+    if (seenTransfers.has(transaction.transferId)) return false;
+    seenTransfers.add(transaction.transferId);
+    return true;
+  });
 }
 
 export async function createTransaction(
