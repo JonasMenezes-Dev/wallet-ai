@@ -174,8 +174,8 @@ export async function advanceRecurringItem(id: number): Promise<void> {
 }
 
 export async function getCashflowForecast(horizonDays = 30): Promise<CashflowForecast> {
-  if (!Number.isSafeInteger(horizonDays) || horizonDays < 0) {
-    throw new Error("O período da previsão deve ser um número inteiro não negativo.");
+  if (!Number.isSafeInteger(horizonDays) || horizonDays < 0 || horizonDays > 3650) {
+    throw new Error("Informe um horizonte entre 0 e 3650 dias.");
   }
 
   const database = await getDatabase();
