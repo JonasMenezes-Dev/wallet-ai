@@ -127,7 +127,10 @@ export default function NotificationImportScreen() {
       Alert.alert("Movimentação importada", "Confira os dados na tela Transações.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Não foi possível importar.";
-      if (message.toLowerCase().includes("já foi registrada")) {
+      const normalizedError = message.toLowerCase();
+      const isDuplicate = normalizedError.includes("já foi registrada") ||
+        normalizedError.includes("unique constraint failed: transactions.external_id");
+      if (isDuplicate) {
         // A chave externa já existe no banco: limpar a fila evita novas tentativas
         // e não altera o saldo nem cria um segundo lançamento.
         dismissCapturedNotification(item.key);
