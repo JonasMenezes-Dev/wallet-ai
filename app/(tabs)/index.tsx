@@ -301,9 +301,12 @@ export default function HomeScreen() {
 
           {summary.expensesByCategory.length === 0 ? (
             <View style={styles.emptyCard}>
+              <View style={styles.emptyIcon}>
+                <WalletSymbol name="budget" color={colors.primary} size={22} />
+              </View>
+              <Text style={styles.emptyTitle}>Seus gastos vão aparecer aqui</Text>
               <Text style={styles.emptyText}>
-                Nenhum gasto registrado neste mês ainda. Registre uma despesa
-                para ver a divisão por categoria.
+                Registre uma despesa para acompanhar como seu dinheiro está sendo usado.
               </Text>
             </View>
           ) : (
@@ -363,8 +366,9 @@ export default function HomeScreen() {
                   ]}
                 >
                   <View style={styles.insightHeader}>
-                    
-
+                    <View style={styles.insightIconWrap}>
+                      <Text style={styles.insightIcon}>{insight.icon}</Text>
+                    </View>
                     <Text style={styles.insightTitle}>{insight.title}</Text>
                   </View>
 
@@ -422,17 +426,19 @@ export default function HomeScreen() {
 
         {summary.accounts.length === 0 ? (
           <FadeInView style={styles.emptyCard}>
+            <View style={styles.emptyIcon}>
+              <WalletSymbol name="accounts" color={colors.primary} size={22} />
+            </View>
             <Text style={styles.emptyTitle}>Nenhuma conta cadastrada</Text>
-
             <Text style={styles.emptyText}>
               Cadastre uma conta para começar a acompanhar seu saldo.
             </Text>
-
             <AnimatedPressable
               style={styles.inlineButton}
               onPress={() => router.push("/(tabs)/accounts")}
             >
-              <Text style={styles.inlineButtonText}>+ Adicionar conta</Text>
+              <WalletSymbol name="plus" color={colors.primary} size={18} />
+              <Text style={styles.inlineButtonText}>Adicionar conta</Text>
             </AnimatedPressable>
           </FadeInView>
         ) : (
@@ -494,20 +500,19 @@ export default function HomeScreen() {
 
         {summary.recentTransactions.length === 0 ? (
           <FadeInView style={styles.emptyCard}>
+            <View style={styles.emptyIcon}>
+              <WalletSymbol name="transactions" color={colors.primary} size={22} />
+            </View>
             <Text style={styles.emptyTitle}>Sem transações</Text>
-
             <Text style={styles.emptyText}>
-              Você ainda não possui nenhuma transação. Registre a primeira para
-              começar a ver seus números aqui.
+              Você ainda não possui nenhuma transação. Registre a primeira para começar a ver seus números aqui.
             </Text>
-
             <AnimatedPressable
               style={styles.inlineButton}
               onPress={() => router.push("/transaction/new")}
             >
-              <Text style={styles.inlineButtonText}>
-                + Adicionar transação
-              </Text>
+              <WalletSymbol name="plus" color={colors.primary} size={18} />
+              <Text style={styles.inlineButtonText}>Adicionar transação</Text>
             </AnimatedPressable>
           </FadeInView>
         ) : (
@@ -576,8 +581,9 @@ export default function HomeScreen() {
             pressedOpacity={0.85}
             onPress={() => router.push("/transaction/new")}
           >
+            <WalletSymbol name="plus" color={colors.onPrimary} size={20} />
             <Text style={styles.newTransactionButtonText}>
-              + Nova transação
+              Nova transação
             </Text>
           </AnimatedPressable>
         </AnimatedBlock>
@@ -669,6 +675,7 @@ const createStyles = (colors: ThemeColors) =>
     accountBalance: { maxWidth: "42%", fontSize: 13, fontWeight: "800", color: colors.text },
 
     emptyCard: { marginTop: 12, padding: spacing.xl, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "flex-start" },
+    emptyIcon: { width: 44, height: 44, borderRadius: 15, backgroundColor: colors.accentSurface, alignItems: "center", justifyContent: "center", marginBottom: spacing.md },
     emptyTitle: { fontSize: 15, fontWeight: "800", color: colors.text },
     emptyText: { marginTop: spacing.xs, fontSize: 13, lineHeight: 20, color: colors.textMuted },
     inlineButton: { marginTop: spacing.md, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.accentSurface },
@@ -689,6 +696,7 @@ const createStyles = (colors: ThemeColors) =>
     insightPositive: { backgroundColor: colors.incomeSurface, borderColor: colors.incomeSurface },
     insightWarning: { backgroundColor: colors.warningSurface, borderColor: colors.warningSurface },
     insightHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    insightIconWrap: { width: 34, height: 34, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
     insightIcon: { fontSize: 17 },
     insightTitle: { flex: 1, fontSize: 13, fontWeight: "800", color: colors.text },
     insightText: { marginTop: spacing.sm, fontSize: 12, lineHeight: 18, color: colors.textMuted },
