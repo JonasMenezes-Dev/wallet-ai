@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { screenTransition } from "../src/animations";
+import { WalletSymbol } from "../src/components/WalletSymbol";
 import { getDatabase } from "../src/database/database";
 import {
   ThemeProvider,
@@ -48,16 +49,7 @@ function RootNavigator() {
                 borderColor: colors.border,
               }}
             >
-              <Text
-                style={{
-                  color: colors.primary,
-                  fontSize: 44,
-                  lineHeight: 52,
-                  fontWeight: "900",
-                }}
-              >
-                W
-              </Text>
+              <WalletSymbol name="accounts" color={colors.primary} size={44} />
             </View>
             <Text
               style={{
