@@ -288,6 +288,8 @@ const createStyles = (colors: ThemeColors) =>
   saveButton: {
     height: 56,
     marginTop: 24,
+    flexDirection: "row",
+    gap: 8,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
