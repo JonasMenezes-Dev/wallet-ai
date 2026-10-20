@@ -504,10 +504,11 @@ export async function updateTransaction(
       type: Transaction["type"];
       account_id: number | null;
       goal_id: number | null;
+      transfer_id: string | null;
       date: string;
     }>(
       `
-        SELECT amount, type, account_id, goal_id, date
+        SELECT amount, type, account_id, goal_id, transfer_id, date
         FROM transactions
         WHERE id = $id
       `,
@@ -516,6 +517,10 @@ export async function updateTransaction(
 
     if (!current) {
       throw new Error("Transação não encontrada.");
+    }
+
+    if (current.transfer_id) {
+      throw new Error("Transferências entre contas não podem ser editadas individualmente. Exclua a transferência completa e registre-a novamente.");
     }
 
     if (current.goal_id || current.type === "transfer") {
