@@ -1,9 +1,9 @@
 import { Tabs } from "expo-router";
-import { View, useWindowDimensions } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useThemeColors, radii, spacing, typography } from "../../src/theme";
-import { WalletSymbol } from "../../src/components/WalletSymbol";
+import { AnimatedTabIcon } from "../../src/components/AnimatedTabIcon";
+import { useThemeColors, spacing, typography } from "../../src/theme";
 
 export default function TabsLayout() {
   const colors = useThemeColors();
@@ -15,11 +15,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // Desliza o conteúdo entre abas sem apagar a tela com um fade branco.
         animation: "shift",
-        transitionSpec: {
-          animation: "timing",
-          config: { duration: 220 },
-        },
+        animationDuration: 240,
+        sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSubtle,
         tabBarShowLabel: true,
@@ -60,18 +59,12 @@ export default function TabsLayout() {
           title: "Início",
           tabBarAccessibilityLabel: "Início",
           tabBarIcon: ({ focused, color }) => (
-            <View
-              style={{
-                width: 34,
-                height: 28,
-                borderRadius: radii.sm,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: focused ? colors.accentSurface : "transparent",
-              }}
-            >
-              <WalletSymbol name="home" color={color} size={21} />
-            </View>
+            <AnimatedTabIcon
+              name="home"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
@@ -81,9 +74,12 @@ export default function TabsLayout() {
           title: "Transações",
           tabBarAccessibilityLabel: "Transações",
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <WalletSymbol name="transactions" color={color} size={21} />
-            </View>
+            <AnimatedTabIcon
+              name="transactions"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
@@ -93,9 +89,12 @@ export default function TabsLayout() {
           title: "Contas",
           tabBarAccessibilityLabel: "Contas",
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <WalletSymbol name="accounts" color={color} size={21} />
-            </View>
+            <AnimatedTabIcon
+              name="accounts"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
@@ -105,9 +104,12 @@ export default function TabsLayout() {
           title: "Metas",
           tabBarAccessibilityLabel: "Metas",
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <WalletSymbol name="goals" color={color} size={21} />
-            </View>
+            <AnimatedTabIcon
+              name="goals"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
@@ -117,9 +119,12 @@ export default function TabsLayout() {
           title: "Ajustes",
           tabBarAccessibilityLabel: "Configurações",
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <WalletSymbol name="settings" color={color} size={21} />
-            </View>
+            <AnimatedTabIcon
+              name="settings"
+              focused={focused}
+              color={color}
+              activeBackgroundColor={colors.accentSurface}
+            />
           ),
         }}
       />
