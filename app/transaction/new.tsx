@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -312,6 +313,7 @@ export default function NewTransactionScreen() {
         onPress={handleSave}
         disabled={saving}
       >
+        {saving && <ActivityIndicator color={colors.onPrimary} size="small" />}
         <Text style={styles.saveButtonText}>
           {saving ? 'Salvando...' : 'Salvar transação'}
         </Text>
