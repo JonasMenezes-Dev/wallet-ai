@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withDelay,
   withTiming,
@@ -25,21 +26,24 @@ export function AnimatedProgressFill({
   style,
 }: AnimatedProgressFillProps) {
   const animatedProgress = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
   const targetProgress = Number.isFinite(progress)
     ? Math.min(1, Math.max(0, progress))
     : 0;
 
   useEffect(() => {
     animatedProgress.set(
-      withDelay(
-        delay,
-        withTiming(targetProgress, {
-          duration,
-          easing: easings.out,
-        }),
-      ),
+      reduceMotion
+        ? targetProgress
+        : withDelay(
+            delay,
+            withTiming(targetProgress, {
+              duration,
+              easing: easings.out,
+            }),
+          ),
     );
-  }, [animatedProgress, delay, duration, targetProgress]);
+  }, [animatedProgress, delay, duration, reduceMotion, targetProgress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     width: `${animatedProgress.value * 100}%`,
