@@ -136,7 +136,7 @@ export default function HomeScreen() {
           </AnimatedPressable>
         </AnimatedBlock>
 
-        <AnimatedBlock delay={60} style={styles.balanceCard}>
+        <AnimatedBlock delay={40} style={styles.balanceCard}>
           <View style={styles.heroOrb} />
           <View style={styles.heroOrbSecondary} />
           <View style={styles.balanceHeader}>
@@ -189,7 +189,7 @@ export default function HomeScreen() {
           </View>
         </AnimatedBlock>
 
-        <AnimatedBlock delay={100}>
+        <AnimatedBlock delay={70}>
           <Text style={styles.sectionLabel}>Este mês</Text>
 
           <View style={styles.cards}>
@@ -254,7 +254,7 @@ export default function HomeScreen() {
           </View>
         </AnimatedBlock>
 
-        <AnimatedBlock delay={120} style={styles.sectionBlock}>
+        <AnimatedBlock delay={90} style={styles.sectionBlock}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionHeaderText}>
               <Text style={styles.sectionTitle}>Acesso rápido</Text>
@@ -297,7 +297,7 @@ export default function HomeScreen() {
           </View>
         </AnimatedBlock>
 
-        <AnimatedBlock delay={140}>
+        <AnimatedBlock delay={100}>
           <Text style={styles.sectionTitle}>Seus gastos</Text>
 
           {summary.expensesByCategory.length === 0 ? (
@@ -353,7 +353,7 @@ export default function HomeScreen() {
         </AnimatedBlock>
 
         {allInsights.length > 0 && (
-          <AnimatedBlock delay={180}>
+          <AnimatedBlock delay={130}>
             <Text style={styles.sectionTitle}>Insights</Text>
 
             <View style={styles.insightList}>
@@ -383,7 +383,7 @@ export default function HomeScreen() {
         )}
 
         {summary.featuredGoal && (
-          <AnimatedBlock delay={210} style={styles.sectionHeader}>
+          <AnimatedBlock delay={150} style={styles.sectionHeader}>
             <View style={styles.sectionHeaderText}>
               <Text style={styles.sectionTitle}>Sua meta</Text>
 
@@ -409,7 +409,7 @@ export default function HomeScreen() {
           />
         )}
 
-        <AnimatedBlock delay={240} style={styles.sectionHeader}>
+        <AnimatedBlock delay={170} style={styles.sectionHeader}>
           <View style={styles.sectionHeaderText}>
             <Text style={styles.sectionTitle}>Minhas contas</Text>
 
@@ -447,7 +447,7 @@ export default function HomeScreen() {
             {summary.accounts.map((account, index) => (
               <AnimatedBlock
                 key={account.id}
-                delay={260 + index * 45}
+                delay={260 + Math.min(index * 25, 100)}
                 style={styles.accountCard}
               >
                 <View style={styles.accountIcon}>
@@ -483,7 +483,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <AnimatedBlock delay={300} style={styles.sectionHeader}>
+        <AnimatedBlock delay={200} style={styles.sectionHeader}>
           <View style={styles.sectionHeaderText}>
             <Text style={styles.sectionTitle}>Últimas movimentações</Text>
 
@@ -521,7 +521,7 @@ export default function HomeScreen() {
             {summary.recentTransactions.map((item, index) => (
               <AnimatedBlock
                 key={item.id}
-                delay={320 + index * 40}
+                delay={220 + Math.min(index * 25, 100)}
                 style={styles.recentRow}
               >
                 <View
@@ -569,7 +569,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <AnimatedBlock delay={360}>
+        <AnimatedBlock delay={240}>
           <Text style={styles.transactions}>
             {summary.transactionCount}{" "}
             {summary.transactionCount === 1
