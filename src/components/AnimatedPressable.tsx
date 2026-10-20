@@ -7,6 +7,7 @@ import {
 
 import Animated, {
     interpolate,
+    useReducedMotion,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
@@ -39,6 +40,7 @@ export function AnimatedPressable({
   ...props
 }: AnimatedPressableProps) {
   const progress = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
 
   // Mantém compatibilidade com chamadas antigas, mas o feedback agora é só
   // movimento: variar opacidade causava a piscada que queremos evitar.
@@ -56,22 +58,26 @@ export function AnimatedPressable({
   // escrita em `progress.value` como mutação de uma variável imutável.
   const pressIn = useCallback((event: GestureResponderEvent) => {
     progress.set(
-      withTiming(1, {
-        duration: 80,
-        easing: easings.out,
-      }),
+      reduceMotion
+        ? 1
+        : withTiming(1, {
+            duration: 80,
+            easing: easings.out,
+          }),
     );
     onPressIn?.(event);
-  }, [progress, onPressIn]);
+  }, [progress, onPressIn, reduceMotion]);
 
   const pressOut = useCallback((event: GestureResponderEvent) => {
     progress.set(
-      withSpring(0, {
-        ...spring.press,
-      }),
+      reduceMotion
+        ? 0
+        : withSpring(0, {
+            ...spring.press,
+          }),
     );
     onPressOut?.(event);
-  }, [progress, onPressOut]);
+  }, [progress, onPressOut, reduceMotion]);
 
   return (
     <AnimatedPressableBase
