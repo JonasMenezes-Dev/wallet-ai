@@ -8,7 +8,7 @@ import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { GoalProgressCard } from "../../src/components/GoalProgressCard";
 import { useDashboard } from "../../src/hooks/use-dashboard";
 import { useUserSettings } from "../../src/hooks/use-user-settings";
-import { ThemeColors, useThemedStyles, radii, spacing, typography } from "../../src/theme";
+import { ThemeColors, useThemeColors, useThemedStyles, radii, spacing, typography } from "../../src/theme";
 import {
   getFinancialInsights,
   FinancialInsight,
@@ -16,7 +16,6 @@ import {
 import type { DashboardInsight } from "../../src/services/dashboard.service";
 import { formatTransactionDateTime } from "../../src/utils/date-time";
 import { WalletSymbol } from "../../src/components/WalletSymbol";
-import { useThemeColors } from "../../src/theme";
 
 function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
@@ -647,7 +646,7 @@ const createStyles = (colors: ThemeColors) =>
 
     sectionBlock: { gap: spacing.md },
     sectionHeaderText: { flex: 1, marginRight: spacing.sm },
-    sectionHeader: { marginTop: spacing.xl, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+    sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
     sectionTitle: { fontSize: typography.size.subtitle, fontWeight: "800", letterSpacing: -0.25, color: colors.text },
     sectionSubtitle: { marginTop: 4, fontSize: 12, lineHeight: 17, color: colors.textSubtle },
     seeAll: { fontSize: 12, fontWeight: "800", color: colors.primary },
@@ -664,7 +663,7 @@ const createStyles = (colors: ThemeColors) =>
     accountCard: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
     accountIcon: { width: 43, height: 43, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentSurface },
     accountIconText: { fontSize: 18, fontWeight: "800", color: colors.primary },
-    accountInfo: { flex: 1, minWidth: 0, marginLeft: spacing.xs },
+    accountInfo: { flex: 1, minWidth: 0 },
     accountName: { fontSize: 13, fontWeight: "800", color: colors.text },
     accountType: { marginTop: 3, fontSize: 11, color: colors.textSubtle },
     accountBalance: { maxWidth: "42%", fontSize: 13, fontWeight: "800", color: colors.text },
