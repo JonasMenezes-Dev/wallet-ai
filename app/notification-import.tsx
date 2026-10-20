@@ -4,7 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { AnimatedPressable } from "../src/components/AnimatedPressable";
 import { ScreenHeader } from "../src/components/ScreenHeader";
 import { listAccounts } from "../src/services/account.service";
-import { listCategories, suggestCategoryId } from "../src/services/category.service";
+import { listCategories } from "../src/services/category.service";
 import { addTransaction } from "../src/services/transaction.service";
 import {
   dismissCapturedNotification, hasNotificationAccess, isNotificationListenerAvailable,
