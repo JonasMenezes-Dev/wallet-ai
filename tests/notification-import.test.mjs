@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseFinancialNotification } from "../src/services/notification-import.service.ts";
+import { applyTransactionToAccount, isBalanceInvalid } from "../src/services/transaction-balance.ts";
 
 const notification = (title, text) => ({
   key: "test-notification",
@@ -65,4 +66,22 @@ test("does not invent an amount when the notification has no currency value", ()
 
   assert.equal(result.amount, null);
   assert.equal(result.reason, "missing_amount");
+});
+
+test("reduces a bank account balance for an expense", () => {
+  assert.equal(applyTransactionToAccount(100, "bank", "expense", 25), 75);
+});
+
+test("increases used debt for a credit-card expense", () => {
+  assert.equal(applyTransactionToAccount(100, "credit_card", "expense", 25), 125);
+});
+
+test("does not change account balance for a goal transfer", () => {
+  assert.equal(applyTransactionToAccount(100, "bank", "transfer", 25), 100);
+});
+
+test("flags negative or non-finite account balances", () => {
+  assert.equal(isBalanceInvalid(-0.01, "bank"), true);
+  assert.equal(isBalanceInvalid(Number.NaN, "bank"), true);
+  assert.equal(isBalanceInvalid(0, "bank"), false);
 });
