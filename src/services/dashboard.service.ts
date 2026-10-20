@@ -143,7 +143,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income'
+              WHEN type = 'income' AND transfer_id IS NULL
               THEN amount
               ELSE 0
             END
@@ -154,7 +154,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense'
+              WHEN type = 'expense' AND transfer_id IS NULL
               THEN amount
               ELSE 0
             END
@@ -167,7 +167,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income'
+              WHEN type = 'income' AND transfer_id IS NULL
               AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
                 = strftime('%Y-%m', 'now', 'localtime')
               THEN amount
@@ -180,7 +180,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense'
+              WHEN type = 'expense' AND transfer_id IS NULL
               AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
                 = strftime('%Y-%m', 'now', 'localtime')
               THEN amount
@@ -201,7 +201,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income'
+              WHEN type = 'income' AND transfer_id IS NULL
               AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
                 = strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month')
               THEN amount
@@ -214,7 +214,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense'
+              WHEN type = 'expense' AND transfer_id IS NULL
               AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
                 = strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month')
               THEN amount
@@ -252,6 +252,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       LEFT JOIN categories
         ON categories.id = transactions.category_id
       WHERE transactions.type = 'expense'
+        AND transactions.transfer_id IS NULL
         AND (CASE WHEN length(transactions.date) = 10 THEN substr(transactions.date, 1, 7) ELSE strftime('%Y-%m', transactions.date, 'localtime') END)
           = strftime('%Y-%m', 'now', 'localtime')
       GROUP BY transactions.category_id
@@ -271,10 +272,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     `
       SELECT
         transactions.id AS id,
-        transactions.description AS description,
+        CASE WHEN transactions.transfer_id IS NOT NULL THEN transactions.description ELSE transactions.description END AS description,
         goals.name AS goal_name,
         transactions.amount AS amount,
-        transactions.type AS type,
+        CASE WHEN transactions.transfer_id IS NOT NULL THEN 'transfer' ELSE transactions.type END AS type,
         transactions.source AS source,
         transactions.date AS date
       FROM transactions
