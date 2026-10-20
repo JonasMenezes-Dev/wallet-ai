@@ -3,6 +3,7 @@ import { type ColorValue, StyleSheet } from "react-native";
 import Animated, {
   interpolate,
   interpolateColor,
+  useReducedMotion,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -25,15 +26,18 @@ export function AnimatedTabIcon({
   activeBackgroundColor,
 }: AnimatedTabIconProps) {
   const focusProgress = useSharedValue(focused ? 1 : 0);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     focusProgress.set(
-      withSpring(focused ? 1 : 0, {
-        ...spring.press,
-        stiffness: 260,
-      }),
+      reduceMotion
+        ? focused ? 1 : 0
+        : withSpring(focused ? 1 : 0, {
+            ...spring.press,
+            stiffness: 260,
+          }),
     );
-  }, [focused, focusProgress]);
+  }, [focused, focusProgress, reduceMotion]);
 
   const containerStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
