@@ -168,8 +168,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           SUM(
             CASE
               WHEN type = 'income'
-              AND strftime('%Y-%m', date)
-                = strftime('%Y-%m', 'now')
+              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+                = strftime('%Y-%m', 'now', 'localtime')
               THEN amount
               ELSE 0
             END
@@ -181,8 +181,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           SUM(
             CASE
               WHEN type = 'expense'
-              AND strftime('%Y-%m', date)
-                = strftime('%Y-%m', 'now')
+              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+                = strftime('%Y-%m', 'now', 'localtime')
               THEN amount
               ELSE 0
             END
@@ -192,8 +192,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
 
         COUNT(
           CASE
-            WHEN strftime('%Y-%m', date)
-              = strftime('%Y-%m', 'now')
+            WHEN (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+              = strftime('%Y-%m', 'now', 'localtime')
             THEN 1
           END
         ) AS monthTransactionCount,
@@ -202,8 +202,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           SUM(
             CASE
               WHEN type = 'income'
-              AND strftime('%Y-%m', date)
-                = strftime('%Y-%m', 'now', '-1 month')
+              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+                = strftime('%Y-%m', 'now', 'localtime', '-1 month')
               THEN amount
               ELSE 0
             END
@@ -215,8 +215,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           SUM(
             CASE
               WHEN type = 'expense'
-              AND strftime('%Y-%m', date)
-                = strftime('%Y-%m', 'now', '-1 month')
+              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+                = strftime('%Y-%m', 'now', 'localtime', '-1 month')
               THEN amount
               ELSE 0
             END
@@ -252,8 +252,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       LEFT JOIN categories
         ON categories.id = transactions.category_id
       WHERE transactions.type = 'expense'
-        AND strftime('%Y-%m', transactions.date)
-          = strftime('%Y-%m', 'now')
+        AND (CASE WHEN length(transactions.date) = 10 THEN substr(transactions.date, 1, 7) ELSE strftime('%Y-%m', transactions.date, 'localtime') END)
+          = strftime('%Y-%m', 'now', 'localtime')
       GROUP BY transactions.category_id
       ORDER BY total DESC
     `,
@@ -456,6 +456,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       creditCardUsedTotal,
       creditCards,
       transactionCount: transactions?.transactionCount ?? 0,
+      previousMonthExpenses,
     }),
 
     currentMonthName: getCurrentMonthName(),
@@ -520,6 +521,7 @@ interface InsightInput {
   creditCardUsedTotal: number;
   creditCards: DashboardCreditCard[];
   transactionCount: number;
+  previousMonthExpenses: number;
 }
 
 /**
@@ -536,6 +538,7 @@ function buildInsights({
   creditCardUsedTotal,
   creditCards,
   transactionCount,
+  previousMonthExpenses,
 }: InsightInput): DashboardInsight[] {
   const insights: DashboardInsight[] = [];
 
@@ -563,7 +566,7 @@ function buildInsights({
           : `Você gastou ${variation}% mais`,
       description:
         expensesChangeRatio <= 0
-          ? `Comparado ao mês anterior, sobraram ${formatCurrency(monthExpenses * Math.abs(expensesChangeRatio))} no seu orçamento.`
+          ? `Comparado ao mês anterior, sobraram ${formatCurrency(previousMonthExpenses - monthExpenses)} no seu orçamento.`
           : `São ${formatCurrency(monthExpenses - monthExpenses / (1 + expensesChangeRatio))} a mais que no mês anterior.`,
       tone: expensesChangeRatio <= 0 ? "positive" : "warning",
     });
