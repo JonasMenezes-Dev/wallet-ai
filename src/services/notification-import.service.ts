@@ -13,6 +13,7 @@ interface NotificationListenerBridge {
   openSettings(): void;
   getCapturedNotifications(): CapturedFinancialNotification[];
   removeCapturedNotification(key: string): boolean;
+  notifyExpenseRecorded(amount: number, category: string): boolean;
 }
 
 let bridge: NotificationListenerBridge | null = null;
@@ -30,6 +31,7 @@ export function openNotificationAccessSettings() {
 }
 export const listCapturedNotifications = () => bridge?.getCapturedNotifications() ?? [];
 export const dismissCapturedNotification = (key: string) => bridge?.removeCapturedNotification(key) ?? false;
+export const notifyRecordedExpense = (amount: number, category: string) => bridge?.notifyExpenseRecorded(amount, category) ?? false;
 
 export function parseFinancialNotification(item: CapturedFinancialNotification) {
   const text = `${item.title} ${item.text}`;
