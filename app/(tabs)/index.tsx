@@ -132,7 +132,7 @@ export default function HomeScreen() {
             accessibilityLabel="Abrir alertas financeiros"
             onPress={() => router.push("/alerts")}
           >
-            <WalletSymbol name="alerts" color={colors.primary} size={22} />
+            <WalletSymbol name="alerts" color={colors.textMuted} size={20} />
           </AnimatedPressable>
         </AnimatedBlock>
 
@@ -610,11 +610,11 @@ const createStyles = (colors: ThemeColors) =>
     pageTitle: { marginTop: 5, fontSize: 22, lineHeight: 28, fontWeight: "800", letterSpacing: -0.5, color: colors.text },
     month: { marginTop: 6, fontSize: 30, fontWeight: "800", color: colors.text, textTransform: "capitalize" },
     subtitle: { marginTop: 5, fontSize: 12, color: colors.textSubtle, textTransform: "capitalize" },
-    headerAction: { width: 46, height: 46, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    headerAction: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceMuted, borderWidth: 1, borderColor: colors.border },
 
     balanceCard: { position: "relative", overflow: "hidden", marginTop: -spacing.xs, padding: spacing.xl, borderRadius: 28, backgroundColor: colors.primary },
-    heroOrb: { position: "absolute", top: -56, right: -38, width: 170, height: 170, borderRadius: 100, borderWidth: 28, borderColor: colors.onPrimary, opacity: 0.07 },
-    heroOrbSecondary: { position: "absolute", bottom: -76, right: 85, width: 135, height: 135, borderRadius: 100, backgroundColor: colors.onPrimary, opacity: 0.05 },
+    heroOrb: { position: "absolute", top: -56, right: -38, width: 170, height: 170, borderRadius: 100, borderWidth: 28, borderColor: colors.accentSurface, opacity: 0.24 },
+    heroOrbSecondary: { position: "absolute", bottom: -76, right: 85, width: 135, height: 135, borderRadius: 100, backgroundColor: colors.accentSurface, opacity: 0.16 },
     balanceHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     balanceLabelRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
     balanceLabel: { fontSize: 14, color: colors.onPrimary, opacity: 0.88, fontWeight: "600" },
