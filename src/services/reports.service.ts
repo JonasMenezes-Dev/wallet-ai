@@ -29,20 +29,20 @@ export async function getMonthlyReport(month: string): Promise<MonthlyReport> {
       COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses,
       COUNT(*) AS transaction_count
     FROM transactions
-    WHERE strftime('%Y-%m', date) = $month
+    WHERE (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = $month
   `, { $month: month });
   const previous = await database.getFirstAsync<{ income: number | null; expenses: number | null }>(`
     SELECT
       COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
       COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses
     FROM transactions
-    WHERE strftime('%Y-%m', date) = $month
+    WHERE (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = $month
   `, { $month: previousMonth });
   const rows = await database.getAllAsync<{ category_id: number | null; category_name: string | null; total: number }>(`
     SELECT transactions.category_id, categories.name AS category_name, SUM(transactions.amount) AS total
     FROM transactions
     LEFT JOIN categories ON categories.id = transactions.category_id
-    WHERE transactions.type = 'expense' AND strftime('%Y-%m', transactions.date) = $month
+    WHERE transactions.type = 'expense' AND (CASE WHEN length(transactions.date) = 10 THEN substr(transactions.date, 1, 7) ELSE strftime('%Y-%m', transactions.date, 'localtime') END) = $month
     GROUP BY transactions.category_id, categories.name
     ORDER BY total DESC
   `, { $month: month });
