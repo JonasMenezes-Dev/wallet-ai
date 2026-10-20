@@ -71,6 +71,24 @@ export async function updateAccount(
 ): Promise<void> {
   const database = await getDatabase();
 
+  const existing = await database.getFirstAsync<{ type: Account["type"] }>(
+    "SELECT type FROM accounts WHERE id = $id",
+    { $id: accountId },
+  );
+  if (!existing) {
+    throw new Error("Conta não encontrada.");
+  }
+
+  if (existing.type !== account.type) {
+    const transactions = await database.getFirstAsync<{ total: number }>(
+      "SELECT COUNT(*) AS total FROM transactions WHERE account_id = $id",
+      { $id: accountId },
+    );
+    if ((transactions?.total ?? 0) > 0) {
+      throw new Error("Não é possível mudar o tipo de uma conta que já possui transações. Crie uma nova conta para preservar os cálculos financeiros.");
+    }
+  }
+
   const now = new Date().toISOString();
 
   const result = await database.runAsync(
