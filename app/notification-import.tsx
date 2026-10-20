@@ -45,6 +45,12 @@ export default function NotificationImportScreen() {
   }, []);
   useFocusEffect(useCallback(() => { void reload(); }, [reload]));
 
+  const readyCount = items.filter((item) => {
+    const parsed = parseFinancialNotification(item);
+    return parsed.amount !== null && !parsed.isRejected;
+  }).length;
+  const reviewCount = items.length - readyCount;
+
   async function importItem(item: CapturedFinancialNotification) {
     const parsed = parseFinancialNotification(item);
     if (parsed.isRejected) {
@@ -131,7 +137,14 @@ export default function NotificationImportScreen() {
           </View>
         ) : (
           <>
-            <View style={styles.statusCard}><Text style={styles.statusTitle}>Acesso ativado</Text><Text style={styles.body}>Encontradas {items.length} notificações financeiras aguardando revisão.</Text></View>
+            <View style={styles.statusCard}>
+              <Text style={styles.statusTitle}>Acesso às notificações ativado</Text>
+              <Text style={styles.body}>{items.length === 0 ? "Nenhuma notificação financeira aguardando revisão." : `${items.length} ${items.length === 1 ? "notificação encontrada" : "notificações encontradas"} aguardando revisão.`}</Text>
+              {items.length > 0 && <View style={styles.summaryRow}>
+                <View style={styles.summaryPill}><Text style={styles.summaryReady}>{readyCount} prontas para conferir</Text></View>
+                <View style={styles.summaryPill}><Text style={styles.summaryReview}>{reviewCount} precisam de atenção</Text></View>
+              </View>}
+            </View>
             {items.length === 0 ? <View style={styles.card}><Text style={styles.cardTitle}>Nenhuma notificação capturada</Text><Text style={styles.body}>Faça uma compra ou Pix de teste em um banco compatível e volte aqui. Alguns bancos não incluem o valor na notificação.</Text></View> :
               items.map((item) => {
                 const parsed = parseFinancialNotification(item);
@@ -170,6 +183,10 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.c
   statusCard: { padding: spacing.lg, borderRadius: radii.lg, backgroundColor: colors.surfaceMuted, gap: spacing.xs },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: "800" },
   statusTitle: { color: colors.income, fontSize: 15, fontWeight: "800" },
+  summaryRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.xs },
+  summaryPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radii.md, backgroundColor: colors.surface },
+  summaryReady: { color: colors.income, fontSize: 12, fontWeight: "700" },
+  summaryReview: { color: colors.warning, fontSize: 12, fontWeight: "700" },
   body: { color: colors.textMuted, fontSize: 13, lineHeight: 20 },
   amount: { fontSize: 22, fontWeight: "800" },
   income: { color: colors.income },
