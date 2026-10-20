@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   StyleSheet,
@@ -238,6 +239,7 @@ export default function AccountsScreen() {
   if (loading) {
     return (
       <FadeInView style={styles.center}>
+        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel="Carregando contas" />
         <Text>Carregando contas...</Text>
       </FadeInView>
     );
