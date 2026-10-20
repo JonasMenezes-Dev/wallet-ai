@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseFinancialNotification } from "../src/services/notification-import.service.ts";
+import { parseFinancialNotification } from "../src/services/financial-notification-parser.ts";
 import { applyTransactionToAccount, isBalanceInvalid } from "../src/services/transaction-balance.ts";
 
 const notification = (title, text) => ({
