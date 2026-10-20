@@ -105,6 +105,10 @@ export async function addGoalContribution(
       throw new Error('Conta não encontrada.');
     }
 
+    if (account.type === 'credit_card') {
+      throw new Error('Não é possível usar cartão de crédito para aportar em uma meta.');
+    }
+
     if (amount <= 0) {
       throw new Error(
         'O valor do aporte deve ser maior que zero.'
