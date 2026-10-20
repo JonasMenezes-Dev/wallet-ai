@@ -83,7 +83,7 @@ export async function saveMonthlyBudget(
     throw new Error("Selecione uma categoria válida.");
   }
 
-  if (!/^\d{4}-\d{2}$/.test(month)) {
+  if (!isValidMonth(month)) {
     throw new Error("O mês selecionado é inválido.");
   }
 
