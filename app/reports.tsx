@@ -3,7 +3,6 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-nat
 import { router, useFocusEffect } from "expo-router";
 
 import { AnimatedPressable } from "../src/components/AnimatedPressable";
-import { ScreenHeader } from "../src/components/ScreenHeader";
 import { getDatabase } from "../src/database/database";
 import { ThemeColors, useThemeColors, useThemedStyles, spacing, radii } from "../src/theme";
 
