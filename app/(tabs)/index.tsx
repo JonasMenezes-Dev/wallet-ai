@@ -221,6 +221,20 @@ export default function HomeScreen() {
           </AnimatedPressable>
         </AnimatedBlock>
 
+        <AnimatedBlock delay={135}>
+          <View style={{ gap: spacing.sm }}>
+            <AnimatedPressable style={styles.inlineButton} pressedScale={0.97} onPress={() => router.push("/notification-import")}>
+              <Text style={styles.inlineButtonText}>↳  Importar notificações bancárias</Text>
+            </AnimatedPressable>
+            <AnimatedPressable style={styles.inlineButton} pressedScale={0.97} onPress={() => router.push("/reports")}>
+              <Text style={styles.inlineButtonText}>▥  Relatórios financeiros</Text>
+            </AnimatedPressable>
+            <AnimatedPressable style={styles.inlineButton} pressedScale={0.97} onPress={() => router.push("/alerts")}>
+              <Text style={styles.inlineButtonText}>♧  Alertas de gastos e vencimentos</Text>
+            </AnimatedPressable>
+          </View>
+        </AnimatedBlock>
+
         <AnimatedBlock delay={140}>
           <Text style={styles.sectionTitle}>Seus gastos</Text>
 
