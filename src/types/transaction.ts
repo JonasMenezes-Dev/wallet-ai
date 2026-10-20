@@ -21,6 +21,8 @@ export interface Transaction {
   paymentMethod: string | null;
   goalId: number | null;
   goalName?: string | null;
+  /** Identificador compartilhado pelos dois lados de uma transferência entre contas. */
+  transferId?: string | null;
   isAutomatic: boolean;
   source: TransactionSource;
   /**
