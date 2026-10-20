@@ -175,7 +175,7 @@ export default function HomeScreen() {
               pressedScale={0.98}
               onPress={() => router.push("/transaction/new")}
             >
-              <WalletSymbol name="plus" color={colors.primary} size={18} />
+              <WalletSymbol name="plus" color={colors.text} size={18} />
               <Text style={styles.heroPrimaryActionText}>Adicionar</Text>
             </AnimatedPressable>
             <AnimatedPressable
@@ -623,12 +623,12 @@ const createStyles = (colors: ThemeColors) =>
     balance: { marginTop: spacing.md, fontSize: 34, lineHeight: 42, fontWeight: "800", letterSpacing: -0.8, color: colors.onPrimary },
     balanceMeta: { marginTop: 5, fontSize: 12, color: colors.onPrimary, opacity: 0.78 },
     heroActions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xl },
-    heroPrimaryAction: { minHeight: 46, flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: spacing.sm, borderRadius: 15, backgroundColor: colors.surface },
-    heroPrimaryActionText: { color: colors.primary, fontSize: 13, fontWeight: "800" },
+    heroPrimaryAction: { minHeight: 46, flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: spacing.sm, borderRadius: 15, backgroundColor: colors.surfaceMuted },
+    heroPrimaryActionText: { color: colors.text, fontSize: 13, fontWeight: "800" },
     heroSecondaryAction: { minHeight: 46, flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: spacing.sm, borderRadius: 15, borderWidth: 1, borderColor: colors.onPrimary + "45", backgroundColor: "transparent" },
     heroSecondaryActionText: { color: colors.onPrimary, fontSize: 13, fontWeight: "700" },
 
-    sectionLabel: { marginTop: 24, fontSize: 13, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase", color: colors.textSubtle },
+    sectionLabel: { marginTop: spacing.md, fontSize: 13, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase", color: colors.textSubtle },
     cards: { flexDirection: "row", gap: spacing.sm, marginTop: 12 },
     card: { flex: 1, minWidth: 0, padding: spacing.md, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
     metricHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
