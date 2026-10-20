@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   ScrollView,
@@ -248,6 +249,7 @@ export default function TransactionsScreen() {
   if (loading) {
     return (
       <FadeInView style={styles.center}>
+        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel="Carregando transações" />
         <Text>Carregando transações...</Text>
       </FadeInView>
     );
