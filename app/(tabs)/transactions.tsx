@@ -39,7 +39,8 @@ function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
 }
 
-function getTransactionLabel(type: string) {
+function getTransactionLabel(type: string, isAccountTransfer = false) {
+  if (type === "transfer" && isAccountTransfer) return "Transferência";
   switch (type) {
     case "income":
       return "Entrada";
@@ -196,7 +197,8 @@ export default function TransactionsScreen() {
   }
 
   function handleDelete(transaction: TransactionWithRelations) {
-    const isGoalContribution = transaction.type === "transfer" || transaction.goalId !== null;
+    const isGoalContribution = transaction.type === "transfer" && transaction.goalId !== null;
+    const isAccountTransfer = Boolean(transaction.transferId);
 
     const isCardTransaction =
       transaction.accountId !== null &&
@@ -211,6 +213,8 @@ export default function TransactionsScreen() {
      */
     const impactMessage = isGoalContribution
       ? "O valor será devolvido ao saldo da conta e retirado da meta."
+      : isAccountTransfer
+        ? "A transferência inteira será removida e os saldos das duas contas serão restaurados."
       : isCardTransaction
         ? "O valor sairá do limite usado do cartão, liberando limite disponível."
         : "O valor será devolvido ao saldo da conta.";
@@ -632,6 +636,7 @@ export default function TransactionsScreen() {
 
           const isGoalContribution =
             item.type === "transfer" && item.goalId !== null;
+          const isAccountTransfer = Boolean(item.transferId);
 
           const isAutomatic = item.isAutomatic;
 
@@ -669,7 +674,7 @@ export default function TransactionsScreen() {
                               : styles.expenseBadgeText,
                         ]}
                       >
-                        {getTransactionLabel(item.type)}
+                        {getTransactionLabel(item.type, isAccountTransfer)}
                       </Text>
                     </View>
 
