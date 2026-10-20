@@ -13,7 +13,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 
-import { durations, spring } from "../animations";
+import { durations, easings, spring } from "../animations";
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
@@ -25,14 +25,14 @@ type AnimatedPressableProps = PressableProps & {
 };
 
 /**
- * Pressable com feedback suave de toque (escala + opacidade com spring).
- * Usado em todos os botões, chips, filtros e cards clicáveis do app para
- * manter a mesma sensação de resposta ao toque.
+ * Pressable com feedback de "pop": compressão curta no toque e retorno
+ * elástico ao soltar. Sem variar opacidade, evitando piscadas visuais.
+ * Usado em botões, chips, filtros e cards clicáveis do app.
  */
 export function AnimatedPressable({
   children,
   style,
-  pressedScale = 0.97,
+  pressedScale = 0.94,
   pressedOpacity = 1,
   onPressIn,
   onPressOut,
@@ -52,12 +52,24 @@ export function AnimatedPressable({
   // Handlers criados fora do JSX para que o React Compiler não trate a
   // escrita em `progress.value` como mutação de uma variável imutável.
   const pressIn = useCallback((event: GestureResponderEvent) => {
-    progress.set(withSpring(1, spring.press));
+    progress.set(
+      withTiming(1, {
+        duration: 65,
+        easing: easings.out,
+      }),
+    );
     onPressIn?.(event);
   }, [progress, onPressIn]);
 
   const pressOut = useCallback((event: GestureResponderEvent) => {
-    progress.set(withTiming(0, { duration: durations.fast }));
+    progress.set(
+      withSpring(0, {
+        ...spring.press,
+        damping: 13,
+        stiffness: 420,
+        mass: 0.45,
+      }),
+    );
     onPressOut?.(event);
   }, [progress, onPressOut]);
 
