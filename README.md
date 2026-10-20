@@ -36,6 +36,18 @@ npm run typecheck
 npm run lint
 ```
 
+## Checklist de validação antes de distribuir
+
+- [ ] Criar uma conta comum com saldo de R$ 100,00; lançar despesa de R$ 20,00 e conferir R$ 80,00.
+- [ ] Editar essa despesa para R$ 30,00 e conferir R$ 70,00; excluí-la e conferir retorno a R$ 100,00.
+- [ ] Lançar uma entrada de R$ 15,00 e conferir R$ 115,00; tentar uma despesa maior que o saldo e confirmar que não grava.
+- [ ] Criar cartão com limite de R$ 1.000,00; lançar compra de R$ 200,00 e conferir R$ 800,00 disponíveis; excluir a compra e conferir restauração.
+- [ ] Fazer aporte para uma meta e conferir que o saldo da conta diminui e o valor guardado aumenta; excluir o aporte e conferir que ambos são revertidos.
+- [ ] Conferir orçamento em 80% e 100%, vencimentos recorrentes, comparação entre meses e relatório de um mês com valores conhecidos.
+- [ ] Testar notificação com um único valor, notificação com valor e saldo juntos, tentativa recusada e repetição da mesma notificação. Valores ambíguos/recusados não devem gerar lançamento.
+- [ ] Fechar e reabrir o app; conferir persistência, modo claro/escuro, navegação e animações.
+- [ ] Instalar a nova versão por cima da anterior para preservar os dados locais. Não desinstalar o app durante a atualização.
+
 ## Gerar APK de teste para Android
 
 1. Instale/entre na CLI do EAS: `npx eas-cli login`.
