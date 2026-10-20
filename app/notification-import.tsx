@@ -203,7 +203,7 @@ export default function NotificationImportScreen() {
                     <View style={styles.chips}>{categories.map((category) => <AnimatedPressable key={category.id} style={[styles.chip, (categoryByKey[item.key] ?? categoryByKey.default ?? categories[0]?.id) === category.id && styles.chipSelected]} onPress={() => setCategoryByKey((current) => ({ ...current, [item.key]: category.id }))}><Text style={styles.chipText}>{category.name}</Text></AnimatedPressable>)}</View>
                     <View style={styles.actions}>
                       <AnimatedPressable style={styles.secondaryButton} onPress={() => { dismissCapturedNotification(item.key); void reload(); }}><Text style={styles.secondaryText}>Descartar</Text></AnimatedPressable>
-                      <AnimatedPressable style={styles.primaryButton} disabled={savingKey === item.key} onPress={() => void importItem(item)}><Text style={styles.primaryText}>{savingKey === item.key ? "Importando..." : "Confirmar lançamento"}</Text></AnimatedPressable>
+                      <AnimatedPressable style={[styles.primaryButton, (parsed.reason !== null || parsed.amount === null || parsed.isRejected) && styles.disabledButton]} disabled={savingKey === item.key || parsed.reason !== null || parsed.amount === null || parsed.isRejected} onPress={() => void importItem(item)}><Text style={styles.primaryText}>{savingKey === item.key ? "Importando..." : parsed.reason !== null || parsed.amount === null || parsed.isRejected ? "Revisar manualmente" : "Confirmar lançamento"}</Text></AnimatedPressable>
                     </View>
                   </View>
                 );
@@ -241,6 +241,7 @@ const createStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.c
   chipText: { color: colors.text, fontSize: 12, fontWeight: "600" },
   actions: { flexDirection: "row", gap: spacing.sm, justifyContent: "flex-end", flexWrap: "wrap" },
   primaryButton: { padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: "center" },
+  disabledButton: { opacity: 0.45 },
   primaryText: { color: colors.onPrimary, fontWeight: "800" },
   secondaryButton: { padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.surfaceMuted, alignItems: "center" },
   secondaryText: { color: colors.text, fontWeight: "700" },
