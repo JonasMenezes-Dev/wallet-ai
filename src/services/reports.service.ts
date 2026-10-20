@@ -8,7 +8,7 @@ export interface MonthlyReport {
   transactionCount: number;
   previousIncome: number;
   previousExpenses: number;
-  expensesByCategory: Array<{ categoryId: number | null; categoryName: string; total: number }>;
+  expensesByCategory: { categoryId: number | null; categoryName: string; total: number }[];
 }
 
 function shiftMonth(month: string, offset: number): string {
