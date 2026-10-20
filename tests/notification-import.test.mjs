@@ -59,6 +59,15 @@ test("marks an unlabelled balance amount as ambiguous", () => {
   assert.equal(result.reason, "ambiguous");
 });
 
+test("does not treat a balance as the transaction amount when it is the only currency value", () => {
+  const result = parseFinancialNotification(
+    notification("Aviso bancário", "Saldo disponível: R$ 120,00"),
+  );
+
+  assert.equal(result.amount, null);
+  assert.equal(result.reason, "ambiguous");
+});
+
 test("does not invent an amount when the notification has no currency value", () => {
   const result = parseFinancialNotification(
     notification("Compra aprovada", "Sua compra foi aprovada"),
