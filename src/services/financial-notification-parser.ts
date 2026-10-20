@@ -23,13 +23,17 @@ export function parseFinancialNotification(item: CapturedFinancialNotification) 
   // sem símbolo monetário. Se houver outro valor junto desses rótulos, não
   // escolhemos automaticamente qual deles representa a movimentação.
   const contextualMoneyMatches = [
-    ...text.matchAll(/\b(?:saldo(?: atual| disponível| disponivel)?|limite(?: disponível| disponivel)?|valor total|total da fatura)\s*:?\s*(?:R\$\s*)?([0-9][0-9.,]*)/gi),
+    ...text.matchAll(/\b(saldo(?: atual| disponível| disponivel)?|limite(?: disponível| disponivel)?|valor total|total da fatura)\s*:?\s*(?:R\$\s*)?([0-9][0-9.,]*)/gi),
   ];
   const hasConflictingContextValue = contextualMoneyMatches.some((contextMatch) => {
-    const rawContextValue = contextMatch[1] ?? "";
+    const label = contextMatch[1] ?? "";
+    const rawContextValue = contextMatch[2] ?? "";
     if (normalizeBrazilianAmount(rawContextValue) === null) return false;
     const valueOffset = (contextMatch.index ?? 0) + contextMatch[0].lastIndexOf(rawContextValue);
-    // Não contar duas vezes o mesmo número quando o rótulo já contém "R$".
+    // Saldo, limite e fatura não são o valor da compra, mesmo quando esse é o único valor com R$.
+    const isBalanceOrLimit = /\b(?:saldo|limite|total da fatura)\b/i.test(label);
+    if (isBalanceOrLimit) return true;
+    // Não contar duas vezes o mesmo número quando o rótulo descreve o total da compra.
     const isSameMoneyMatch = moneyMatches.some((moneyMatch) => {
       const start = moneyMatch.index ?? 0;
       return valueOffset >= start && valueOffset < start + moneyMatch[0].length;
