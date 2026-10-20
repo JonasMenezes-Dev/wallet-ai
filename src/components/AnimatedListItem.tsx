@@ -7,7 +7,7 @@ import Animated, {
   LinearTransition,
 } from "react-native-reanimated";
 
-import { durations, staggerDelay } from "../animations";
+import { durations, easings, staggerDelay } from "../animations";
 
 type AnimatedListItemProps = {
   children: ReactNode;
@@ -29,11 +29,11 @@ export function AnimatedListItem({
 }: AnimatedListItemProps) {
   return (
     <Animated.View
-      layout={LinearTransition.duration(durations.base).build()}
-      entering={FadeInDown.delay(staggerDelay(index, delayStep)).duration(
-        durations.smooth,
-      )}
-      exiting={FadeOut.duration(durations.fast)}
+      layout={LinearTransition.duration(durations.base).easing(easings.inOut).build()}
+      entering={FadeInDown.delay(staggerDelay(index, delayStep))
+        .duration(durations.smooth)
+        .easing(easings.out)}
+      exiting={FadeOut.duration(durations.fast).easing(easings.in)}
       style={style}
     >
       {children}
@@ -53,7 +53,8 @@ export function AnimatedBlock({
 }) {
   return (
     <Animated.View
-      entering={FadeInDown.delay(delay).duration(durations.smooth)}
+      entering={FadeInDown.delay(delay).duration(durations.smooth).easing(easings.out)}
+      exiting={FadeOut.duration(durations.fast).easing(easings.in)}
       style={style}
     >
       {children}
@@ -73,8 +74,8 @@ export function FadeInView({
 }) {
   return (
     <Animated.View
-      entering={FadeIn.delay(delay).duration(durations.base)}
-      exiting={FadeOut.duration(durations.fast)}
+      entering={FadeIn.delay(delay).duration(durations.base).easing(easings.out)}
+      exiting={FadeOut.duration(durations.fast).easing(easings.in)}
       style={style}
     >
       {children}

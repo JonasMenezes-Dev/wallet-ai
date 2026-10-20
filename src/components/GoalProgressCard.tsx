@@ -1,14 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { useEffect } from "react";
 
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
-} from "react-native-reanimated";
-
-import { durations, easings } from "../animations";
+import { AnimatedProgressFill } from "./AnimatedProgressFill";
 import { ThemeColors, useThemedStyles } from "../theme";
 import type { DashboardGoal } from "../services/dashboard.service";
 
@@ -39,24 +31,6 @@ function formatDeadline(goal: DashboardGoal) {
  */
 export function GoalProgressCard({ goal, goalCount }: GoalProgressCardProps) {
   const styles = useThemedStyles(createStyles);
-  const fill = useSharedValue(0);
-
-  useEffect(() => {
-    fill.set(
-      withDelay(
-        160,
-        withTiming(goal.progressPercentage / 100, {
-          duration: durations.slow,
-          easing: easings.out,
-        }),
-      ),
-    );
-  }, [fill, goal.progressPercentage]);
-
-  const fillStyle = useAnimatedStyle(() => ({
-    width: `${fill.value * 100}%`,
-  }));
-
   const isCompleted = goal.remainingAmount <= 0;
 
   return (
@@ -78,12 +52,10 @@ export function GoalProgressCard({ goal, goalCount }: GoalProgressCardProps) {
       </View>
 
       <View style={styles.track}>
-        <Animated.View
-          style={[
-            styles.fill,
-            isCompleted && styles.fillCompleted,
-            fillStyle,
-          ]}
+        <AnimatedProgressFill
+          progress={goal.progressPercentage / 100}
+          delay={160}
+          style={[styles.fill, isCompleted && styles.fillCompleted]}
         />
       </View>
 
