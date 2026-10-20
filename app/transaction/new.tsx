@@ -23,7 +23,7 @@ import {
   listCategories,
   suggestCategoryId,
 } from '../../src/services/category.service';
-import { addTransaction } from '../../src/services/transaction.service';
+import { addTransaction, transferBetweenAccounts } from '../../src/services/transaction.service';
 
 import { Account } from '../../src/types/account';
 import { Category } from '../../src/types/category';
@@ -47,6 +47,7 @@ export default function NewTransactionScreen() {
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
     null
   );
+  const [selectedDestinationAccountId, setSelectedDestinationAccountId] = useState<number | null>(null);
 
   const [saving, setSaving] = useState(false);
   const styles = useThemedStyles(createStyles);
@@ -69,6 +70,7 @@ export default function NewTransactionScreen() {
 
         if (accountsData.length > 0) {
           setSelectedAccountId(accountsData[0].id);
+          setSelectedDestinationAccountId(accountsData[1]?.id ?? null);
         }
       } catch (error) {
         console.error('Erro ao carregar dados da transação:', error);
@@ -98,14 +100,27 @@ export default function NewTransactionScreen() {
       return;
     }
 
-    if (!selectedCategoryId) {
+    if (type !== 'transfer' && !selectedCategoryId) {
       Alert.alert('Categoria obrigatória', 'Selecione uma categoria.');
+      return;
+    }
+    if (type === 'transfer' && (!selectedDestinationAccountId || selectedDestinationAccountId === selectedAccountId)) {
+      Alert.alert('Destino obrigatório', 'Selecione uma conta de destino diferente da origem.');
       return;
     }
 
     try {
       setSaving(true);
 
+      if (type === 'transfer') {
+        await transferBetweenAccounts({
+          amount: amountValue,
+          fromAccountId: selectedAccountId,
+          toAccountId: selectedDestinationAccountId!,
+          description: description.trim() || null,
+          date: new Date().toISOString(),
+        });
+      } else {
       await addTransaction({
         amount: amountValue,
         type,
@@ -125,6 +140,7 @@ export default function NewTransactionScreen() {
         provider: null,
         institution: null,
       });
+      }
 
       Alert.alert(
         'Transação salva',
@@ -163,7 +179,7 @@ export default function NewTransactionScreen() {
       <AnimatedBlock>
         <ScreenHeader
           title="Nova transação"
-          subtitle="Registre uma entrada ou saída de dinheiro."
+          subtitle="Registre entradas, saídas ou transferências entre contas."
           eyebrow="Movimentação"
         />
       </AnimatedBlock>
@@ -204,6 +220,23 @@ export default function NewTransactionScreen() {
             Receita
           </Text>
         </AnimatedPressable>
+        <AnimatedPressable
+          pressedScale={0.96}
+          style={[
+            styles.typeButton,
+            type === 'transfer' && styles.typeButtonActive,
+          ]}
+          onPress={() => setType('transfer')}
+        >
+          <Text
+            style={[
+              styles.typeButtonText,
+              type === 'transfer' && styles.typeButtonTextActive,
+            ]}
+          >
+            Transferir
+          </Text>
+        </AnimatedPressable>
       </AnimatedBlock>
 
       <View style={styles.field}>
@@ -235,7 +268,7 @@ export default function NewTransactionScreen() {
         />
       </View>
 
-      <View style={styles.field}>
+      {type !== 'transfer' && <View style={styles.field}>
         <Text style={styles.label}>Categoria</Text>
 
         <ScrollView
@@ -265,10 +298,10 @@ export default function NewTransactionScreen() {
             </AnimatedPressable>
           ))}
         </ScrollView>
-      </View>
+      </View>}
 
       <View style={styles.field}>
-        <Text style={styles.label}>Conta ou cartão</Text>
+        <Text style={styles.label}>{type === 'transfer' ? 'Conta de origem' : 'Conta ou cartão'}</Text>
 
         <ScrollView
           horizontal
@@ -304,6 +337,25 @@ export default function NewTransactionScreen() {
         </ScrollView>
       </View>
 
+      {type === 'transfer' && <View style={styles.field}>
+        <Text style={styles.label}>Conta de destino</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.options}>
+          {accounts.filter((account) => account.type !== 'credit_card' && account.id !== selectedAccountId).map((account) => (
+            <AnimatedPressable
+              key={account.id}
+              pressedScale={0.94}
+              style={[styles.option, selectedDestinationAccountId === account.id && styles.optionActive]}
+              onPress={() => setSelectedDestinationAccountId(account.id)}
+            >
+              <Text style={[styles.optionText, selectedDestinationAccountId === account.id && styles.optionTextActive]}>
+                {account.name}
+              </Text>
+            </AnimatedPressable>
+          ))}
+        </ScrollView>
+        <Text style={styles.label}>A transferência não pode envolver cartão de crédito.</Text>
+      </View>}
+
       <AnimatedPressable
         style={[
           styles.saveButton,
@@ -315,7 +367,7 @@ export default function NewTransactionScreen() {
       >
         {saving && <ActivityIndicator color={colors.onPrimary} size="small" />}
         <Text style={styles.saveButtonText}>
-          {saving ? 'Salvando...' : 'Salvar transação'}
+          {saving ? 'Salvando...' : type === 'transfer' ? 'Confirmar transferência' : 'Salvar transação'}
         </Text>
       </AnimatedPressable>
       </ScrollView>
