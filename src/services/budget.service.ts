@@ -52,6 +52,7 @@ export async function listMonthlyBudgets(month: string): Promise<MonthlyBudget[]
         SELECT category_id, SUM(amount) AS total
         FROM transactions
         WHERE type = 'expense'
+          AND transfer_id IS NULL
           AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = $month
         GROUP BY category_id
       ) AS spending

@@ -329,7 +329,7 @@ export default function TransactionsScreen() {
           ["all", "Todas"],
           ["income", "Entradas"],
           ["expense", "Gastos"],
-          ["transfer", "Aportes"],
+          ["transfer", "Transferências"],
         ] as [TransactionTypeFilter, string][]).map(([value, label]) => (
           <AnimatedPressable
             key={value}
@@ -710,6 +710,7 @@ export default function TransactionsScreen() {
                     {item.accountName
                       ? ` · ${item.accountName}`
                       : ""}
+                    {item.counterpartyAccountName ? ` ↔ ${item.counterpartyAccountName}` : ""}
                   </Text>
                 </View>
 
@@ -719,7 +720,7 @@ export default function TransactionsScreen() {
                       styles.transactionAmount,
                       isIncome
                         ? styles.income
-                        : isGoalContribution
+                        : isGoalContribution || isAccountTransfer
                           ? styles.goal
                           : styles.expense,
                     ]}
@@ -732,7 +733,7 @@ export default function TransactionsScreen() {
                   </Text>
 
                   <View style={styles.cardButtons}>
-                    {!isGoalContribution && (
+                    {!isGoalContribution && !isAccountTransfer && (
                       <AnimatedPressable
                         style={styles.editButton}
                         pressedScale={0.93}
@@ -760,9 +761,9 @@ export default function TransactionsScreen() {
 
               {/* Edição rápida de categoria: o ajuste mais frequente do dia
                   a dia, sem abrir a tela de edição completa. */}
-              {isGoalContribution ? (
+              {isGoalContribution || isAccountTransfer ? (
                 <Text style={styles.goalHint}>
-                  Aporte para a meta {item.goalName ?? ""}
+                  {isAccountTransfer ? "Transferência entre contas" : `Aporte para a meta ${item.goalName ?? ""}`}
                 </Text>
               ) : !isEditingCategory ? (
                 <AnimatedPressable

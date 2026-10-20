@@ -47,6 +47,9 @@ export interface TransactionRelations {
   categoryName: string | null;
   /** Nome da conta. `null` se a conta foi removida. */
   accountName: string | null;
+  /** Other side of a grouped account transfer; absent on ordinary transactions. */
+  counterpartyAccountId?: number | null;
+  counterpartyAccountName?: string | null;
 }
 
 /** Transação como a listagem consome: já com os nomes resolvidos. */

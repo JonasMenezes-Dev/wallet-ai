@@ -23,6 +23,7 @@ export async function getFinancialInsights(): Promise<FinancialInsight[]> {
     `SELECT COALESCE(SUM(amount), 0) AS total
      FROM transactions
      WHERE type = 'expense'
+       AND transfer_id IS NULL
        AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = strftime('%Y-%m', 'now', 'localtime')`,
   );
 

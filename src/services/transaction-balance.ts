@@ -24,11 +24,10 @@ export function applyTransactionToAccount(
     return balance;
   }
 
-  if (accountType === "credit_card") {
-    return type === "expense" ? balance + amount : balance - amount;
-  }
-
-  return type === "expense" ? balance - amount : balance + amount;
+  const direction = accountType === "credit_card"
+    ? (type === "expense" ? 1 : -1)
+    : (type === "expense" ? -1 : 1);
+  return (Math.round(balance * 100) + direction * Math.round(amount * 100)) / 100;
 }
 
 /** Rejeita saldos negativos e resultados não finitos em qualquer conta. */

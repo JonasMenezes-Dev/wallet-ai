@@ -25,16 +25,16 @@ export async function getMonthlyReport(month: string): Promise<MonthlyReport> {
     income: number | null; expenses: number | null; transaction_count: number | null;
   }>(`
     SELECT
-      COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
-      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses,
-      COUNT(*) AS transaction_count
+      COALESCE(SUM(CASE WHEN type = 'income' AND transfer_id IS NULL THEN amount ELSE 0 END), 0) AS income,
+      COALESCE(SUM(CASE WHEN type = 'expense' AND transfer_id IS NULL THEN amount ELSE 0 END), 0) AS expenses,
+      COUNT(DISTINCT COALESCE(transfer_id, 'transaction-' || id)) AS transaction_count
     FROM transactions
     WHERE (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = $month
   `, { $month: month });
   const previous = await database.getFirstAsync<{ income: number | null; expenses: number | null }>(`
     SELECT
-      COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS income,
-      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS expenses
+      COALESCE(SUM(CASE WHEN type = 'income' AND transfer_id IS NULL THEN amount ELSE 0 END), 0) AS income,
+      COALESCE(SUM(CASE WHEN type = 'expense' AND transfer_id IS NULL THEN amount ELSE 0 END), 0) AS expenses
     FROM transactions
     WHERE (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = $month
   `, { $month: previousMonth });
@@ -42,7 +42,7 @@ export async function getMonthlyReport(month: string): Promise<MonthlyReport> {
     SELECT transactions.category_id, categories.name AS category_name, SUM(transactions.amount) AS total
     FROM transactions
     LEFT JOIN categories ON categories.id = transactions.category_id
-    WHERE transactions.type = 'expense' AND (CASE WHEN length(transactions.date) = 10 THEN substr(transactions.date, 1, 7) ELSE strftime('%Y-%m', transactions.date, 'localtime') END) = $month
+    WHERE transactions.type = 'expense' AND transactions.transfer_id IS NULL AND (CASE WHEN length(transactions.date) = 10 THEN substr(transactions.date, 1, 7) ELSE strftime('%Y-%m', transactions.date, 'localtime') END) = $month
     GROUP BY transactions.category_id, categories.name
     ORDER BY total DESC
   `, { $month: month });

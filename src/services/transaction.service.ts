@@ -1,5 +1,6 @@
 import {
   createAccountTransfer,
+  createCardPayment,
   createTransaction,
   deleteTransaction,
   getAllTransactions,
@@ -51,6 +52,19 @@ export async function removeTransaction(id: number): Promise<void> {
   await deleteTransaction(id);
 }
 
+/** Paying debt moves existing money; linked entries stay outside cashflow totals. */
+export async function payCreditCard(input: {
+  amount: number;
+  fromAccountId: number;
+  toAccountId: number;
+  description: string | null;
+  date?: string;
+}): Promise<string> {
+  validateTransaction(input.amount, "expense", input.fromAccountId);
+  validateTransaction(input.amount, "income", input.toAccountId);
+  return createCardPayment({ ...input, date: input.date ?? new Date().toISOString() });
+}
+
 export interface TransactionEditPayload {
   amount: number;
   type: Transaction["type"];
@@ -96,6 +110,10 @@ function validateTransaction(
 ): void {
   if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
     throw new Error("O valor da transação deve ser um número válido maior que zero.");
+  }
+  const cents = Math.round(amount * 100);
+  if (!Number.isSafeInteger(cents) || cents <= 0 || Math.abs(amount * 100 - cents) > 0.000001) {
+    throw new Error("Informe um valor em centavos, com até duas casas decimais.");
   }
 
   if (type !== "income" && type !== "expense" && type !== "transfer") {

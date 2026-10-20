@@ -114,7 +114,8 @@ export async function saveRecurringItem(input: {
       UPDATE recurring_items
       SET title = $title, type = $type, amount = $amount,
           category_id = $categoryId, next_due_date = $nextDueDate,
-          due_day = $dueDay, updated_at = $now
+          due_day = CASE WHEN next_due_date = $nextDueDate THEN due_day ELSE $dueDay END,
+          updated_at = $now
       WHERE id = $id AND is_active = 1
     `, {
       $title: title, $type: input.type, $amount: input.amount,

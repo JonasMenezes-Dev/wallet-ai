@@ -270,7 +270,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     `
       SELECT
         transactions.id AS id,
-        CASE WHEN transactions.transfer_id IS NOT NULL THEN transactions.description ELSE transactions.description END AS description,
+        transactions.description AS description,
         goals.name AS goal_name,
         transactions.amount AS amount,
         CASE WHEN transactions.transfer_id IS NOT NULL THEN 'transfer' ELSE transactions.type END AS type,
@@ -279,6 +279,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       FROM transactions
       LEFT JOIN goals
         ON goals.id = transactions.goal_id
+      WHERE transactions.transfer_id IS NULL OR transactions.type = 'expense'
       ORDER BY transactions.date DESC, transactions.id DESC
       LIMIT $limit
     `,
