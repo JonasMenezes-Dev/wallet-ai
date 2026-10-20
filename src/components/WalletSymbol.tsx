@@ -1,5 +1,5 @@
 import { SymbolView } from "expo-symbols";
-import { Text } from "react-native";
+import { Text, type ColorValue } from "react-native";
 
 export type WalletIconName =
   | "home"
@@ -71,7 +71,7 @@ const fallbacks: Record<WalletIconName, string> = {
 
 type WalletSymbolProps = {
   name: WalletIconName;
-  color: string;
+  color: ColorValue;
   size?: number;
 };
 
