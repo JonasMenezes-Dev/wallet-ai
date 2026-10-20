@@ -162,7 +162,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           0
         ) AS totalExpenses,
 
-        COUNT(*) AS transactionCount,
+        COUNT(DISTINCT COALESCE(transfer_id, 'transaction-' || id)) AS transactionCount,
 
         COALESCE(
           SUM(
@@ -190,13 +190,11 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
           0
         ) AS monthExpenses,
 
-        COUNT(
-          CASE
-            WHEN (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
-              = strftime('%Y-%m', 'now', 'localtime')
-            THEN 1
-          END
-        ) AS monthTransactionCount,
+        COUNT(DISTINCT CASE
+          WHEN (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+            = strftime('%Y-%m', 'now', 'localtime')
+          THEN COALESCE(transfer_id, 'transaction-' || id)
+        END) AS monthTransactionCount,
 
         COALESCE(
           SUM(
