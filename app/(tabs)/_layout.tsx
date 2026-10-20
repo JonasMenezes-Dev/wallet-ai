@@ -17,7 +17,10 @@ export default function TabsLayout() {
         headerShown: false,
         // Desliza o conteúdo entre abas sem apagar a tela com um fade branco.
         animation: "shift",
-        animationDuration: 240,
+        transitionSpec: {
+          animation: "timing",
+          config: { duration: 240 },
+        },
         sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSubtle,
