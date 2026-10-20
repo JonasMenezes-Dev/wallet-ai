@@ -10,11 +10,9 @@
       "package": "com.walletai.app",
       "versionCode": 3,
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "POST_NOTIFICATIONS"
-      ],
+      "permissions": ["POST_NOTIFICATIONS"],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/Captura de tela 2026-10-20 103251.png",
+        "foregroundImage": "./assets/wallet-icon.png",
         "backgroundColor": "#0B0F14"
       }
     },
@@ -62,6 +60,6 @@
       }
     },
     "owner": "jonas_menezes",
-    "icon": "./assets/Captura de tela 2026-10-20 103251.png"
+    "icon": "./assets/wallet-icon.png"
   }
 }
