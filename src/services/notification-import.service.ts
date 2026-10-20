@@ -42,7 +42,7 @@ export type NotificationReviewReason =
 
 export function parseFinancialNotification(item: CapturedFinancialNotification) {
   const text = `${item.title} ${item.text}`;
-  const moneyMatches = [...text.matchAll(/R\\$\\s*([0-9]+(?:[.,][0-9]{1,3})*)/gi)];
+  const moneyMatches = [...text.matchAll(/R\$\s*([0-9]+(?:[.,][0-9]{1,3})*)/gi)];
   const isRejected =
     /não autorizad[oa]|nao autorizad[oa]|compra recusada|transa[cç][aã]o recusada|compra não realizada|compra nao realizada|transa[cç][aã]o não realizada|transa[cç][aã]o nao realizada|pagamento recusado|pagamento não concluído|pagamento nao concluido|compra não aprovada|compra nao aprovada|pagamento não aprovado|pagamento nao aprovado/i.test(text);
 
@@ -50,7 +50,7 @@ export function parseFinancialNotification(item: CapturedFinancialNotification) 
   // sem símbolo monetário. Se houver outro valor junto desses rótulos, não
   // escolhemos automaticamente qual deles representa a movimentação.
   const contextualMoneyMatches = [
-    ...text.matchAll(/\\b(?:saldo(?: atual| disponível| disponivel)?|limite(?: disponível| disponivel)?|valor total|total da fatura)\\s*:?\\s*(?:R\\$\\s*)?([0-9][0-9.,]*)/gi),
+    ...text.matchAll(/\b(?:saldo(?: atual| disponível| disponivel)?|limite(?: disponível| disponivel)?|valor total|total da fatura)\s*:?\s*(?:R\$\s*)?([0-9][0-9.,]*)/gi),
   ];
   const hasConflictingContextValue = contextualMoneyMatches.some((contextMatch) => {
     const rawContextValue = contextMatch[1] ?? "";
@@ -76,7 +76,7 @@ export function parseFinancialNotification(item: CapturedFinancialNotification) 
   else if (moneyMatches.length === 0) reason = "missing_amount";
   else if (amount === null) reason = "invalid_amount";
 
-  const type = /\\b(recebeu|recebido|pix recebido|transfer[eê]ncia recebida|cr[eé]dito em conta)\\b/i.test(text)
+  const type = /\b(recebeu|recebido|pix recebido|transfer[eê]ncia recebida|cr[eé]dito em conta)\b/i.test(text)
     ? "income"
     : "expense";
 
@@ -86,7 +86,7 @@ export function parseFinancialNotification(item: CapturedFinancialNotification) 
     reason,
     amountCandidates: moneyMatches.length + (hasConflictingContextValue ? 1 : 0),
     type: type as "income" | "expense",
-    description: (item.text.replace(/R\\$\\s*[0-9]+(?:[.,][0-9]{1,3})*/gi, "").trim() || item.title || "Movimentação bancária").slice(0, 120),
+    description: (item.text.replace(/R\$\s*[0-9]+(?:[.,][0-9]{1,3})*/gi, "").trim() || item.title || "Movimentação bancária").slice(0, 120),
     confidence: amount === null ? "low" as const : "high" as const,
   };
 }
@@ -99,18 +99,18 @@ function normalizeBrazilianAmount(raw: string): string | null {
   if (!raw || !/^[0-9][0-9.,]*$/.test(raw)) return null;
 
   if (raw.includes(",") && raw.includes(".")) {
-    if (!/^\\d{1,3}(\\.\\d{3})*,\\d{2}$/.test(raw)) return null;
-    return raw.replace(/\\./g, "").replace(",", ".");
+    if (!/^\d{1,3}(\.\d{3})*,\d{2}$/.test(raw)) return null;
+    return raw.replace(/\./g, "").replace(",", ".");
   }
 
   if (raw.includes(",")) {
-    if (!/^\\d+,\\d{1,2}$/.test(raw)) return null;
+    if (!/^\d+,\d{1,2}$/.test(raw)) return null;
     return raw.replace(",", ".");
   }
 
   if (raw.includes(".")) {
-    if (/^\\d+\\.\\d{1,2}$/.test(raw)) return raw;
-    if (/^\\d{1,3}(\\.\\d{3})+$/.test(raw)) return raw.replace(/\\./g, "");
+    if (/^\d+\.\d{1,2}$/.test(raw)) return raw;
+    if (/^\d{1,3}(\.\d{3})+$/.test(raw)) return raw.replace(/\./g, "");
     return null;
   }
 
