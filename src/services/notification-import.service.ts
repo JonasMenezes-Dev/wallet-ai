@@ -33,27 +33,56 @@ export const listCapturedNotifications = () => bridge?.getCapturedNotifications(
 export const dismissCapturedNotification = (key: string) => bridge?.removeCapturedNotification(key) ?? false;
 export const notifyRecordedExpense = (amount: number, category: string) => bridge?.notifyExpenseRecorded(amount, category) ?? false;
 
+export type NotificationReviewReason =
+  | "rejected"
+  | "ambiguous"
+  | "missing_amount"
+  | "invalid_amount"
+  | null;
+
 export function parseFinancialNotification(item: CapturedFinancialNotification) {
   const text = `${item.title} ${item.text}`;
-  const matches = text.match(/R\$\s*[0-9]+(?:[.,][0-9]{1,3})*/gi) ?? [];
+  const moneyMatches = [...text.matchAll(/R\\$\\s*([0-9]+(?:[.,][0-9]{1,3})*)/gi)];
+  const isRejected =
+    /não autorizad[oa]|nao autorizad[oa]|compra recusada|transa[cç][aã]o recusada|compra não realizada|compra nao realizada|transa[cç][aã]o não realizada|transa[cç][aã]o nao realizada|pagamento recusado|pagamento não concluído|pagamento nao concluido|compra não aprovada|compra nao aprovada|pagamento não aprovado|pagamento nao aprovado/i.test(text);
 
-  // A notificação pode exibir o valor da compra e também o saldo restante.
-  // Sem contexto bancário específico, escolher o último valor é perigoso:
-  // importe apenas quando existe um único valor monetário reconhecível.
-  const isRejected = /não autorizado|nao autorizado|compra recusada|transação recusada|transacao recusada|compra não realizada|compra nao realizada|transação não realizada|transacao nao realizada|pagamento recusado|pagamento não concluído|pagamento nao concluido/i.test(text);
-  const raw = matches.length === 1 ? matches[0].replace(/R\$\s*/i, "").trim() : "";
+  // Alguns bancos mostram o valor da compra com R$, mas exibem saldo/limite
+  // sem símbolo monetário. Se houver outro valor junto desses rótulos, não
+  // escolhemos automaticamente qual deles representa a movimentação.
+  const contextualMoneyMatches = [
+    ...text.matchAll(/\\b(?:saldo(?: atual| disponível| disponivel)?|limite(?: disponível| disponivel)?|valor total|total da fatura)\\s*:?\\s*(?:R\\$\\s*)?([0-9][0-9.,]*)/gi),
+  ];
+  const distinctContextValues = new Set(
+    contextualMoneyMatches.map((match) => normalizeBrazilianAmount(match[1] ?? "")).filter((value): value is string => value !== null),
+  );
+  const hasConflictingContextValue =
+    distinctContextValues.size > 0 &&
+    (moneyMatches.length !== 1 ||
+      [...distinctContextValues][0] !== normalizeBrazilianAmount(moneyMatches[0]?.[1] ?? ""));
+
+  const raw = moneyMatches.length === 1 ? (moneyMatches[0]?.[1] ?? "") : "";
   const normalized = normalizeBrazilianAmount(raw);
   const parsed = normalized === null ? NaN : Number(normalized);
-  const amount = !isRejected && Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  const type = /recebeu|recebido|pix recebido|transfer[eê]ncia recebida|cr[eé]dito em conta/i.test(text)
+  const amount = !isRejected && moneyMatches.length === 1 && !hasConflictingContextValue &&
+    Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+
+  let reason: NotificationReviewReason = null;
+  if (isRejected) reason = "rejected";
+  else if (moneyMatches.length > 1 || hasConflictingContextValue) reason = "ambiguous";
+  else if (moneyMatches.length === 0) reason = "missing_amount";
+  else if (amount === null) reason = "invalid_amount";
+
+  const type = /\\b(recebeu|recebido|pix recebido|transfer[eê]ncia recebida|cr[eé]dito em conta)\\b/i.test(text)
     ? "income"
     : "expense";
 
   return {
     amount,
     isRejected,
+    reason,
+    amountCandidates: moneyMatches.length + (hasConflictingContextValue ? 1 : 0),
     type: type as "income" | "expense",
-    description: (item.text.replace(/R\$\s*[0-9]+(?:[.,][0-9]{1,3})*/gi, "").trim() || item.title || "Movimentação bancária").slice(0, 120),
+    description: (item.text.replace(/R\\$\\s*[0-9]+(?:[.,][0-9]{1,3})*/gi, "").trim() || item.title || "Movimentação bancária").slice(0, 120),
     confidence: amount === null ? "low" as const : "high" as const,
   };
 }
@@ -66,21 +95,18 @@ function normalizeBrazilianAmount(raw: string): string | null {
   if (!raw || !/^[0-9][0-9.,]*$/.test(raw)) return null;
 
   if (raw.includes(",") && raw.includes(".")) {
-    // No formato brasileiro, ponto separa milhares e vírgula os centavos.
-    if (!/^\d{1,3}(\.\d{3})*,\d{2}$/.test(raw)) return null;
-    return raw.replace(/\./g, "").replace(",", ".");
+    if (!/^\\d{1,3}(\\.\\d{3})*,\\d{2}$/.test(raw)) return null;
+    return raw.replace(/\\./g, "").replace(",", ".");
   }
 
   if (raw.includes(",")) {
-    if (!/^\d+,\d{1,2}$/.test(raw)) return null;
+    if (!/^\\d+,\\d{1,2}$/.test(raw)) return null;
     return raw.replace(",", ".");
   }
 
   if (raw.includes(".")) {
-    // Aceita ponto decimal com dois dígitos; caso contrário trata os pontos
-    // em grupos de três como separadores de milhares.
-    if (/^\d+\d?\.\d{1,2}$/.test(raw)) return raw;
-    if (/^\d{1,3}(\.\d{3})+$/.test(raw)) return raw.replace(/\./g, "");
+    if (/^\\d+\\.\\d{1,2}$/.test(raw)) return raw;
+    if (/^\\d{1,3}(\\.\\d{3})+$/.test(raw)) return raw.replace(/\\./g, "");
     return null;
   }
 
