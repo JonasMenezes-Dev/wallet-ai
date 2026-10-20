@@ -203,7 +203,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
             CASE
               WHEN type = 'income'
               AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
-                = strftime('%Y-%m', 'now', 'localtime', '-1 month')
+                = strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month')
               THEN amount
               ELSE 0
             END
@@ -216,7 +216,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
             CASE
               WHEN type = 'expense'
               AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
-                = strftime('%Y-%m', 'now', 'localtime', '-1 month')
+                = strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month')
               THEN amount
               ELSE 0
             END
