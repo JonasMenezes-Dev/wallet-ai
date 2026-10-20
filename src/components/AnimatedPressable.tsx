@@ -13,7 +13,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 
-import { durations, easings, spring } from "../animations";
+import { easings, spring } from "../animations";
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
