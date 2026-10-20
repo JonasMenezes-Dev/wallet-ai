@@ -40,13 +40,16 @@ export function AnimatedPressable({
 }: AnimatedPressableProps) {
   const progress = useSharedValue(0);
 
+  // Mantém compatibilidade com chamadas antigas, mas o feedback agora é só
+  // movimento: variar opacidade causava a piscada que queremos evitar.
+  void pressedOpacity;
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       {
         scale: interpolate(progress.value, [0, 1], [1, pressedScale]),
       },
     ],
-    opacity: interpolate(progress.value, [0, 1], [1, pressedOpacity]),
   }));
 
   // Handlers criados fora do JSX para que o React Compiler não trate a
