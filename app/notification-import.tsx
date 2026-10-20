@@ -22,6 +22,7 @@ export default function NotificationImportScreen() {
   const styles = useThemedStyles(createStyles);
   const [available, setAvailable] = useState(isNotificationListenerAvailable());
   const [permission, setPermission] = useState(false);
+  const [walletNotificationsAllowed, setWalletNotificationsAllowed] = useState<boolean | null>(null);
   const [items, setItems] = useState<CapturedFinancialNotification[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -34,6 +35,15 @@ export default function NotificationImportScreen() {
     if (isNotificationListenerAvailable()) {
       setPermission(hasNotificationAccess());
       setItems(listCapturedNotifications());
+    }
+    if (Platform.OS === "android" && Number(Platform.Version) >= 33) {
+      try {
+        setWalletNotificationsAllowed(await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS));
+      } catch {
+        setWalletNotificationsAllowed(false);
+      }
+    } else {
+      setWalletNotificationsAllowed(true);
     }
     try {
       const [nextAccounts, nextCategories] = await Promise.all([listAccounts(), listCategories()]);
@@ -50,6 +60,24 @@ export default function NotificationImportScreen() {
     return parsed.amount !== null && !parsed.isRejected;
   }).length;
   const reviewCount = items.length - readyCount;
+
+  async function requestWalletNotifications() {
+    if (Platform.OS !== "android" || Number(Platform.Version) < 33) {
+      setWalletNotificationsAllowed(true);
+      return;
+    }
+    try {
+      const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+      const allowed = result === PermissionsAndroid.RESULTS.GRANTED;
+      setWalletNotificationsAllowed(allowed);
+      if (!allowed) {
+        Alert.alert("Permissão não concedida", "O Wallet continuará funcionando, mas não poderá exibir avisos próprios de confirmação.");
+      }
+    } catch {
+      setWalletNotificationsAllowed(false);
+      Alert.alert("Não foi possível solicitar", "Ative as notificações do Wallet nas configurações do Android.");
+    }
+  }
 
   async function importItem(item: CapturedFinancialNotification) {
     const parsed = parseFinancialNotification(item);
@@ -86,24 +114,12 @@ export default function NotificationImportScreen() {
         provider: "android_notification_listener",
         institution,
       });
-      if (parsed.type === "expense" && isNotificationListenerAvailable()) {
-        let notificationsAllowed = true;
-        if (Platform.OS === "android" && Number(Platform.Version) >= 33) {
-          try {
-            const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
-            notificationsAllowed = result === PermissionsAndroid.RESULTS.GRANTED;
-          } catch (permissionError) {
-            notificationsAllowed = false;
-            console.warn("Permissão de notificações não concedida:", permissionError);
-          }
-        }
-        if (notificationsAllowed) {
-          const categoryName = categories.find((category) => category.id === categoryId)?.name ?? "Sem categoria";
-          try {
-            notifyRecordedExpense(parsed.amount, categoryName);
-          } catch (notificationError) {
-            console.warn("Não foi possível mostrar a confirmação do gasto:", notificationError);
-          }
+      if (parsed.type === "expense" && walletNotificationsAllowed) {
+        const categoryName = categories.find((category) => category.id === categoryId)?.name ?? "Sem categoria";
+        try {
+          notifyRecordedExpense(parsed.amount, categoryName);
+        } catch (notificationError) {
+          console.warn("Não foi possível mostrar a confirmação do gasto:", notificationError);
         }
       }
       dismissCapturedNotification(item.key);
@@ -111,7 +127,15 @@ export default function NotificationImportScreen() {
       Alert.alert("Movimentação importada", "Confira os dados na tela Transações.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Não foi possível importar.";
-      Alert.alert(message.toLowerCase().includes("já foi registrada") ? "Já importada" : "Erro ao importar", message);
+      if (message.toLowerCase().includes("já foi registrada")) {
+        // A chave externa já existe no banco: limpar a fila evita novas tentativas
+        // e não altera o saldo nem cria um segundo lançamento.
+        dismissCapturedNotification(item.key);
+        await reload();
+        Alert.alert("Já importada", "Essa notificação já corresponde a um lançamento salvo. Ela foi removida da fila para evitar tentativas repetidas.");
+      } else {
+        Alert.alert("Erro ao importar", message);
+      }
     } finally { setSavingKey(null); }
   }
 
@@ -133,6 +157,8 @@ export default function NotificationImportScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Ative o acesso às notificações</Text>
             <Text style={styles.body}>O Android abrirá as configurações do sistema. Ative apenas se concordar com o acesso descrito acima. Depois volte para esta tela.</Text>
+            <Text style={styles.body}>Avisos próprios do Wallet: {walletNotificationsAllowed === null ? "verificando..." : walletNotificationsAllowed ? "ativados" : "desativados"}. Essa permissão é separada do acesso às notificações bancárias.</Text>
+            {walletNotificationsAllowed === false && <AnimatedPressable style={styles.secondaryButton} onPress={() => void requestWalletNotifications()}><Text style={styles.secondaryText}>Permitir avisos do Wallet</Text></AnimatedPressable>}
             <AnimatedPressable style={styles.primaryButton} onPress={() => { try { openNotificationAccessSettings(); } catch (error) { Alert.alert("Não foi possível abrir", error instanceof Error ? error.message : "Tente novamente."); } }}><Text style={styles.primaryText}>Abrir configurações do Android</Text></AnimatedPressable>
           </View>
         ) : (
@@ -140,6 +166,8 @@ export default function NotificationImportScreen() {
             <View style={styles.statusCard}>
               <Text style={styles.statusTitle}>Acesso às notificações ativado</Text>
               <Text style={styles.body}>{items.length === 0 ? "Nenhuma notificação financeira aguardando revisão." : `${items.length} ${items.length === 1 ? "notificação encontrada" : "notificações encontradas"} aguardando revisão.`}</Text>
+              <Text style={styles.body}>Avisos próprios do Wallet: {walletNotificationsAllowed === null ? "verificando..." : walletNotificationsAllowed ? "ativados" : "desativados"}.</Text>
+              {walletNotificationsAllowed === false && <AnimatedPressable style={styles.secondaryButton} onPress={() => void requestWalletNotifications()}><Text style={styles.secondaryText}>Permitir avisos do Wallet</Text></AnimatedPressable>}
               {items.length > 0 && <View style={styles.summaryRow}>
                 <View style={styles.summaryPill}><Text style={styles.summaryReady}>{readyCount} prontas para conferir</Text></View>
                 <View style={styles.summaryPill}><Text style={styles.summaryReview}>{reviewCount} precisam de atenção</Text></View>
@@ -152,8 +180,20 @@ export default function NotificationImportScreen() {
                   <View key={item.key} style={styles.card}>
                     <Text style={styles.cardTitle}>{item.title}</Text>
                     <Text style={styles.body}>{item.text}</Text>
-                    <Text style={[styles.amount, parsed.type === "income" ? styles.income : styles.expense]}>{parsed.amount ? currency(parsed.amount) : "Valor não identificado"}</Text>
-                    <Text style={styles.body}>Tipo sugerido: {parsed.type === "income" ? "Entrada" : "Despesa"} · {parsed.confidence === "high" ? "valor reconhecido" : "revisão necessária"}</Text>
+                    <Text style={[styles.amount, parsed.type === "income" ? styles.income : styles.expense]}>
+                      {parsed.reason === "rejected" ? "Transação recusada" : parsed.amount !== null ? currency(parsed.amount) : "Valor não identificado"}
+                    </Text>
+                    <Text style={styles.body}>
+                      {parsed.reason === "rejected"
+                        ? "A notificação indica uma tentativa recusada ou não concluída. Não importe como transação."
+                        : parsed.reason === "ambiguous"
+                          ? "Há mais de um valor possível nesta notificação. Registre manualmente após conferir o comprovante."
+                          : parsed.reason === "missing_amount"
+                            ? "A notificação não informa um valor monetário reconhecível."
+                            : parsed.reason === "invalid_amount"
+                              ? "O formato do valor não pôde ser interpretado com segurança."
+                              : `Tipo sugerido: ${parsed.type === "income" ? "Entrada" : "Despesa"} · valor reconhecido`}
+                    </Text>
                     <Text style={styles.fieldLabel}>Conta/cartão</Text>
                     <View style={styles.chips}>{accounts.map((account) => <AnimatedPressable key={account.id} style={[styles.chip, (accountByKey[item.key] ?? accountByKey.default ?? accounts[0]?.id) === account.id && styles.chipSelected]} onPress={() => setAccountByKey((current) => ({ ...current, [item.key]: account.id }))}><Text style={styles.chipText}>{account.name}</Text></AnimatedPressable>)}</View>
                     <Text style={styles.fieldLabel}>Categoria</Text>
