@@ -5,9 +5,8 @@ function isValidMonth(value: string): boolean {
   if (parts.length !== 2 || parts[0].length !== 4 || parts[1].length !== 2) return false;
   const year = Number(parts[0]);
   const month = Number(parts[1]);
-  return Number.isInteger(year) && String(year) === parts[0] && month >= 1 && month <= 12 && String(month).padStart(2, "0") === parts[1];
-  const [year, month] = value.split("-").map(Number);
-  return Number.isInteger(year) && year >= 1 && month >= 1 && month <= 12;
+  return Number.isInteger(year) && year >= 1 && String(year) === parts[0] &&
+    month >= 1 && month <= 12 && String(month).padStart(2, "0") === parts[1];
 }
 
 export interface MonthlyBudget {
