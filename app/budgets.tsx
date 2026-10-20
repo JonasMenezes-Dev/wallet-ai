@@ -380,7 +380,7 @@ export default function BudgetsScreen() {
                 <Text style={styles.secondaryButtonText}>Cancelar</Text>
               </Pressable>
               <Pressable style={styles.saveButton} onPress={() => void handleSave()} disabled={saving}>
-                {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryButtonText}>Salvar limite</Text>}
+                {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.primaryButtonText}>Salvar limite</Text>}
               </Pressable>
             </View>
           </View>
