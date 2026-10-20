@@ -1,16 +1,9 @@
 import { Tabs } from "expo-router";
-import { Text, View, useWindowDimensions } from "react-native";
+import { View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useThemeColors, radii, spacing, typography } from "../../src/theme";
-
-const tabSymbols: Record<string, string> = {
-  index: "⌂",
-  transactions: "↔",
-  accounts: "▤",
-  goals: "◎",
-  settings: "⚙",
-};
+import { WalletSymbol } from "../../src/components/WalletSymbol";
 
 export default function TabsLayout() {
   const colors = useThemeColors();
@@ -77,9 +70,7 @@ export default function TabsLayout() {
                 backgroundColor: focused ? colors.accentSurface : "transparent",
               }}
             >
-              <Text style={{ color, fontSize: 22, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>
-                {tabSymbols.index}
-              </Text>
+              <WalletSymbol name="home" color={color} size={21} />
             </View>
           ),
         }}
@@ -91,7 +82,7 @@ export default function TabsLayout() {
           tabBarAccessibilityLabel: "Transações",
           tabBarIcon: ({ focused, color }) => (
             <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <Text style={{ color, fontSize: 21, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.transactions}</Text>
+              <WalletSymbol name="transactions" color={color} size={21} />
             </View>
           ),
         }}
@@ -103,7 +94,7 @@ export default function TabsLayout() {
           tabBarAccessibilityLabel: "Contas",
           tabBarIcon: ({ focused, color }) => (
             <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <Text style={{ color, fontSize: 19, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.accounts}</Text>
+              <WalletSymbol name="accounts" color={color} size={21} />
             </View>
           ),
         }}
@@ -115,7 +106,7 @@ export default function TabsLayout() {
           tabBarAccessibilityLabel: "Metas",
           tabBarIcon: ({ focused, color }) => (
             <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <Text style={{ color, fontSize: 20, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.goals}</Text>
+              <WalletSymbol name="goals" color={color} size={21} />
             </View>
           ),
         }}
@@ -127,7 +118,7 @@ export default function TabsLayout() {
           tabBarAccessibilityLabel: "Configurações",
           tabBarIcon: ({ focused, color }) => (
             <View style={{ width: 34, height: 28, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: focused ? colors.accentSurface : "transparent" }}>
-              <Text style={{ color, fontSize: 19, lineHeight: 25, fontWeight: focused ? "700" : "400" }}>{tabSymbols.settings}</Text>
+              <WalletSymbol name="settings" color={color} size={21} />
             </View>
           ),
         }}
