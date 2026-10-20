@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
@@ -200,6 +201,7 @@ export default function NewGoalScreen() {
             onPress={handleSave}
             disabled={saving}
           >
+            {saving && <ActivityIndicator color={colors.onPrimary} size="small" />}
             <Text style={styles.saveButtonText}>
               {saving ? "Salvando..." : "Criar meta"}
             </Text>
