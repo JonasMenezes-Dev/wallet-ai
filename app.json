@@ -12,7 +12,11 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "POST_NOTIFICATIONS"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/Captura de tela 2026-10-20 103251.png",
+        "backgroundColor": "#0B0F14"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.walletai.app"
@@ -25,7 +29,18 @@
       "expo-sqlite",
       "expo-updates",
       "@react-native-community/datetimepicker",
-      "expo-splash-screen"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/Captura de tela 2026-10-20 103242.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B0F14",
+          "dark": {
+            "backgroundColor": "#0B0F14"
+          }
+        }
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/65d50a05-d803-4da3-af32-4cdb34f1df9c",
@@ -46,6 +61,7 @@
         "projectId": "65d50a05-d803-4da3-af32-4cdb34f1df9c"
       }
     },
-    "owner": "jonas_menezes"
+    "owner": "jonas_menezes",
+    "icon": "./assets/Captura de tela 2026-10-20 103251.png"
   }
 }
