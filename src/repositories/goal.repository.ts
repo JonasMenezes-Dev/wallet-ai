@@ -87,12 +87,14 @@ export async function addGoalContribution(
       id: number;
       balance: number;
       name: string;
+      type: string;
     }>(
       `
         SELECT
           id,
           balance,
-          name
+          name,
+          type
         FROM accounts
         WHERE id = $accountId
       `,
