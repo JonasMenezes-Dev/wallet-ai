@@ -21,6 +21,24 @@ test("recognizes one explicit Brazilian-real expense amount", () => {
   assert.equal(result.reason, null);
 });
 
+test("normalizes Brazilian thousands and decimal separators", () => {
+  const result = parseFinancialNotification(
+    notification("Compra aprovada", "Compra aprovada de R$ 1.234,56"),
+  );
+
+  assert.equal(result.amount, 1234.56);
+  assert.equal(result.reason, null);
+});
+
+test("rejects a number formatted with conflicting separators", () => {
+  const result = parseFinancialNotification(
+    notification("Compra aprovada", "Compra aprovada de R$ 1,234.56"),
+  );
+
+  assert.equal(result.amount, null);
+  assert.equal(result.reason, "invalid_amount");
+});
+
 test("recognizes a received Pix as income", () => {
   const result = parseFinancialNotification(
     notification("Pix recebido", "Você recebeu um Pix de R$ 150,00"),
