@@ -456,6 +456,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   saveButton: {
     height: 58,
     marginTop: 36,
+    flexDirection: 'row',
+    gap: 8,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
