@@ -31,7 +31,7 @@ export function AnimatedTabIcon({
   useEffect(() => {
     focusProgress.set(
       reduceMotion
-        ? focused ? 1 : 0
+        ? Number(focused)
         : withSpring(focused ? 1 : 0, {
             ...spring.press,
             stiffness: 260,
