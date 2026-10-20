@@ -70,6 +70,9 @@ function createStyles(colors: ThemeColors) {
     emptyText: { color: colors.textMuted, textAlign: "center", lineHeight: 20 },
     loading: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background, gap: spacing.md },
     loadingText: { color: colors.textMuted },
+    errorText: { color: colors.expense, textAlign: "center", lineHeight: 20 },
+    retryButton: { marginTop: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.primary },
+    retryButtonText: { color: colors.onPrimary, fontWeight: "700" },
   });
 }
 
@@ -81,11 +84,13 @@ export default function ReportsScreen() {
   const [previous, setPrevious] = useState<MonthTotals>({ income: 0, expenses: 0, count: 0 });
   const [categories, setCategories] = useState<CategoryTotal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const currentMonth = monthKey(new Date());
 
   const reload = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const db = await getDatabase();
       const [currentRows, previousRows, categoryRows] = await Promise.all([
         db.getFirstAsync<{ income: number; expenses: number; count: number }>(
@@ -121,6 +126,7 @@ export default function ReportsScreen() {
       setCategories(categoryRows);
     } catch (error) {
       console.error("Erro ao carregar relatórios:", error);
+      setLoadError("Não foi possível carregar os dados do relatório. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -135,6 +141,10 @@ export default function ReportsScreen() {
 
   if (loading) {
     return <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={styles.loadingText}>Calculando relatório...</Text></View>;
+  }
+
+  if (loadError) {
+    return <View style={styles.loading}><Text style={styles.errorText}>{loadError}</Text><AnimatedPressable style={styles.retryButton} onPress={() => void reload()}><Text style={styles.retryButtonText}>Tentar novamente</Text></AnimatedPressable></View>;
   }
 
   return (
