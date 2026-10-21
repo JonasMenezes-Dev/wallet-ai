@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="390" height="320" viewBox="0 0 390 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Ambient / arcos de destaque" opacity="0.055" clip-path="url(#clip0_0_20)">
+<path id="Vector" d="M459 87C459 148.856 408.856 199 347 199C285.144 199 235 148.856 235 87C235 25.1441 285.144 -25 347 -25C408.856 -25 459 25.1441 459 87Z" stroke-width="1.7" stroke="#6FE0A2"/>
+<path id="Vector_2" d="M484 87C484 162.663 422.663 224 347 224C271.337 224 210 162.663 210 87C210 11.337 271.337 -50 347 -50C422.663 -50 484 11.337 484 87Z" stroke-width="1.1" stroke="#6FE0A2"/>
+<path id="Vector_3" d="M512 87C512 178.127 438.127 252 347 252C255.873 252 182 178.127 182 87C182 -4.12698 255.873 -78 347 -78C438.127 -78 512 -4.12698 512 87Z" stroke-width="0.8" stroke="#6FE0A2"/>
+</g>
+<defs>
+<clipPath id="clip0_0_20">
+<rect width="390" height="320" fill="white"/>
+</clipPath>
+</defs>
+</svg>

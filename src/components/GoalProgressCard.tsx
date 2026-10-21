@@ -1,7 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AnimatedProgressFill } from "./AnimatedProgressFill";
-import { ThemeColors, useThemedStyles } from "../theme";
+import { AppCard } from "./AppCard";
+import { WalletSymbol } from "./WalletSymbol";
+import { spacing, typography, ThemeColors, useThemeColors, useThemedStyles } from "../theme";
 import type { DashboardGoal } from "../services/dashboard.service";
 
 type GoalProgressCardProps = {
@@ -31,13 +33,17 @@ function formatDeadline(goal: DashboardGoal) {
  */
 export function GoalProgressCard({ goal, goalCount }: GoalProgressCardProps) {
   const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
   const isCompleted = goal.remainingAmount <= 0;
 
   return (
-    <View style={styles.card}>
+    <AppCard ambient="highlight" style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerInfo}>
-          <Text style={styles.badge}>🎯 Sua meta</Text>
+          <View style={styles.badgeRow}>
+            <WalletSymbol name="goals" color={colors.primary} size={18} />
+            <Text style={styles.badge}>Sua meta</Text>
+          </View>
 
           <Text style={styles.name} numberOfLines={1}>
             {goal.name}
@@ -67,7 +73,7 @@ export function GoalProgressCard({ goal, goalCount }: GoalProgressCardProps) {
 
         <Text style={styles.valuesText}>
           {isCompleted
-            ? "Meta concluída 🎉"
+            ? "Meta concluída"
             : `Faltam ${formatCurrency(goal.remainingAmount)}`}
         </Text>
       </View>
@@ -77,20 +83,16 @@ export function GoalProgressCard({ goal, goalCount }: GoalProgressCardProps) {
           Mostrando a meta mais próxima de {goalCount} cadastradas
         </Text>
       )}
-    </View>
+    </AppCard>
   );
 }
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     card: {
-      marginTop: 14,
-      padding: 18,
-      borderRadius: 18,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
+      marginTop: spacing.lg,
     },
+    badgeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
 
     header: {
       flexDirection: "row",
@@ -104,12 +106,14 @@ const createStyles = (colors: ThemeColors) =>
     },
 
     badge: {
+      fontFamily: typography.family.bold,
       fontSize: 12,
       fontWeight: "700",
       color: colors.textMuted,
     },
 
     name: {
+      fontFamily: typography.family.bold,
       marginTop: 6,
       fontSize: 18,
       fontWeight: "800",
@@ -117,12 +121,14 @@ const createStyles = (colors: ThemeColors) =>
     },
 
     deadline: {
+      fontFamily: typography.family.regular,
       marginTop: 3,
       fontSize: 12,
       color: colors.textSubtle,
     },
 
     percentage: {
+      fontFamily: typography.family.bold,
       fontSize: 22,
       fontWeight: "800",
       color: colors.primary,
@@ -154,11 +160,13 @@ const createStyles = (colors: ThemeColors) =>
     },
 
     valuesText: {
+      fontFamily: typography.family.regular,
       fontSize: 12,
       color: colors.textMuted,
     },
 
     footer: {
+      fontFamily: typography.family.regular,
       marginTop: 12,
       fontSize: 11,
       color: colors.textSubtle,

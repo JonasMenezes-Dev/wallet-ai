@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { AnimatedPressable } from "./AnimatedPressable";
 import { useThemeColors, controlSizes, radii, spacing, typography } from "../theme";
@@ -9,6 +9,7 @@ type AppButtonProps = {
   onPress: () => void;
   variant?: "primary" | "secondary" | "ghost";
   disabled?: boolean;
+  loading?: boolean;
   leading?: ReactNode;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
@@ -20,11 +21,13 @@ export function AppButton({
   onPress,
   variant = "primary",
   disabled = false,
+  loading = false,
   leading,
   style,
   accessibilityLabel,
 }: AppButtonProps) {
   const colors = useThemeColors();
+  const blocked = disabled || loading;
   const primary = variant === "primary";
   const ghost = variant === "ghost";
   const backgroundColor = primary
@@ -38,21 +41,21 @@ export function AppButton({
     <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
+      accessibilityState={{ disabled: blocked, busy: loading }}
+      disabled={blocked}
+      onPress={() => { if (!blocked) onPress(); }}
       pressedOpacity={0.82}
       style={[
         styles.button,
         {
           backgroundColor,
           borderColor: primary || ghost ? "transparent" : colors.border,
-          opacity: disabled ? 0.5 : 1,
+          opacity: blocked ? 0.5 : 1,
         },
         style,
       ]}
     >
-      {leading ? <View style={styles.leading}>{leading}</View> : null}
+      {loading ? <ActivityIndicator color={foregroundColor} /> : leading ? <View style={styles.leading}>{leading}</View> : null}
       <Text style={[styles.label, { color: foregroundColor }]}>{label}</Text>
     </AnimatedPressable>
   );
@@ -75,6 +78,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.size.body,
+    fontFamily: typography.family.bold,
     fontWeight: typography.weight.bold,
   },
 });

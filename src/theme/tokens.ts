@@ -21,12 +21,16 @@ export const radii = {
   xs: 6,
   sm: 10,
   md: 14,
-  lg: 18,
+  lg: 21,
   xl: 24,
   pill: 999,
 } as const;
 
 export const typography = {
+  family: {
+    regular: 'Inter-Regular',
+    bold: 'Inter-Bold',
+  },
   size: {
     caption: 11,
     small: 12,
@@ -34,8 +38,8 @@ export const typography = {
     bodyLarge: 16,
     subtitle: 18,
     title: 22,
-    titleLarge: 28,
-    display: 34,
+    titleLarge: 29,
+    display: 32,
   },
   lineHeight: {
     tight: 1.2,
@@ -58,9 +62,9 @@ export const typography = {
 } as const;
 
 export const controlSizes = {
-  buttonHeight: 50,
-  buttonHeightCompact: 42,
-  inputHeight: 52,
+  buttonHeight: 52,
+  buttonHeightCompact: 44,
+  inputHeight: 55,
   tabBarMinHeight: 60,
   iconButtonSize: 44,
   touchTargetMin: 44,
@@ -78,4 +82,17 @@ export const motion = {
   quick: 140,
   standard: 220,
   emphasis: 300,
+} as const;
+
+/** Opacidade aplicada aos SVGs de linhas; arcos já têm 5,5% no arquivo. */
+export const ambientOpacity = { subtle: 0.04, standard: 0.06, highlight: 0.07 } as const;
+
+export const elevation = {
+  card: {
+    shadowColor: '#06110C',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 1,
+  },
 } as const;

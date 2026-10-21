@@ -62,18 +62,21 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   eyebrow: {
+    fontFamily: typography.family.bold,
     fontSize: typography.size.caption,
     fontWeight: typography.weight.bold,
     letterSpacing: typography.letterSpacing.wide,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.md,
   },
   title: {
+    fontFamily: typography.family.bold,
     flexShrink: 1,
     fontSize: typography.size.titleLarge,
     lineHeight: Math.round(typography.size.titleLarge * typography.lineHeight.tight),
-    fontWeight: typography.weight.heavy,
+    fontWeight: typography.weight.bold,
   },
   subtitle: {
+    fontFamily: typography.family.regular,
     flexShrink: 1,
     marginTop: spacing.sm,
     fontSize: typography.size.body,

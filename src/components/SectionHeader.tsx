@@ -39,10 +39,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
+    fontFamily: typography.family.bold,
     fontSize: typography.size.subtitle,
     fontWeight: typography.weight.bold,
   },
   subtitle: {
+    fontFamily: typography.family.regular,
     marginTop: spacing.xxs,
     fontSize: typography.size.small,
     lineHeight: Math.round(typography.size.small * typography.lineHeight.relaxed),

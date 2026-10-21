@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { useThemeColors, radii, spacing } from "../theme";
+import { useThemeColors, elevation, radii, spacing } from "../theme";
+import { PremiumAmbient } from "./PremiumAmbient";
 
 type AppCardProps = {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   muted?: boolean;
   padded?: boolean;
+  ambient?: "none" | "subtle" | "highlight";
 };
 
 /** Superfície consistente para blocos de conteúdo em qualquer tema. */
@@ -16,6 +18,7 @@ export function AppCard({
   style,
   muted = false,
   padded = true,
+  ambient = "none",
 }: AppCardProps) {
   const colors = useThemeColors();
 
@@ -26,16 +29,17 @@ export function AppCard({
         {
           backgroundColor: muted ? colors.surfaceMuted : colors.surface,
           borderColor: colors.border,
-          padding: padded ? spacing.lg : 0,
-          shadowColor: "#10271C",
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
-          elevation: 1,
+          padding: padded ? spacing.xl : 0,
+          ...elevation.card,
         },
         style,
       ]}
     >
+      {ambient !== "none" ? (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.texture]}>
+          <PremiumAmbient variant={ambient} placement="card" />
+        </View>
+      ) : null}
       {children}
     </View>
   );
@@ -43,7 +47,8 @@ export function AppCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderRadius: radii.lg,
   },
+  texture: { borderRadius: radii.lg, overflow: "hidden" },
 });

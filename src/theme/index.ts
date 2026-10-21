@@ -13,7 +13,9 @@ export type { ThemeColors, ThemeName, ThemePreference } from "./colors";
 export { useThemedStyles } from "./use-themed-styles";
 
 export {
+  ambientOpacity,
   controlSizes,
+  elevation,
   iconSizes,
   motion,
   radii,

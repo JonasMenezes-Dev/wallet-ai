@@ -1,5 +1,6 @@
 import { SymbolView } from "expo-symbols";
-import { Text, type ColorValue } from "react-native";
+import { Image } from "expo-image";
+import { View, type ColorValue } from "react-native";
 
 export type WalletIconName =
   | "home"
@@ -21,7 +22,10 @@ export type WalletIconName =
   | "bank"
   | "card"
   | "goal"
-  | "more";
+  | "more"
+  | "success"
+  | "error"
+  | "insight";
 
 const symbols = {
   home: { ios: "house.fill", android: "home", web: "home" },
@@ -44,29 +48,20 @@ const symbols = {
   card: { ios: "creditcard.fill", android: "credit_card", web: "credit_card" },
   goal: { ios: "flag.fill", android: "flag", web: "flag" },
   more: { ios: "ellipsis", android: "more_horiz", web: "more_horiz" },
+  success: { ios: "checkmark.circle", android: "check_circle", web: "check_circle" },
+  error: { ios: "exclamationmark.circle", android: "error", web: "error" },
+  insight: { ios: "sparkles", android: "auto_awesome", web: "auto_awesome" },
 } as const;
 
-const fallbacks: Record<WalletIconName, string> = {
-  home: "⌂",
-  transactions: "↔",
-  accounts: "▣",
-  goals: "◎",
-  settings: "⚙",
-  alerts: "♧",
-  budget: "▥",
-  recurring: "↻",
-  reports: "▤",
-  notification: "♧",
-  plus: "+",
-  income: "↙",
-  expense: "↗",
-  transfer: "↔",
-  food: "•",
-  shopping: "▣",
-  bank: "▤",
-  card: "▰",
-  goal: "⚑",
-  more: "•••",
+const approvedIcons = {
+  home: require("../../assets/premium/home.svg"),
+  transactions: require("../../assets/premium/transactions.svg"),
+  accounts: require("../../assets/premium/accounts.svg"),
+  goals: require("../../assets/premium/goals.svg"),
+  settings: require("../../assets/premium/settings.svg"),
+  income: require("../../assets/premium/income.svg"),
+  expense: require("../../assets/premium/expense.svg"),
+  insight: require("../../assets/premium/insight.svg"),
 };
 
 type WalletSymbolProps = {
@@ -76,16 +71,16 @@ type WalletSymbolProps = {
 };
 
 export function WalletSymbol({ name, color, size = 22 }: WalletSymbolProps) {
+  if (name in approvedIcons && typeof color === "string") {
+    return <Image source={approvedIcons[name as keyof typeof approvedIcons]} tintColor={color} contentFit="contain" accessible={false} style={{ width: size, height: size }} />;
+  }
   return (
     <SymbolView
+      accessible={false}
       name={symbols[name]}
       size={size}
       tintColor={color}
-      fallback={
-        <Text style={{ color, fontSize: size, lineHeight: size + 2 }}>
-          {fallbacks[name]}
-        </Text>
-      }
+      fallback={<View style={{ width: size, height: size }} />}
     />
   );
 }

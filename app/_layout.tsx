@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 import { StatusBar } from "expo-status-bar";
+import { useFonts } from "expo-font";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { screenTransition } from "../src/animations";
@@ -19,8 +20,12 @@ function RootNavigator() {
   const colors = useThemeColors();
   const themeName = useThemeName();
   const { loading } = useThemePreference();
+  const [fontsLoaded, fontError] = useFonts({
+    "Inter-Regular": require("../assets/fonts/Inter-Regular.ttf"),
+    "Inter-Bold": require("../assets/fonts/Inter-Bold.ttf"),
+  });
 
-  if (loading) {
+  if (loading || (!fontsLoaded && !fontError)) {
     return (
       <>
         <SafeAreaView
