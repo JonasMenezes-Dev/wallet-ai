@@ -1,7 +1,10 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { AppCard } from "../../src/components/AppCard";
+import { AppText as Text } from "../../src/components/AppText";
+import { PremiumScreen } from "../../src/components/PremiumScreen";
+import { BankNotificationSettings } from "../../src/components/BankNotificationSettings";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import {
   ThemeColors,
@@ -37,6 +40,7 @@ export default function SettingsScreen() {
   const { themePreference, setThemePreference } = useThemePreference();
 
   return (
+    <PremiumScreen ambient="subtle">
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.container}
@@ -97,7 +101,9 @@ export default function SettingsScreen() {
           mesmo quando o tema do sistema mudar.
         </Text>
       </View>
+      <BankNotificationSettings />
     </ScrollView>
+    </PremiumScreen>
   );
 }
 
@@ -105,15 +111,14 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: colors.background,
     },
     container: {
-      paddingHorizontal: 18,
+      paddingHorizontal: 24,
       paddingTop: 24,
       paddingBottom: 32,
     },
     section: {
-      padding: 18,
+      padding: 20,
     },
     sectionTitle: {
       fontSize: 18,
@@ -132,7 +137,7 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       alignItems: "center",
       padding: 14,
-      borderRadius: 14,
+      borderRadius: 21,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,
@@ -176,9 +181,9 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.primary,
     },
     note: {
-      marginTop: 16,
-      padding: 16,
-      borderRadius: 16,
+      marginTop: 24,
+      padding: 20,
+      borderRadius: 21,
       backgroundColor: colors.surfaceMuted,
     },
     noteTitle: {

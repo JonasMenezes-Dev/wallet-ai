@@ -1,3 +1,9 @@
+import { Image } from "expo-image";
+import { PremiumScreen } from "../../src/components/PremiumScreen";
+import { AppField } from "../../src/components/AppField";
+import { AppButton } from "../../src/components/AppButton";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppText as Text } from "../../src/components/AppText";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useState } from "react";
 
@@ -7,8 +13,6 @@ import {
     Platform,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
     View,
 } from "react-native";
 
@@ -18,7 +22,7 @@ import { AnimatedBlock, FadeInView } from "../../src/components/AnimatedListItem
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { editGoal, loadGoal } from "../../src/services/goal.service";
-import { ThemeColors, useThemedStyles } from "../../src/theme";
+import { typography, ThemeColors, useThemeColors, useThemedStyles } from "../../src/theme";
 
 function parseMoney(value: string) {
   return Number(value.replace(/\./g, "").replace(",", "."));
@@ -52,7 +56,9 @@ export default function EditGoalScreen() {
   const [loading, setLoading] = useState(true);
 
   const [saving, setSaving] = useState(false);
+  const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     async function load() {
@@ -158,13 +164,14 @@ export default function EditGoalScreen() {
   }
 
   return (
+    <PremiumScreen ambient="subtle">
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={24}
     >
     <ScrollView
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 32 }]}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
     >
@@ -179,31 +186,25 @@ export default function EditGoalScreen() {
 
       <AnimatedBlock delay={60}>
         <ScreenHeader
-          title="Editar meta"
-          subtitle="Ajuste os detalhes da sua meta."
-          eyebrow="Planejamento"
+          title="Planejar meta"
+          subtitle="Defina seu objetivo financeiro"
+          eyebrow="Objetivos"
         />
       </AnimatedBlock>
 
       <AnimatedBlock delay={120} style={styles.form}>
-        <Text style={styles.label}>Nome da meta</Text>
-
-        <TextInput
-          value={name}
+        <AppField label="Nome da meta" containerStyle={styles.field}
+            value={name}
           onChangeText={setName}
           placeholder="Ex.: Z Fold 5"
-          style={styles.input}
-        />
+          style={styles.fieldInput} />
 
-        <Text style={styles.label}>Valor da meta</Text>
-
-        <TextInput
-          value={targetAmount}
+        <AppField label="Valor da meta" containerStyle={styles.field}
+            value={targetAmount}
           onChangeText={setTargetAmount}
           placeholder="0,00"
           keyboardType="decimal-pad"
-          style={styles.input}
-        />
+          style={styles.moneyFieldInput} />
 
         <View style={styles.savedBox}>
           <Text style={styles.savedLabel}>Já guardado</Text>
@@ -214,10 +215,13 @@ export default function EditGoalScreen() {
         <Text style={styles.label}>Prazo</Text>
 
         <AnimatedPressable
+          accessibilityRole="button"
+          accessibilityLabel="Definir prazo da meta"
           onPress={() => setShowDatePicker(true)}
-          style={styles.input}
+          style={[styles.input, styles.dateInput]}
         >
-          <Text style={deadline ? styles.dateText : styles.placeholderText}>
+          <Image source={require("../../assets/premium/goalform-calendar.svg")} tintColor={colors.primary} style={{ width: 20, height: 20 }} accessible={false} />
+            <Text style={deadline ? styles.dateText : styles.placeholderText}>
             {deadline
               ? deadline.toLocaleDateString("pt-BR")
               : "Selecionar data"}
@@ -247,19 +251,11 @@ export default function EditGoalScreen() {
           />
         )}
 
-        <AnimatedPressable
-          pressedOpacity={0.85}
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-          disabled={saving}
-          onPress={handleSave}
-        >
-          <Text style={styles.saveButtonText}>
-            {saving ? "Salvando..." : "Salvar alterações"}
-          </Text>
-        </AnimatedPressable>
+        <AppButton label={saving ? "Salvando..." : "Salvar objetivo"} onPress={handleSave} loading={saving} style={styles.saveButton} />
       </AnimatedBlock>
     </ScrollView>
     </KeyboardAvoidingView>
+    </PremiumScreen>
   );
 }
 
@@ -271,17 +267,17 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: 18,
+    paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
-    backgroundColor: colors.background,
+    backgroundColor: "transparent",
   },
 
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background,
+    backgroundColor: "transparent",
   },
 
   backButton: {
@@ -294,12 +290,14 @@ const createStyles = (colors: ThemeColors) =>
   backText: {
     fontSize: 16,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
     color: colors.primary,
   },
 
   title: {
-    fontSize: 30,
+    fontSize: 29,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -313,18 +311,24 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   label: {
-    fontSize: 14,
+    textTransform: "uppercase",
+    fontSize: 11,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
     marginBottom: 7,
     marginTop: 18,
     color: colors.text,
   },
 
+  field: { marginTop: 20 },
+  fieldInput: { fontSize: 16 },
+  moneyFieldInput: { minHeight: 68, fontSize: 25, fontFamily: typography.family.bold, fontVariant: ["tabular-nums"] },
+  dateInput: { flexDirection: "row", alignItems: "center", gap: 16, minHeight: 55 },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: 21,
     padding: 13,
     fontSize: 16,
     color: colors.text,
@@ -341,28 +345,39 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   clearDate: {
+    minHeight: 44,
+    paddingVertical: 12,
     marginTop: 8,
     color: colors.primary,
     fontSize: 13,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
   },
 
   savedBox: {
-    marginTop: 18,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceMuted,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    marginTop: 24,
+    padding: 20,
+    borderRadius: 21,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 12,
   },
 
   savedLabel: {
+    fontSize: 11,
+    fontFamily: typography.family.bold,
+    textTransform: "uppercase",
     color: colors.textMuted,
   },
 
   savedValue: {
     fontWeight: "800",
-    color: colors.text,
+    fontFamily: typography.family.bold,
+    color: colors.primary,
+    fontSize: 25,
+    lineHeight: 34,
+    fontVariant: ["tabular-nums"],
   },
 
   saveButton: {
@@ -380,5 +395,6 @@ const createStyles = (colors: ThemeColors) =>
   saveButtonText: {
     color: colors.onPrimary,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
   },
   });

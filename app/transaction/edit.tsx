@@ -6,14 +6,18 @@ import {
     Platform,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AnimatedBlock } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
+import { AppText as Text } from "../../src/components/AppText";
+import { AppField } from "../../src/components/AppField";
+import { AppButton } from "../../src/components/AppButton";
+import { AppSelector } from "../../src/components/AppSelector";
+import { PremiumScreen } from "../../src/components/PremiumScreen";
+import { WalletSymbol } from "../../src/components/WalletSymbol";
 import { listAccounts } from "../../src/services/account.service";
 import { listCategories } from "../../src/services/category.service";
 import {
@@ -23,7 +27,7 @@ import {
 import { Account } from "../../src/types/account";
 import { Category } from "../../src/types/category";
 import { Transaction, TransactionType } from "../../src/types/transaction";
-import { ThemeColors, useThemedStyles } from "../../src/theme";
+import { ThemeColors, useThemedStyles, useThemeColors } from "../../src/theme";
 
 function parseMoney(value: string) {
   return Number(value.replace(/\./g, "").replace(",", "."));
@@ -73,6 +77,7 @@ export default function EditTransactionScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
 
   useEffect(() => {
     async function load() {
@@ -145,13 +150,14 @@ export default function EditTransactionScreen() {
 
   if (!transaction) {
     return (
-      <AnimatedBlock style={styles.center}>
+      <PremiumScreen ambient="subtle"><AnimatedBlock style={styles.center}>
         <Text>Carregando transação...</Text>
-      </AnimatedBlock>
+      </AnimatedBlock></PremiumScreen>
     );
   }
 
   return (
+    <PremiumScreen ambient="subtle">
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -180,41 +186,24 @@ export default function EditTransactionScreen() {
       </AnimatedBlock>
 
       <AnimatedBlock delay={120} style={styles.typeSelector}>
-        {(["expense", "income"] as TransactionType[]).map((item) => (
-          <AnimatedPressable
-            key={item}
-            pressedScale={0.96}
-            style={[
-              styles.typeButton,
-              type === item && styles.typeButtonActive,
-            ]}
-            onPress={() => setType(item)}
-          >
-            <Text
-              style={[
-                styles.typeButtonText,
-                type === item && styles.typeButtonTextActive,
-              ]}
-            >
-              {item === "expense" ? "Despesa" : "Receita"}
-            </Text>
-          </AnimatedPressable>
-        ))}
+        <AppSelector<TransactionType> accessibilityLabel="Tipo de movimentação" value={type} onChange={setType}
+          options={[{ value: "expense", label: "Despesa" }, { value: "income", label: "Receita" }]} />
       </AnimatedBlock>
 
-      <Text style={styles.label}>Valor</Text>
-      <TextInput
+      <AppField label="Valor" containerStyle={styles.field}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"
         placeholder="0,00"
-        style={styles.input}
+        style={styles.amountInput}
       />
       <Text style={styles.label}>Data</Text>
       <AnimatedPressable
         pressedScale={0.98}
         pressedOpacity={0.8}
         style={styles.input}
+        accessibilityRole="button"
+        accessibilityLabel="Alterar data da transação"
         onPress={() => setShowDatePicker(true)}
       >
         <Text style={styles.dateValue}>{formatDateLabel(date)}</Text>
@@ -247,6 +236,8 @@ export default function EditTransactionScreen() {
         pressedScale={0.98}
         pressedOpacity={0.8}
         style={styles.input}
+        accessibilityRole="button"
+        accessibilityLabel="Alterar horário da transação"
         onPress={() => setShowTimePicker(true)}
       >
         <Text style={styles.dateValue}>{formatTimeLabel(date)}</Text>
@@ -276,12 +267,10 @@ export default function EditTransactionScreen() {
         />
       )}
 
-      <Text style={styles.label}>Descrição</Text>
-      <TextInput
+      <AppField label="Descrição" containerStyle={styles.field}
         value={description}
         onChangeText={setDescription}
         placeholder="Ex.: Almoço"
-        style={styles.input}
       />
       <Text style={styles.label}>Categoria</Text>
       <ScrollView
@@ -293,6 +282,8 @@ export default function EditTransactionScreen() {
           <AnimatedPressable
             key={category.id}
             pressedScale={0.94}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: categoryId === category.id }}
             style={[
               styles.option,
               categoryId === category.id && styles.optionActive,
@@ -328,12 +319,15 @@ export default function EditTransactionScreen() {
             <AnimatedPressable
               key={account.id}
               pressedScale={0.94}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: accountId === account.id }}
               style={[
                 styles.option,
                 accountId === account.id && styles.optionActive,
               ]}
               onPress={() => setAccountId(account.id)}
             >
+              {isCard && <WalletSymbol name="card" size={18} color={accountId === account.id ? colors.onPrimary : colors.textMuted} />}
               <Text
                 style={
                   accountId === account.id
@@ -341,46 +335,34 @@ export default function EditTransactionScreen() {
                     : styles.optionText
                 }
               >
-                {isCard ? "💳 " : ""}
                 {account.name}
               </Text>
             </AnimatedPressable>
           );
         })}
       </ScrollView>
-      <AnimatedPressable
-        pressedOpacity={0.85}
-        style={[styles.saveButton, saving && styles.disabled]}
-        disabled={saving}
-        onPress={handleSave}
-      >
-        <Text style={styles.saveText}>
-          {saving ? "Salvando..." : "Salvar alterações"}
-        </Text>
-      </AnimatedPressable>
+      <AppButton style={styles.saveButton} disabled={saving} loading={saving}
+        onPress={handleSave} label={saving ? "Salvando..." : "Salvar alterações"} />
     </ScrollView>
     </KeyboardAvoidingView>
+    </PremiumScreen>
   );
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: 24, paddingTop: 28, paddingBottom: 40 },
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background,
   },
   back: { color: colors.primary, fontWeight: "700" },
   title: { marginTop: 28, fontSize: 30, fontWeight: "800", color: colors.text },
   subtitle: { marginTop: 8, color: colors.textMuted },
   typeSelector: {
     flexDirection: "row",
-    marginTop: 28,
-    padding: 4,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceMuted,
+    marginTop: 24,
   },
   typeButton: {
     flex: 1,
@@ -393,16 +375,23 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   typeButtonText: { color: colors.textMuted, fontWeight: "700" },
   typeButtonTextActive: { color: colors.onPrimary },
   label: {
-    marginTop: 22,
+    marginTop: 24,
     marginBottom: 8,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
     fontWeight: "700",
-    color: colors.text,
+    color: colors.textMuted,
   },
+  field: { marginTop: 24 },
+  amountInput: { minHeight: 78, fontSize: 30, fontFamily: "Inter-Bold", fontVariant: ["tabular-nums"] },
   input: {
-    height: 56,
+    minHeight: 55,
     justifyContent: "center",
     paddingHorizontal: 16,
-    borderRadius: 14,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
     fontSize: 16,
   },
@@ -416,10 +405,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: 8,
     fontSize: 12,
     lineHeight: 17,
-    color: colors.textSubtle,
+    color: colors.textMuted,
   },
   options: { gap: 8 },
   option: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
@@ -429,11 +422,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   optionText: { color: colors.text, fontWeight: "600" },
   optionTextActive: { color: colors.onPrimary, fontWeight: "700" },
   saveButton: {
-    height: 56,
-    marginTop: 32,
+    minHeight: 52,
+    marginTop: 24,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
+    borderRadius: 14,
     backgroundColor: colors.primary,
   },
   saveText: { color: colors.onPrimary, fontWeight: "800" },

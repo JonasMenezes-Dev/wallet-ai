@@ -32,7 +32,7 @@ export function AnimatedListItem({
   return (
     <Animated.View
       layout={reduceMotion ? undefined : LinearTransition.duration(durations.base).easing(easings.inOut).build()}
-      entering={reduceMotion ? undefined : FadeInDown.delay(staggerDelay(index, delayStep))
+      entering={reduceMotion || index > 11 ? undefined : FadeInDown.delay(staggerDelay(index, delayStep))
         .duration(durations.smooth)
         .easing(easings.out)}
       exiting={reduceMotion ? undefined : FadeOut.duration(durations.fast).easing(easings.in)}
@@ -56,7 +56,7 @@ export function AnimatedBlock({
   const reduceMotion = useReducedMotion();
   return (
     <Animated.View
-      entering={reduceMotion ? undefined : FadeInDown.delay(delay).duration(durations.smooth).easing(easings.out)}
+      entering={reduceMotion ? undefined : FadeInDown.delay(Math.min(delay, 160)).duration(durations.smooth).easing(easings.out)}
       exiting={reduceMotion ? undefined : FadeOut.duration(durations.fast).easing(easings.in)}
       style={style}
     >

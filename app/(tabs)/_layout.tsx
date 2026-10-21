@@ -21,7 +21,7 @@ export default function TabsLayout() {
         animation: reduceMotion ? "none" : "shift",
         transitionSpec: {
           animation: "timing",
-          config: { duration: reduceMotion ? 0 : 200 },
+          config: { duration: reduceMotion ? 0 : 260 },
         },
         sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
@@ -29,6 +29,7 @@ export default function TabsLayout() {
         tabBarShowLabel: true,
         tabBarLabelPosition: "below-icon",
         tabBarLabelStyle: {
+          fontFamily: typography.family.regular,
           fontSize: tabLabelSize,
           fontWeight: typography.weight.semibold,
           textAlign: "center",
@@ -51,7 +52,7 @@ export default function TabsLayout() {
           paddingTop: spacing.xs,
           paddingBottom: Math.max(insets.bottom, spacing.sm),
           paddingHorizontal: spacing.xs,
-          backgroundColor: colors.surface,
+          backgroundColor: colors.background,
           borderTopColor: colors.border,
           borderTopWidth: 1,
           elevation: 0,

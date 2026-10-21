@@ -31,6 +31,7 @@ export function createAccountsScreen({ accounts, reload, payCreditCard }) {
     react: React,
     'react/jsx-runtime': require('react/jsx-runtime'),
     'react-native': native,
+    'expo-image': { Image: 'Image' },
     'expo-router/js-tabs': { useBottomTabBarHeight: () => 100 },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 24, bottom: 34 }) },
     '../../src/hooks/use-accounts': { useAccounts: () => state },
@@ -40,13 +41,18 @@ export function createAccountsScreen({ accounts, reload, payCreditCard }) {
     '../../src/components/AnimatedPressable': { AnimatedPressable: 'AnimatedPressable' },
     '../../src/components/CreditCardSummary': { CreditCardSummary: 'CreditCardSummary', formatCurrency: value => `R$ ${value.toFixed(2)}` },
     '../../src/components/ScreenHeader': { ScreenHeader: 'ScreenHeader' },
-    '../../src/theme': { useThemedStyles: create => create({}), useThemeColors: () => ({}) },
+    '../../src/components/AppText': { AppText: 'Text' },
+    '../../src/components/AppCard': { AppCard: 'AppCard' },
+    '../../src/components/AppField': { AppField: 'TextInput' },
+    '../../src/components/PremiumAmbient': { PremiumAmbient: 'PremiumAmbient' },
+    '../../src/theme': { typography: { family: { bold: 'Inter-Bold', regular: 'Inter-Regular' } }, useThemedStyles: create => create({}), useThemeColors: () => ({}) },
   };
   const compiled = ts.transpileModule(readFileSync(new URL('../../app/(tabs)/accounts.tsx', import.meta.url), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
   const module = { exports: {} };
   new Function('require', 'module', 'exports', compiled)(name => {
+    if (name.endsWith('.svg')) return name;
     if (!(name in dependencies)) throw new Error(`Unexpected screen dependency: ${name}`);
     return dependencies[name];
   }, module, module.exports);

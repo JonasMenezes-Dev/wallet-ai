@@ -1,12 +1,18 @@
+import { Image } from "expo-image";
+import { useBottomTabBarHeight } from "expo-router/js-tabs";
+import { PremiumScreen } from "../../src/components/PremiumScreen";
+import { AppCard } from "../../src/components/AppCard";
+import { AppField } from "../../src/components/AppField";
+import { AppText as Text } from "../../src/components/AppText";
 import { useState } from "react";
 
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from "react-native";
 
@@ -25,7 +31,7 @@ import {
   removeGoal,
 } from "../../src/services/goal.service";
 
-import { ThemeColors, useThemeColors, useThemedStyles } from "../../src/theme";
+import { typography, ThemeColors, useThemeColors, useThemedStyles } from "../../src/theme";
 
 function formatCurrency(value: number) {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
@@ -58,6 +64,7 @@ export default function GoalsScreen() {
   const { accounts, reload: reloadAccounts } = useAccounts();
   const styles = useThemedStyles(createStyles);
   const colors = useThemeColors();
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [contributingGoalId, setContributingGoalId] = useState<number | null>(
     null,
@@ -178,16 +185,20 @@ export default function GoalsScreen() {
   }
 
   return (
+    <PremiumScreen>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, { paddingBottom: tabBarHeight + 24 }]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
     >
       <AnimatedBlock style={styles.header}>
         <ScreenHeader
-          title="Metas"
-          subtitle="Planeje o que você quer conquistar."
-          eyebrow="Seus objetivos"
+          title="Minhas metas"
+          subtitle="Conquistas que começam hoje"
+          eyebrow="Seu futuro"
           accessory={
             <AnimatedPressable
               style={styles.addButton}
@@ -201,7 +212,9 @@ export default function GoalsScreen() {
       </AnimatedBlock>
 
       {goals.length === 0 ? (
-        <FadeInView style={styles.emptyCard}>
+        <FadeInView>
+        <AppCard style={styles.emptyCard}>
+          <Image source={require("../../assets/premium/goals-target.svg")} tintColor={colors.primary} style={{ width: 23, height: 23 }} accessible={false} />
 
           <Text style={styles.emptyTitle}>Nenhuma meta criada</Text>
 
@@ -219,6 +232,7 @@ export default function GoalsScreen() {
               Criar minha primeira meta
             </Text>
           </AnimatedPressable>
+        </AppCard>
         </FadeInView>
       ) : (
         goals.map((goal, index) => {
@@ -233,8 +247,10 @@ export default function GoalsScreen() {
               key={goal.id}
               index={index}
               delayStep={30}
-              style={styles.goalCard}
+              style={{ marginBottom: 16 }}
             >
+              <AppCard style={styles.goalCard} ambient={index === 0 ? "highlight" : "none"}>
+              <Text variant="label" tone="muted" style={{ marginBottom: 14 }}>{index === 0 ? "Objetivo em destaque" : "Seus objetivos"}</Text>
               <View style={styles.goalHeader}>
                 <View style={styles.goalTitleArea}>
                   <Text style={styles.goalName}>{goal.name}</Text>
@@ -275,9 +291,8 @@ export default function GoalsScreen() {
 
                   <Text
                     style={styles.currentAmount}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.72}
+
+
                   >
                     {formatCurrency(goal.currentAmount)}
                   </Text>
@@ -288,9 +303,8 @@ export default function GoalsScreen() {
 
                   <Text
                     style={styles.targetAmount}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.72}
+
+
                   >
                     {formatCurrency(goal.targetAmount)}
                   </Text>
@@ -304,9 +318,8 @@ export default function GoalsScreen() {
 
                 <Text
                   style={styles.remainingAmount}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.72}
+
+
                 >
                   {formatCurrency(progress.remainingAmount)}
                 </Text>
@@ -314,9 +327,12 @@ export default function GoalsScreen() {
 
               {!isCompleted && progress.deadlineStatus === "on-track" && (
                 <View style={styles.plansSection}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <Image source={require("../../assets/premium/goals-calendar.svg")} tintColor={colors.primary} style={{ width: 22, height: 22 }} accessible={false} />
                   <Text style={styles.plansTitle}>
                     Média mensal para chegar à meta
                   </Text>
+                  </View>
 
                   {/* AGRESSIVA */}
                   <View style={styles.planCard}>
@@ -333,7 +349,7 @@ export default function GoalsScreen() {
                       </Text>
                     </View>
 
-                    <Text style={styles.planValue} numberOfLines={2}>
+                    <Text style={styles.planValue}>
                       {formatCurrency(progress.plans.aggressive.monthlyAmount)}
                       /mês
                     </Text>
@@ -354,7 +370,7 @@ export default function GoalsScreen() {
                       </Text>
                     </View>
 
-                    <Text style={styles.planValue} numberOfLines={2}>
+                    <Text style={styles.planValue}>
                       {formatCurrency(progress.plans.balanced.monthlyAmount)}
                       /mês
                     </Text>
@@ -375,7 +391,7 @@ export default function GoalsScreen() {
                       </Text>
                     </View>
 
-                    <Text style={styles.planValue} numberOfLines={2}>
+                    <Text style={styles.planValue}>
                       {formatCurrency(progress.plans.comfortable.monthlyAmount)}
                       /mês
                     </Text>
@@ -399,7 +415,7 @@ export default function GoalsScreen() {
                 <View style={styles.contributionBox}>
                   <Text style={styles.contributionTitle}>Fazer aporte</Text>
 
-                  <TextInput
+                  <AppField label="Valor do aporte"
                     value={amount}
                     onChangeText={setAmount}
                     placeholder="0,00"
@@ -413,6 +429,8 @@ export default function GoalsScreen() {
                     {accounts.map((account) => (
                       <AnimatedPressable
                         key={account.id}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: selectedAccountId === account.id }}
                         pressedScale={0.94}
                         style={[
                           styles.accountOption,
@@ -507,11 +525,14 @@ export default function GoalsScreen() {
                   <Text style={styles.deleteText}>Excluir</Text>
                 </AnimatedPressable>
               </View>
+              </AppCard>
             </AnimatedListItem>
           );
         })
       )}
     </ScrollView>
+    </KeyboardAvoidingView>
+    </PremiumScreen>
   );
 }
 
@@ -519,15 +540,15 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "transparent",
   },
 
   container: {
     flexGrow: 1,
-    padding: 18,
+    padding: 24,
     paddingTop: 24,
     paddingBottom: 40,
-    backgroundColor: colors.background,
+    backgroundColor: "transparent",
   },
 
   center: {
@@ -535,7 +556,7 @@ const createStyles = (colors: ThemeColors) =>
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
-    backgroundColor: colors.background,
+    backgroundColor: "transparent",
   },
 
   header: {
@@ -546,8 +567,9 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   title: {
-    fontSize: 30,
+    fontSize: 29,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -568,6 +590,7 @@ const createStyles = (colors: ThemeColors) =>
   addButtonText: {
     color: colors.onPrimary,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
   },
 
   goalCard: {
@@ -575,9 +598,9 @@ const createStyles = (colors: ThemeColors) =>
     minWidth: 0,
     alignSelf: "stretch",
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
+    borderRadius: 21,
+    padding: 20,
+    marginBottom: 0,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -596,8 +619,10 @@ const createStyles = (colors: ThemeColors) =>
 
   goalName: {
     flexShrink: 1,
-    fontSize: 21,
+    fontSize: 23,
+    lineHeight: 30,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -612,6 +637,7 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.income,
     fontSize: 12,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
   },
 
   overdueText: {
@@ -619,12 +645,15 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.expense,
     fontSize: 12,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
   },
 
   percentage: {
+    lineHeight: 28,
     flexShrink: 0,
     fontSize: 20,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.primary,
   },
 
@@ -669,6 +698,7 @@ const createStyles = (colors: ThemeColors) =>
     marginTop: 2,
     fontSize: 18,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -676,6 +706,7 @@ const createStyles = (colors: ThemeColors) =>
     marginTop: 2,
     fontSize: 16,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
     color: colors.text,
     textAlign: "right",
   },
@@ -697,6 +728,7 @@ const createStyles = (colors: ThemeColors) =>
     minWidth: 0,
     color: colors.textMuted,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
   },
 
   remainingAmount: {
@@ -704,6 +736,7 @@ const createStyles = (colors: ThemeColors) =>
     textAlign: "right",
     fontSize: 17,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -712,8 +745,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   plansTitle: {
+    flex: 1,
     fontSize: 16,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.text,
     marginBottom: 10,
   },
@@ -730,6 +765,7 @@ const createStyles = (colors: ThemeColors) =>
   overdueBoxTitle: {
     color: colors.warning,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
   },
 
   overdueBoxText: {
@@ -768,6 +804,7 @@ const createStyles = (colors: ThemeColors) =>
 
   planName: {
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -783,6 +820,7 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.textMuted,
     marginTop: 5,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
   },
 
   planValue: {
@@ -790,11 +828,14 @@ const createStyles = (colors: ThemeColors) =>
     maxWidth: "44%",
     textAlign: "right",
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     fontSize: 14,
     color: colors.text,
   },
 
   contributeButton: {
+    minHeight: 52,
+    justifyContent: "center",
     marginTop: 16,
     backgroundColor: colors.primary,
     borderRadius: 14,
@@ -805,6 +846,7 @@ const createStyles = (colors: ThemeColors) =>
   contributeButtonText: {
     color: colors.onPrimary,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
   },
 
   contributionBox: {
@@ -815,8 +857,10 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   contributionTitle: {
+    color: colors.text,
     fontSize: 16,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     marginBottom: 10,
   },
 
@@ -831,9 +875,11 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   accountLabel: {
+    color: colors.text,
     marginTop: 14,
     marginBottom: 8,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
   },
 
   accountsRow: {
@@ -843,6 +889,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   accountOption: {
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 9,
     backgroundColor: colors.surface,
@@ -858,6 +906,7 @@ const createStyles = (colors: ThemeColors) =>
 
   accountOptionText: {
     fontWeight: "600",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -875,7 +924,7 @@ const createStyles = (colors: ThemeColors) =>
   quickValue: {
     flexGrow: 1,
     minWidth: 0,
-    minHeight: 40,
+    minHeight: 44,
     justifyContent: "center",
     backgroundColor: colors.surface,
     paddingHorizontal: 12,
@@ -892,6 +941,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   cancelButton: {
+    minHeight: 52,
+    justifyContent: "center",
     flex: 1,
     padding: 12,
     alignItems: "center",
@@ -902,6 +953,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   confirmButton: {
+    minHeight: 52,
+    justifyContent: "center",
     flex: 1,
     padding: 12,
     alignItems: "center",
@@ -912,24 +965,28 @@ const createStyles = (colors: ThemeColors) =>
   confirmButtonText: {
     color: colors.onPrimary,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
     textAlign: "center",
   },
 
   quickValueText: {
     color: colors.text,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
     textAlign: "center",
   },
 
   cancelButtonText: {
     color: colors.text,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
     textAlign: "center",
   },
 
   managementButtonText: {
     color: colors.text,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
   },
 
   managementRow: {
@@ -949,11 +1006,12 @@ const createStyles = (colors: ThemeColors) =>
   deleteText: {
     color: colors.expense,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
   },
 
   emptyCard: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 21,
     padding: 28,
     alignItems: "center",
     borderWidth: 1,
@@ -967,6 +1025,7 @@ const createStyles = (colors: ThemeColors) =>
   emptyTitle: {
     fontSize: 20,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     marginTop: 12,
     color: colors.text,
   },
@@ -989,6 +1048,7 @@ const createStyles = (colors: ThemeColors) =>
   emptyButtonText: {
     color: colors.onPrimary,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
   },
 
   loadingText: {
@@ -1000,9 +1060,9 @@ const createStyles = (colors: ThemeColors) =>
     textAlign: "center",
   },
 
-  retryButton: {
+  retryButton: { minHeight: 44, justifyContent: "center",
     marginTop: 14,
-    paddingHorizontal: 18,
+    paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 10,
     backgroundColor: colors.primary,
@@ -1011,5 +1071,6 @@ const createStyles = (colors: ThemeColors) =>
   retryButtonText: {
     color: colors.onPrimary,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
   },
   });

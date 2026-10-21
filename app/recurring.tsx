@@ -2,17 +2,22 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useFocusEffect } from "expo-router";
 
+import { AppText as Text } from "../src/components/AppText";
+import { AppCard } from "../src/components/AppCard";
+import { AppButton } from "../src/components/AppButton";
+import { AppField } from "../src/components/AppField";
+import { AppSelector } from "../src/components/AppSelector";
+import { PremiumScreen } from "../src/components/PremiumScreen";
+import { PremiumSheet } from "../src/components/PremiumSheet";
+import { WalletSymbol } from "../src/components/WalletSymbol";
+import { AnimatedListItem } from "../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../src/components/AnimatedPressable";
 import { ScreenHeader } from "../src/components/ScreenHeader";
 import { listCategories } from "../src/services/category.service";
@@ -26,7 +31,7 @@ import {
   type RecurringItem,
 } from "../src/services/recurring.service";
 import type { Category } from "../src/types/category";
-import { ThemeColors, useThemeColors, useThemedStyles, spacing, radii } from "../src/theme";
+import { ThemeColors, useThemeColors, useThemedStyles, spacing, radii, typography } from "../src/theme";
 
 function dateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -54,55 +59,37 @@ function parseMoney(value: string) {
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: spacing.lg, paddingBottom: spacing["3xl"], gap: spacing.md },
+    content: { padding: spacing["2xl"], paddingBottom: spacing["4xl"], gap: spacing["2xl"] },
     header: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-    backButton: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surfaceMuted },
-    backText: { color: colors.text, fontWeight: "700" },
-    forecastCard: { backgroundColor: colors.primary, padding: spacing.lg, borderRadius: radii.xl, gap: spacing.sm },
-    forecastLabel: { color: colors.onPrimary, opacity: 0.85, fontSize: 13 },
-    forecastValue: { color: colors.onPrimary, fontSize: 28, fontWeight: "800" },
-    forecastDescription: { color: colors.onPrimary, opacity: 0.9, fontSize: 12, lineHeight: 18 },
-    forecastRow: { flexDirection: "row", gap: spacing.sm },
-    forecastMetric: { flex: 1, backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, gap: spacing.xs },
+    introCard: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
+    backButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surfaceMuted },
+    backText: { color: colors.text, fontWeight: "700", fontFamily: typography.family.bold },
+    forecastCard: { backgroundColor: colors.surface, padding: spacing.xl, borderRadius: radii.lg, gap: spacing.sm },
+    forecastLabel: { color: colors.textMuted, fontSize: 13 },
+    forecastValue: { color: colors.primary, fontSize: 32, lineHeight: 40, fontVariant: ["tabular-nums"], fontWeight: "700", fontFamily: typography.family.bold },
+    forecastDescription: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
+    forecastRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    forecastMetric: { flex: 1, minWidth: 110, backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.md, gap: spacing.xs },
     metricLabel: { color: colors.textMuted, fontSize: 11 },
-    metricValue: { color: colors.text, fontSize: 15, fontWeight: "800" },
-    sectionTitle: { color: colors.text, fontSize: 18, fontWeight: "800" },
+    metricValue: { color: colors.text, fontSize: 15, fontWeight: "700", fontFamily: typography.family.bold },
+    sectionTitle: { color: colors.text, fontSize: 18, fontWeight: "700", fontFamily: typography.family.bold },
     helper: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
-    itemCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: spacing.md, borderRadius: radii.lg, gap: spacing.sm },
-    itemHeader: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
-    itemInfo: { flex: 1, gap: 4 },
-    itemTitle: { color: colors.text, fontSize: 16, fontWeight: "800" },
+    itemCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: spacing.xl, borderRadius: radii.lg, gap: spacing.sm },
+    itemHeader: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: spacing.sm },
+    itemInfo: { flex: 1, minWidth: 110, gap: 4 },
+    itemTitle: { color: colors.text, fontSize: 16, fontWeight: "700", fontFamily: typography.family.bold },
     itemMeta: { color: colors.textMuted, fontSize: 12 },
-    itemAmount: { fontSize: 16, fontWeight: "800" },
+    itemAmount: { fontSize: 16, fontWeight: "700", fontFamily: typography.family.bold },
     income: { color: colors.income },
     expense: { color: colors.expense },
     actions: { flexDirection: "row", justifyContent: "flex-end", flexWrap: "wrap", gap: spacing.sm },
-    smallButton: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surfaceMuted },
-    smallButtonText: { color: colors.text, fontSize: 12, fontWeight: "700" },
-    dangerText: { color: colors.expense, fontSize: 12, fontWeight: "700" },
-    formCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing.md, gap: spacing.sm },
-    label: { color: colors.text, fontWeight: "700", fontSize: 13, marginTop: spacing.xs },
-    input: { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: radii.md, paddingHorizontal: spacing.md, paddingVertical: spacing.md, fontSize: 16 },
-    typeRow: { flexDirection: "row", gap: spacing.sm },
-    typeButton: { flex: 1, padding: spacing.md, alignItems: "center", borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted },
-    typeButtonSelected: { backgroundColor: colors.accentSurface, borderColor: colors.primary },
-    typeText: { color: colors.text, fontWeight: "700" },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-    chip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surfaceMuted, borderWidth: 1, borderColor: colors.border },
-    chipSelected: { borderColor: colors.primary, backgroundColor: colors.accentSurface },
-    chipText: { color: colors.text, fontSize: 12, fontWeight: "600" },
-    dateButton: { padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
-    dateText: { color: colors.text, fontWeight: "600" },
-    formActions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
-    cancelButton: { flex: 1, padding: spacing.md, borderRadius: radii.md, alignItems: "center", backgroundColor: colors.surfaceMuted },
-    cancelText: { color: colors.text, fontWeight: "700" },
-    saveButton: { flex: 1, padding: spacing.md, borderRadius: radii.md, alignItems: "center", backgroundColor: colors.primary },
-    saveText: { color: colors.onPrimary, fontWeight: "800" },
-    primaryButton: { padding: spacing.md, borderRadius: radii.md, alignItems: "center", backgroundColor: colors.primary },
-    primaryText: { color: colors.onPrimary, fontWeight: "800" },
+    smallButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surfaceMuted },
+    smallButtonText: { color: colors.text, fontSize: 12, fontWeight: "700", fontFamily: typography.family.bold },
+    dangerText: { color: colors.expense, fontSize: 12, fontWeight: "700", fontFamily: typography.family.bold },
+    formActions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
+    formAction: { flex: 1, minWidth: 120 },
     emptyCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, borderRadius: radii.lg, alignItems: "center", gap: spacing.sm },
-    emptyTitle: { color: colors.text, fontWeight: "800", fontSize: 16 },
+    emptyTitle: { color: colors.text, fontWeight: "700", fontFamily: typography.family.bold, fontSize: 16 },
     emptyText: { color: colors.textMuted, textAlign: "center", lineHeight: 20, fontSize: 13 },
     loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, gap: spacing.sm },
     loadingText: { color: colors.textMuted },
@@ -245,16 +232,24 @@ export default function RecurringScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={24}>
+    <PremiumScreen ambient="subtle">
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <AnimatedPressable style={styles.backButton} onPress={() => router.back()}><Text style={styles.backText}>← Voltar</Text></AnimatedPressable>
+          <AnimatedPressable accessibilityRole="button" accessibilityLabel="Voltar" style={styles.backButton} onPress={() => router.back()}><Text style={styles.backText}>← Voltar</Text></AnimatedPressable>
         </View>
 
-        <ScreenHeader title="Contas recorrentes" subtitle="Antecipe entradas e contas que se repetem todo mês." eyebrow="Planejamento financeiro" />
+        <ScreenHeader title="Recorrências" subtitle="Controle os compromissos futuros." eyebrow="Automação" />
+
+        <AppCard style={styles.introCard}>
+          <WalletSymbol name="transfer" color={colors.primary} size={24} />
+          <View style={styles.itemInfo}>
+            <Text variant="subtitle">Pagamentos previsíveis</Text>
+            <Text tone="muted">Organize despesas e receitas que se repetem no tempo.</Text>
+          </View>
+        </AppCard>
 
         {forecast && (
-          <View style={styles.forecastCard}>
+          <AppCard style={styles.forecastCard}>
             <Text style={styles.forecastLabel}>Saldo projetado para os próximos 30 dias</Text>
             <Text style={styles.forecastValue}>{formatCurrency(forecast.projectedBalance)}</Text>
             <Text style={styles.forecastDescription}>
@@ -270,11 +265,11 @@ export default function RecurringScreen() {
                 <Text style={[styles.metricValue, styles.expense]}>{formatCurrency(forecast.upcomingExpenses)}</Text>
               </View>
             </View>
-          </View>
+          </AppCard>
         )}
 
         <View style={{ gap: spacing.xs }}>
-          <Text style={styles.sectionTitle}>Suas recorrências</Text>
+          <Text style={styles.sectionTitle}>Próximos lançamentos</Text>
           <Text style={styles.helper}>Cadastre aluguel, internet, faculdade, assinaturas ou salário. A previsão considera as ocorrências mensais dentro dos próximos 30 dias.</Text>
         </View>
 
@@ -283,9 +278,10 @@ export default function RecurringScreen() {
             <Text style={styles.emptyTitle}>Nada programado ainda</Text>
             <Text style={styles.emptyText}>Adicione sua primeira conta ou entrada recorrente para descobrir quanto pode sobrar até o próximo mês.</Text>
           </View>
-        ) : items.map((item) => (
-          <View key={item.id} style={styles.itemCard}>
+        ) : items.map((item, index) => (
+          <AnimatedListItem key={item.id} index={index}><AppCard style={styles.itemCard}>
             <View style={styles.itemHeader}>
+              <WalletSymbol name="recurring" color={item.type === "income" ? colors.income : colors.warning} size={22} />
               <View style={styles.itemInfo}>
                 <Text style={styles.itemTitle}>{item.title}</Text>
                 <Text style={styles.itemMeta}>{item.type === "income" ? "Entrada mensal" : "Conta mensal"} · Próxima data: {formatDate(item.nextDueDate)}{item.categoryName ? ` · ${item.categoryName}` : ""}</Text>
@@ -297,43 +293,29 @@ export default function RecurringScreen() {
               <AnimatedPressable style={styles.smallButton} onPress={() => confirmAdvance(item)}><Text style={styles.smallButtonText}>Já registrei</Text></AnimatedPressable>
               <AnimatedPressable style={styles.smallButton} onPress={() => confirmDelete(item)}><Text style={styles.dangerText}>Excluir</Text></AnimatedPressable>
             </View>
-          </View>
+          </AppCard></AnimatedListItem>
         ))}
 
-        {formVisible ? (
-          <View style={styles.formCard}>
-            <Text style={styles.sectionTitle}>{editingId ? "Editar recorrência" : "Nova recorrência"}</Text>
-            <Text style={styles.label}>Nome</Text>
-            <TextInput value={title} onChangeText={setTitle} placeholder="Ex.: Internet, salário, faculdade" placeholderTextColor={colors.textSubtle} style={styles.input} maxLength={80} />
-            <Text style={styles.label}>Tipo</Text>
-            <View style={styles.typeRow}>
-              <AnimatedPressable style={[styles.typeButton, type === "expense" && styles.typeButtonSelected]} onPress={() => setType("expense")}><Text style={styles.typeText}>Conta a pagar</Text></AnimatedPressable>
-              <AnimatedPressable style={[styles.typeButton, type === "income" && styles.typeButtonSelected]} onPress={() => setType("income")}><Text style={styles.typeText}>Entrada</Text></AnimatedPressable>
-            </View>
-            <Text style={styles.label}>Valor mensal (R$)</Text>
-            <TextInput value={amount} onChangeText={setAmount} placeholder="Ex.: 150,00" placeholderTextColor={colors.textSubtle} keyboardType="decimal-pad" style={styles.input} />
-            <Text style={styles.label}>Categoria (opcional)</Text>
-            <View style={styles.chips}>
-              <AnimatedPressable style={[styles.chip, categoryId === null && styles.chipSelected]} onPress={() => setCategoryId(null)}><Text style={styles.chipText}>Sem categoria</Text></AnimatedPressable>
-              {categories.map((category) => (
-                <AnimatedPressable key={category.id} style={[styles.chip, categoryId === category.id && styles.chipSelected]} onPress={() => setCategoryId(category.id)}><Text style={styles.chipText}>{category.name}</Text></AnimatedPressable>
-              ))}
-            </View>
-            <Text style={styles.label}>Próxima data prevista</Text>
-            <AnimatedPressable style={styles.dateButton} onPress={() => setDatePickerVisible(true)}><Text style={styles.dateText}>{formatDate(nextDueDate)}</Text></AnimatedPressable>
-            {datePickerVisible && (
-              <DateTimePicker value={parseDate(nextDueDate)} mode="date" display="default" onChange={(event, selectedDate) => { setDatePickerVisible(false); if (selectedDate) setNextDueDate(dateKey(selectedDate)); }} onDismiss={() => setDatePickerVisible(false)} />
-            )}
-            <Text style={styles.helper}>A recorrência é mensal. Ela não lança dinheiro automaticamente: registre a movimentação real na tela Transações e depois use “Já registrei” para avançar a data.</Text>
-            <View style={styles.formActions}>
-              <AnimatedPressable style={styles.cancelButton} onPress={resetForm} disabled={saving}><Text style={styles.cancelText}>Cancelar</Text></AnimatedPressable>
-              <AnimatedPressable style={styles.saveButton} onPress={() => void handleSave()} disabled={saving}>{saving ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.saveText}>Salvar</Text>}</AnimatedPressable>
-            </View>
-          </View>
-        ) : (
-          <AnimatedPressable style={styles.primaryButton} onPress={startNew}><Text style={styles.primaryText}>+ Adicionar conta recorrente</Text></AnimatedPressable>
-        )}
+        <AppButton label="Nova recorrência" onPress={startNew} leading={<WalletSymbol name="plus" color={colors.onPrimary} size={18} />} />
       </ScrollView>
-    </KeyboardAvoidingView>
+      <PremiumSheet visible={formVisible} onClose={() => { if (!saving) resetForm(); }} title={editingId ? "Editar recorrência" : "Nova recorrência"}>
+        <AppField label="Nome" value={title} onChangeText={setTitle} placeholder="Ex.: Internet, salário, faculdade" maxLength={80} editable={!saving} />
+        <Text variant="label" tone="muted">Tipo</Text>
+        <AppSelector options={[{ label: "Conta a pagar", value: "expense" }, { label: "Entrada", value: "income" }]} value={type} onChange={setType} accessibilityLabel="Tipo de recorrência" disabled={saving} />
+        <AppField label="Valor mensal (R$)" value={amount} onChangeText={setAmount} placeholder="Ex.: 150,00" keyboardType="decimal-pad" editable={!saving} />
+        <Text variant="label" tone="muted">Categoria (opcional)</Text>
+        <AppSelector options={[{ label: "Sem categoria", value: -1 }, ...categories.map(category => ({ label: category.name, value: category.id }))]} value={categoryId ?? -1} onChange={value => setCategoryId(value === -1 ? null : value)} accessibilityLabel="Categoria da recorrência" disabled={saving} />
+        <Text variant="label" tone="muted">Próxima data prevista</Text>
+        <AppButton label={formatDate(nextDueDate)} variant="secondary" onPress={() => setDatePickerVisible(true)} disabled={saving} leading={<WalletSymbol name="recurring" color={colors.primary} size={20} />} accessibilityLabel={`Alterar próxima data prevista, ${formatDate(nextDueDate)}`} />
+        {datePickerVisible && (
+          <DateTimePicker value={parseDate(nextDueDate)} mode="date" display="default" onChange={(event, selectedDate) => { setDatePickerVisible(false); if (selectedDate) setNextDueDate(dateKey(selectedDate)); }} onDismiss={() => setDatePickerVisible(false)} />
+        )}
+        <Text style={styles.helper}>A recorrência é mensal. Ela não lança dinheiro automaticamente: registre a movimentação real na tela Transações e depois use “Já registrei” para avançar a data.</Text>
+        <View style={styles.formActions}>
+          <AppButton label="Cancelar" variant="secondary" onPress={resetForm} disabled={saving} style={styles.formAction} />
+          <AppButton label="Salvar" onPress={() => void handleSave()} loading={saving} style={styles.formAction} />
+        </View>
+      </PremiumSheet>
+    </PremiumScreen>
   );
 }

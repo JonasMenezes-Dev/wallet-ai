@@ -6,10 +6,10 @@ import Animated, {
   useReducedMotion,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 
-import { spring } from "../animations";
+import { easings } from "../animations";
 import { WalletSymbol, type WalletIconName } from "./WalletSymbol";
 
 type AnimatedTabIconProps = {
@@ -32,9 +32,9 @@ export function AnimatedTabIcon({
     focusProgress.set(
       reduceMotion
         ? Number(focused)
-        : withSpring(focused ? 1 : 0, {
-            ...spring.press,
-            stiffness: 260,
+        : withTiming(focused ? 1 : 0, {
+            duration: 260,
+            easing: easings.out,
           }),
     );
   }, [focused, focusProgress, reduceMotion]);

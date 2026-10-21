@@ -1,3 +1,8 @@
+import { Image } from "expo-image";
+import { PremiumAmbient } from "../../src/components/PremiumAmbient";
+import { AppCard } from "../../src/components/AppCard";
+import { AppField } from "../../src/components/AppField";
+import { AppText as Text } from "../../src/components/AppText";
 import {
   ActivityIndicator,
   Alert,
@@ -5,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Text,
+
   TextInput,
   View,
 } from 'react-native';
@@ -31,6 +36,7 @@ import {
 } from '../../src/services/account.service';
 
 import {
+  typography,
   ThemeColors,
   useThemeColors,
   useThemedStyles,
@@ -323,14 +329,15 @@ export default function AccountsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={insets.top}
     >
+      <PremiumAmbient variant="standard" />
       <FlatList
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         ListHeaderComponent={<>
       <ScreenHeader
-        title="Contas"
-        subtitle="Seu dinheiro organizado por conta."
-        eyebrow="Patrimônio"
+        title="Contas e cartões"
+        subtitle="Tudo organizado em um só lugar"
+        eyebrow="Seu dinheiro"
         accessory={
           <AnimatedPressable
             style={styles.addButton}
@@ -345,23 +352,23 @@ export default function AccountsScreen() {
         }
       />
 
+      <AppCard ambient="highlight" style={styles.balanceCard}>
+        <Text variant="label" tone="muted">Saldo consolidado</Text>
+        <Text variant="amount" style={styles.consolidatedBalance}>{formatCurrency(accounts.filter(account => account.type !== "credit_card").reduce((total, account) => total + account.balance, 0))}</Text>
+        <Text variant="caption" tone="muted">{accounts.filter(account => account.type !== "credit_card").length} contas vinculadas</Text>
+      </AppCard>
+
       {showForm && (
         <FadeInView style={styles.form}>
           <Text style={styles.formTitle}>
             {isEditing ? 'Editar conta' : 'Nova conta'}
           </Text>
 
-          <Text style={styles.label}>
-            Nome
-          </Text>
-
-          <TextInput
-            style={styles.input}
+          <AppField label="Nome" style={styles.input}
             value={name}
             onChangeText={setName}
             placeholder="Ex.: Itaú"
-            placeholderTextColor={colors.textSubtle}
-          />
+            placeholderTextColor={colors.textSubtle} />
 
           <Text style={styles.label}>
             {isCreditCard ? 'Valor utilizado do cartão' : 'Saldo inicial'}
@@ -396,6 +403,8 @@ export default function AccountsScreen() {
             {accountTypes.map((item) => (
               <AnimatedPressable
                 key={item.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected: type === item.value }}
                 pressedScale={0.94}
                 style={[
                   styles.typeOption,
@@ -474,8 +483,12 @@ export default function AccountsScreen() {
           const isCard = item.type === 'credit_card';
 
           return (
-            <AnimatedListItem index={index} style={styles.accountCard}>
+            <AnimatedListItem index={index}>
+            <AppCard style={styles.accountCard}>
               <View style={styles.accountHeader}>
+                <View style={styles.accountIcon}>
+                  <Image source={isCard ? require("../../assets/premium/accounts-card.svg") : item.type === "cash" ? require("../../assets/premium/accounts-cash.svg") : require("../../assets/premium/accounts-bank.svg")} tintColor={item.type === "cash" ? colors.warning : colors.primary} style={{ width: isCard ? 23 : 21, height: isCard ? 23 : 21 }} accessible={false} />
+                </View>
                 <View style={styles.accountInfo}>
                   <Text style={styles.accountName}>
                     {item.name}
@@ -493,9 +506,8 @@ export default function AccountsScreen() {
                   {!isCard && (
                     <Text
                       style={styles.accountBalance}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.72}
+
+
                     >
                       {formatCurrency(item.balance)}
                     </Text>
@@ -575,8 +587,7 @@ export default function AccountsScreen() {
                     ))}
                   </View>
                   {paymentSources.length === 0 && <Text style={styles.helper}>Cadastre uma conta sem cartão de crédito para pagar.</Text>}
-                  <Text style={styles.label}>Valor do pagamento</Text>
-                  <TextInput
+                  <AppField label="Valor do pagamento"
                     style={styles.input}
                     accessibilityLabel="Valor do pagamento"
                     keyboardType="decimal-pad"
@@ -601,6 +612,7 @@ export default function AccountsScreen() {
                   </AnimatedPressable>
                 </View>
               )}
+            </AppCard>
             </AnimatedListItem>
           );
         }}
@@ -618,14 +630,14 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   container: {
     flex: 1,
-    padding: 18,
+    padding: 24,
     paddingTop: 24,
     backgroundColor: colors.background,
   },
 
   errorText: { fontSize: 14, textAlign: 'center', color: colors.expense, marginHorizontal: 24 },
-  retryButton: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary },
-  retryButtonText: { fontSize: 14, fontWeight: '700', color: colors.onPrimary },
+  retryButton: { minHeight: 44, justifyContent: "center", marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary },
+  retryButtonText: { fontSize: 14, fontWeight: '700', fontFamily: typography.family.bold, color: colors.onPrimary },
   center: {
     flex: 1,
     alignItems: 'center',
@@ -640,8 +652,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   title: {
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: 29,
+    fontWeight: '800', fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -662,15 +674,15 @@ const createStyles = (colors: ThemeColors) =>
 
   addButtonText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '700', fontFamily: typography.family.bold,
     color: colors.onPrimary,
   },
 
   form: {
     marginTop: 8,
     marginBottom: 8,
-    padding: 18,
-    borderRadius: 18,
+    padding: 20,
+    borderRadius: 21,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -679,7 +691,7 @@ const createStyles = (colors: ThemeColors) =>
   formTitle: {
     marginBottom: 18,
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '700', fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -687,14 +699,17 @@ const createStyles = (colors: ThemeColors) =>
     marginTop: 14,
     marginBottom: 8,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '600', fontFamily: typography.family.bold,
     color: colors.text,
   },
 
+  balanceCard: { marginBottom: 24, gap: 12 },
+  consolidatedBalance: { fontSize: 29 },
+  accountIcon: { width: 44, height: 44, borderRadius: 13, backgroundColor: colors.accentSurface, alignItems: "center", justifyContent: "center" },
   input: {
-    height: 52,
+    minHeight: 55,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 21,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceMuted,
@@ -705,9 +720,9 @@ const createStyles = (colors: ThemeColors) =>
   moneyInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
+    minHeight: 55,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 21,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceMuted,
@@ -716,14 +731,14 @@ const createStyles = (colors: ThemeColors) =>
   prefix: {
     marginRight: 8,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600', fontFamily: typography.family.bold,
     color: colors.textMuted,
   },
 
   moneyTextInput: {
     flex: 1,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '600', fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -751,7 +766,7 @@ const createStyles = (colors: ThemeColors) =>
 
   typeOptionText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '600', fontFamily: typography.family.bold,
     color: colors.textMuted,
   },
 
@@ -760,7 +775,7 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   saveButton: {
-    height: 52,
+    minHeight: 55,
     marginTop: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -770,7 +785,7 @@ const createStyles = (colors: ThemeColors) =>
 
   saveButtonText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '700', fontFamily: typography.family.bold,
     color: colors.onPrimary,
   },
 
@@ -782,8 +797,7 @@ const createStyles = (colors: ThemeColors) =>
 
   emptyList: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
   },
 
   emptyText: {
@@ -799,7 +813,7 @@ const createStyles = (colors: ThemeColors) =>
 
   accountCard: {
     padding: 20,
-    borderRadius: 18,
+    borderRadius: 21,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -807,6 +821,7 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   accountHeader: {
+    flexWrap: "wrap",
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
@@ -821,7 +836,7 @@ const createStyles = (colors: ThemeColors) =>
 
   accountName: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: '700', fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -834,7 +849,7 @@ const createStyles = (colors: ThemeColors) =>
   accountBalance: {
     maxWidth: "100%",
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '700', fontFamily: typography.family.bold,
     color: colors.text,
     textAlign: 'right',
   },
@@ -842,7 +857,8 @@ const createStyles = (colors: ThemeColors) =>
   accountActions: {
     alignItems: 'flex-end',
     flexShrink: 1,
-    maxWidth: "58%",
+    maxWidth: "100%",
+    flexGrow: 1,
   },
 
   cardButtons: {
@@ -854,6 +870,8 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   editButton: {
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
@@ -862,11 +880,13 @@ const createStyles = (colors: ThemeColors) =>
 
   editButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '600', fontFamily: typography.family.bold,
     color: colors.primary,
   },
 
   deleteButton: {
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
@@ -875,7 +895,7 @@ const createStyles = (colors: ThemeColors) =>
 
   deleteButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '600', fontFamily: typography.family.bold,
     color: colors.expense,
   },
   });

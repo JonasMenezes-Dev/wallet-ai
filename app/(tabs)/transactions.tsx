@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   ScrollView,
@@ -13,6 +12,10 @@ import {
 
 import { AnimatedListItem, FadeInView } from "../../src/components/AnimatedListItem";
 import { AnimatedPressable } from "../../src/components/AnimatedPressable";
+import { PremiumScreen } from "../../src/components/PremiumScreen";
+import { TransactionFilterPanel } from "../../src/components/TransactionFilterPanel";
+import { WalletSymbol } from "../../src/components/WalletSymbol";
+import { AppState } from "../../src/components/AppState";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { useAccounts } from "../../src/hooks/use-accounts";
 import { useTransactions } from "../../src/hooks/use-transactions";
@@ -21,16 +24,13 @@ import {
   editTransaction,
   removeTransaction,
 } from "../../src/services/transaction.service";
-import { ThemeColors, useThemeColors, useThemedStyles } from "../../src/theme";
+import { ThemeColors, typography, useThemeColors, useThemedStyles } from "../../src/theme";
 import type { Category } from "../../src/types/category";
 import {
   emptyTransactionFilters,
   filterTransactions,
   hasActiveTransactionFilters,
   type TransactionFilters,
-  type TransactionOriginFilter,
-  type TransactionPeriodFilter,
-  type TransactionTypeFilter,
 } from "../../src/types/transaction-filters";
 import type { TransactionWithRelations } from "../../src/types/transaction";
 import { formatTransactionDateTime } from "../../src/utils/date-time";
@@ -74,6 +74,8 @@ export default function TransactionsScreen() {
   const [filters, setFilters] = useState<TransactionFilters>(
     emptyTransactionFilters,
   );
+
+  const [filterPanelVisible, setFilterPanelVisible] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -149,11 +151,6 @@ export default function TransactionsScreen() {
    */
   const creditCards = useMemo(
     () => accounts.filter((account) => account.type === "credit_card"),
-    [accounts],
-  );
-
-  const regularAccounts = useMemo(
-    () => accounts.filter((account) => account.type !== "credit_card"),
     [accounts],
   );
 
@@ -252,10 +249,7 @@ export default function TransactionsScreen() {
 
   if (loading) {
     return (
-      <FadeInView style={styles.center}>
-        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel="Carregando transações" />
-        <Text>Carregando transações...</Text>
-      </FadeInView>
+      <PremiumScreen><AppState variant="loading" title="Carregando transações" /></PremiumScreen>
     );
   }
 
@@ -271,7 +265,13 @@ export default function TransactionsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <PremiumScreen style={styles.container}>
+      <FlatList
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        ListHeaderComponent={<View style={styles.listHeader}>
       <ScreenHeader
         title="Transações"
         subtitle={
@@ -297,9 +297,10 @@ export default function TransactionsScreen() {
       )}
 
       <View style={styles.searchBox}>
-        
+        <WalletSymbol name="search" color={colors.textMuted} size={20} />
 
         <TextInput
+          accessibilityLabel="Buscar transações"
           style={styles.searchInput}
           value={filters.search}
           onChangeText={(value) => updateFilters({ search: value })}
@@ -313,271 +314,22 @@ export default function TransactionsScreen() {
           <AnimatedPressable
             pressedScale={0.9}
             pressedOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel="Limpar busca"
+            style={styles.clearSearchButton}
             onPress={() => updateFilters({ search: "" })}
           >
-            <Text style={styles.clearSearch}>✕</Text>
+            <WalletSymbol name="close" color={colors.textMuted} size={18} />
           </AnimatedPressable>
         )}
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filters}
-      >
-        {([
-          ["all", "Todas"],
-          ["income", "Entradas"],
-          ["expense", "Gastos"],
-          ["transfer", "Transferências"],
-        ] as [TransactionTypeFilter, string][]).map(([value, label]) => (
-          <AnimatedPressable
-            key={value}
-            pressedScale={0.94}
-            style={[
-              styles.filterButton,
-              filters.type === value && styles.filterButtonActive,
-            ]}
-            onPress={() => updateFilters({ type: value })}
-          >
-            <Text
-              style={
-                filters.type === value
-                  ? styles.filterTextActive
-                  : styles.filterText
-              }
-            >
-              {label}
-            </Text>
-          </AnimatedPressable>
-        ))}
-      </ScrollView>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filters}
-      >
-        {([
-          ["all", "Qualquer período"],
-          ["month", "Este mês"],
-          ["last30", "Últimos 30 dias"],
-          ["last90", "Últimos 90 dias"],
-        ] as [TransactionPeriodFilter, string][]).map(([value, label]) => (
-          <AnimatedPressable
-            key={value}
-            pressedScale={0.94}
-            style={[
-              styles.filterButton,
-              filters.period === value && styles.filterButtonActive,
-            ]}
-            onPress={() => updateFilters({ period: value })}
-          >
-            <Text
-              style={
-                filters.period === value
-                  ? styles.filterTextActive
-                  : styles.filterText
-              }
-            >
-              {label}
-            </Text>
-          </AnimatedPressable>
-        ))}
-      </ScrollView>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filters}
-      >
-        {([
-          ["all", "Qualquer origem"],
-          ["manual", "Manual"],
-          ["automatic", "Automático"],
-        ] as [TransactionOriginFilter, string][]).map(([value, label]) => (
-          <AnimatedPressable
-            key={value}
-            pressedScale={0.94}
-            style={[
-              styles.filterButton,
-              filters.origin === value && styles.filterButtonActive,
-            ]}
-            onPress={() => updateFilters({ origin: value })}
-          >
-            <Text
-              style={
-                filters.origin === value
-                  ? styles.filterTextActive
-                  : styles.filterText
-              }
-            >
-              {label}
-            </Text>
-          </AnimatedPressable>
-        ))}
-      </ScrollView>
-
-      {regularAccounts.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filters}
-        >
-          <AnimatedPressable
-            pressedScale={0.94}
-            style={[
-              styles.filterButton,
-              filters.accountId === null && styles.filterButtonActive,
-            ]}
-            onPress={() => updateFilters({ accountId: null })}
-          >
-            <Text
-              style={
-                filters.accountId === null
-                  ? styles.filterTextActive
-                  : styles.filterText
-              }
-            >
-              Todas as contas
-            </Text>
-          </AnimatedPressable>
-
-          {regularAccounts.map((account) => (
-            <AnimatedPressable
-              key={account.id}
-              pressedScale={0.94}
-              style={[
-                styles.filterButton,
-                filters.accountId === account.id && styles.filterButtonActive,
-              ]}
-              onPress={() =>
-                updateFilters({
-                  accountId: filters.accountId === account.id ? null : account.id,
-                })
-              }
-            >
-              <Text
-                style={
-                  filters.accountId === account.id
-                    ? styles.filterTextActive
-                    : styles.filterText
-                }
-              >
-                {account.name}
-              </Text>
-            </AnimatedPressable>
-          ))}
-        </ScrollView>
-      )}
-
-      {/* Fileira só de cartões: filtra os gastos lançados no limite. */}
-      {creditCards.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filters}
-        >
-          <AnimatedPressable
-            pressedScale={0.94}
-            style={[
-              styles.filterButton,
-              filters.cardId === null && styles.filterButtonActive,
-            ]}
-            onPress={() => updateFilters({ cardId: null })}
-          >
-            <Text
-              style={
-                filters.cardId === null
-                  ? styles.filterTextActive
-                  : styles.filterText
-              }
-            >
-              Todos os cartões
-            </Text>
-          </AnimatedPressable>
-
-          {creditCards.map((card) => (
-            <AnimatedPressable
-              key={card.id}
-              pressedScale={0.94}
-              style={[
-                styles.filterButton,
-                filters.cardId === card.id && styles.filterButtonActive,
-              ]}
-              onPress={() =>
-                updateFilters({
-                  cardId: filters.cardId === card.id ? null : card.id,
-                })
-              }
-            >
-              <Text
-                style={
-                  filters.cardId === card.id
-                    ? styles.filterTextActive
-                    : styles.filterText
-                }
-              >
-                {card.name}
-              </Text>
-            </AnimatedPressable>
-          ))}
-        </ScrollView>
-      )}
-
-      {categories.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filters}
-        >
-          <AnimatedPressable
-            pressedScale={0.94}
-            style={[
-              styles.filterButton,
-              filters.categoryId === null && styles.filterButtonActive,
-            ]}
-            onPress={() => updateFilters({ categoryId: null })}
-          >
-            <Text
-              style={
-                filters.categoryId === null
-                  ? styles.filterTextActive
-                  : styles.filterText
-              }
-            >
-              Todas as categorias
-            </Text>
-          </AnimatedPressable>
-
-          {availableCategories.map((category) => (
-            <AnimatedPressable
-              key={category.id}
-              pressedScale={0.94}
-              style={[
-                styles.filterButton,
-                filters.categoryId === category.id && styles.filterButtonActive,
-              ]}
-              onPress={() =>
-                updateFilters({
-                  categoryId:
-                    filters.categoryId === category.id ? null : category.id,
-                })
-              }
-            >
-              <Text
-                style={
-                  filters.categoryId === category.id
-                    ? styles.filterTextActive
-                    : styles.filterText
-                }
-              >
-                {category.name}
-              </Text>
-            </AnimatedPressable>
-          ))}
-        </ScrollView>
-      )}
+      <AnimatedPressable accessibilityRole="button" accessibilityLabel="Abrir filtros de transações" onPress={() => setFilterPanelVisible(true)} style={styles.filterPanelButton}>
+        <WalletSymbol name="filter" color={colors.primary} size={20} />
+        <Text style={styles.filterPanelTitle}>Filtros</Text>
+        <Text style={styles.filterPanelCount}>{[filters.search.trim() !== "", filters.type !== "all", filters.period !== "all", filters.origin !== "all", filters.accountId !== null, filters.cardId !== null, filters.categoryId !== null].filter(Boolean).length} ativos</Text>
+        <WalletSymbol name="chevron" color={colors.primary} size={18} />
+      </AnimatedPressable>
 
       {hasActiveFilters && (
         <AnimatedPressable
@@ -589,10 +341,10 @@ export default function TransactionsScreen() {
         </AnimatedPressable>
       )}
 
-      <FlatList
+
+        </View>}
         data={visibleTransactions}
         keyExtractor={(item) => item.id.toString()}
-        keyboardShouldPersistTaps="handled"
         contentContainerStyle={
           visibleTransactions.length === 0 ? styles.emptyList : styles.list
         }
@@ -652,6 +404,9 @@ export default function TransactionsScreen() {
           return (
             <AnimatedListItem index={index} style={styles.transactionCard}>
               <View style={styles.transactionHeader}>
+                <View style={[styles.transactionIcon, { backgroundColor: isIncome ? colors.incomeSurface : colors.accentSurface }]}>
+                  <WalletSymbol name={isIncome ? "income" : isGoalContribution || isAccountTransfer ? "transfer" : "receipt"} color={isIncome ? colors.income : isGoalContribution || isAccountTransfer ? colors.primary : colors.expense} size={19} />
+                </View>
                 <View style={styles.transactionInfo}>
                   <View style={styles.labelRow}>
                     <View
@@ -732,6 +487,10 @@ export default function TransactionsScreen() {
                     {formatCurrency(item.amount)}
                   </Text>
 
+
+                </View>
+              </View>
+
                   <View style={styles.cardButtons}>
                     {!isGoalContribution && !isAccountTransfer && (
                       <AnimatedPressable
@@ -756,8 +515,6 @@ export default function TransactionsScreen() {
                       <Text style={styles.deleteButtonText}>Excluir</Text>
                     </AnimatedPressable>
                   </View>
-                </View>
-              </View>
 
               {/* Edição rápida de categoria: o ajuste mais frequente do dia
                   a dia, sem abrir a tela de edição completa. */}
@@ -836,22 +593,33 @@ export default function TransactionsScreen() {
           );
         }}
       />
-    </View>
+      <TransactionFilterPanel visible={filterPanelVisible} filters={filters} accounts={accounts} categories={availableCategories} onClose={() => setFilterPanelVisible(false)} onApply={setFilters} />
+      <AnimatedPressable accessibilityRole="button" accessibilityLabel="Nova transação" onPress={() => router.push("/transaction/new")} style={styles.fab}>
+        <WalletSymbol name="plus" color={colors.onPrimary} size={26} />
+      </AnimatedPressable>
+    </PremiumScreen>
   );
 }
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+  listHeader: { paddingBottom: 8 },
+  transactionIcon: { width: 36, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center", marginRight: 10 },
+  clearSearchButton: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
+  filterPanelButton: { minHeight: 54, padding: 16, marginTop: 16, flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 15, backgroundColor: colors.accentSurface },
+  filterPanelTitle: { fontFamily: typography.family.bold,  flex: 1, fontSize: 15, fontWeight: "700", color: colors.text },
+  filterPanelCount: { fontFamily: typography.family.regular,  fontSize: 12, color: colors.primary },
+  fab: { position: "absolute", right: 24, bottom: 24, width: 60, height: 55, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, elevation: 2 },
   container: {
     flex: 1,
-    padding: 18,
+    paddingHorizontal: 24,
     paddingTop: 24,
     backgroundColor: colors.background,
   },
 
-  errorText: { fontSize: 14, textAlign: "center", color: colors.expense, marginHorizontal: 24 },
+  errorText: { fontFamily: typography.family.regular,  fontSize: 14, textAlign: "center", color: colors.expense, marginHorizontal: 24 },
   retryButton: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.primary },
-  retryButtonText: { fontSize: 14, fontWeight: "700", color: colors.onPrimary },
+  retryButtonText: { fontFamily: typography.family.bold,  fontSize: 14, fontWeight: "700", color: colors.onPrimary },
   center: {
     flex: 1,
     alignItems: "center",
@@ -859,13 +627,13 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.background,
   },
 
-  title: {
+  title: { fontFamily: typography.family.bold,
     fontSize: 30,
     fontWeight: "800",
     color: colors.text,
   },
 
-  subtitle: {
+  subtitle: { fontFamily: typography.family.regular,
     marginTop: 8,
     fontSize: 15,
     color: colors.textMuted,
@@ -874,27 +642,28 @@ const createStyles = (colors: ThemeColors) =>
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 14,
-    paddingHorizontal: 14,
-    minHeight: 52,
-    borderRadius: 14,
+    marginTop: 16,
+    gap: 12,
+    paddingHorizontal: 16,
+    minHeight: 55,
+    borderRadius: 21,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
   },
 
-  searchIcon: {
+  searchIcon: { fontFamily: typography.family.regular,
     marginRight: 8,
     fontSize: 14,
   },
 
-  searchInput: {
+  searchInput: { fontFamily: typography.family.regular,
     flex: 1,
     fontSize: 15,
     color: colors.text,
   },
 
-  clearSearch: {
+  clearSearch: { fontFamily: typography.family.bold,
     fontSize: 15,
     fontWeight: "700",
     color: colors.textSubtle,
@@ -906,13 +675,13 @@ const createStyles = (colors: ThemeColors) =>
     marginTop: 10,
   },
 
-  incomeTotals: {
+  incomeTotals: { fontFamily: typography.family.bold,
     fontSize: 13,
     fontWeight: "700",
     color: colors.income,
   },
 
-  expenseTotals: {
+  expenseTotals: { fontFamily: typography.family.bold,
     fontSize: 13,
     fontWeight: "700",
     color: colors.expense,
@@ -936,7 +705,7 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.accentSurface,
   },
 
-  sourceBadgeText: {
+  sourceBadgeText: { fontFamily: typography.family.bold,
     fontSize: 11,
     fontWeight: "700",
     color: colors.textMuted,
@@ -955,15 +724,16 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   categoryChip: {
-    alignSelf: "flex-start",
+    alignSelf: "stretch",
     marginTop: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceMuted,
+    paddingTop: 12,
+    minHeight: 44,
+    justifyContent: "center",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 
-  categoryChipText: {
+  categoryChipText: { fontFamily: typography.family.bold,
     fontSize: 12,
     fontWeight: "600",
     color: colors.textMuted,
@@ -976,7 +746,7 @@ const createStyles = (colors: ThemeColors) =>
     borderTopColor: colors.border,
   },
 
-  categoryPickerLabel: {
+  categoryPickerLabel: { fontFamily: typography.family.bold,
     marginBottom: 8,
     fontSize: 12,
     fontWeight: "700",
@@ -990,7 +760,7 @@ const createStyles = (colors: ThemeColors) =>
   },
 
   categoryOption: {
-    minHeight: 40,
+    minHeight: 44,
     justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1002,7 +772,7 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.primary,
   },
 
-  categoryOptionText: {
+  categoryOptionText: { fontFamily: typography.family.bold,
     fontSize: 12,
     fontWeight: "600",
     color: colors.text,
@@ -1012,14 +782,14 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.onPrimary,
   },
 
-  cancelLink: {
+  cancelLink: { fontFamily: typography.family.bold,
     marginTop: 10,
     fontSize: 12,
     fontWeight: "700",
     color: colors.textSubtle,
   },
 
-  goalHint: {
+  goalHint: { fontFamily: typography.family.bold,
     marginTop: 12,
     fontSize: 12,
     fontWeight: "600",
@@ -1046,13 +816,13 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.primary,
   },
 
-  filterText: {
+  filterText: { fontFamily: typography.family.bold,
     color: colors.textMuted,
     fontSize: 12,
     fontWeight: "700",
   },
 
-  filterTextActive: {
+  filterTextActive: { fontFamily: typography.family.bold,
     color: colors.onPrimary,
     fontSize: 12,
     fontWeight: "700",
@@ -1060,14 +830,13 @@ const createStyles = (colors: ThemeColors) =>
 
   list: {
     paddingTop: 18,
-    paddingBottom: 32,
+    paddingBottom: 100,
     gap: 12,
   },
 
   emptyList: {
     flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingBottom: 100,
   },
 
   emptyState: {
@@ -1076,13 +845,13 @@ const createStyles = (colors: ThemeColors) =>
     paddingVertical: 40,
   },
 
-  emptyTitle: {
+  emptyTitle: { fontFamily: typography.family.bold,
     fontSize: 18,
     fontWeight: "800",
     color: colors.text,
   },
 
-  emptyText: {
+  emptyText: { fontFamily: typography.family.regular,
     marginTop: 8,
     fontSize: 14,
     lineHeight: 20,
@@ -1098,7 +867,7 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.primary,
   },
 
-  emptyButtonText: {
+  emptyButtonText: { fontFamily: typography.family.bold,
     fontSize: 14,
     fontWeight: "700",
     color: colors.onPrimary,
@@ -1113,15 +882,15 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.accentSurface,
   },
 
-  clearButtonText: {
+  clearButtonText: { fontFamily: typography.family.bold,
     fontSize: 12,
     fontWeight: "700",
     color: colors.primary,
   },
 
   transactionCard: {
-    padding: 18,
-    borderRadius: 18,
+    padding: 20,
+    borderRadius: 21,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -1160,7 +929,7 @@ const createStyles = (colors: ThemeColors) =>
     backgroundColor: colors.accentSurface,
   },
 
-  typeBadgeText: {
+  typeBadgeText: { fontFamily: typography.family.bold,
     fontSize: 11,
     fontWeight: "700",
   },
@@ -1177,13 +946,13 @@ const createStyles = (colors: ThemeColors) =>
     color: colors.primary,
   },
 
-  transactionDescription: {
+  transactionDescription: { fontFamily: typography.family.bold,
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
   },
 
-  transactionMeta: {
+  transactionMeta: { fontFamily: typography.family.regular,
     marginTop: 5,
     fontSize: 13,
     color: colors.textSubtle,
@@ -1192,10 +961,10 @@ const createStyles = (colors: ThemeColors) =>
   transactionRight: {
     alignItems: "flex-end",
     flexShrink: 1,
-    maxWidth: "56%",
+    maxWidth: "48%",
   },
 
-  transactionAmount: {
+  transactionAmount: { fontFamily: typography.family.bold,
     maxWidth: "100%",
     fontSize: 15,
     fontWeight: "700",
@@ -1216,25 +985,29 @@ const createStyles = (colors: ThemeColors) =>
 
   deleteButton: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: "center",
     borderRadius: 8,
     backgroundColor: colors.expenseSurface,
   },
 
   editButton: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: "center",
     borderRadius: 8,
     backgroundColor: colors.accentSurface,
   },
 
-  editButtonText: {
+  editButtonText: { fontFamily: typography.family.bold,
     fontSize: 12,
     fontWeight: "600",
     color: colors.primary,
   },
 
-  deleteButtonText: {
+  deleteButtonText: { fontFamily: typography.family.bold,
     fontSize: 12,
     fontWeight: "600",
     color: colors.expense,

@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from "react-native";
+import { AppText as Text } from "./AppText";
+import { StyleSheet, View } from "react-native";
 
-import { ThemeColors, useThemedStyles } from "../theme";
+import { typography, ThemeColors, useThemedStyles } from "../theme";
 
 type CreditCardSummaryProps = {
   /** Valor utilizado/dívida do cartão. Nunca negativo. */
@@ -76,7 +77,7 @@ const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       marginTop: 12,
-      paddingTop: 12,
+      paddingTop: 20,
       borderTopWidth: 1,
       borderTopColor: colors.border,
     },
@@ -84,6 +85,7 @@ const createStyles = (colors: ThemeColors) =>
     usedLabel: {
       fontSize: 11,
       fontWeight: "700",
+    fontFamily: typography.family.bold,
       letterSpacing: 0.5,
       textTransform: "uppercase",
       color: colors.textSubtle,
@@ -91,8 +93,11 @@ const createStyles = (colors: ThemeColors) =>
 
     usedValue: {
       marginTop: 2,
-      fontSize: 16,
+      fontSize: 23,
+      lineHeight: 30,
+      fontVariant: ["tabular-nums"],
       fontWeight: "800",
+    fontFamily: typography.family.bold,
       color: colors.expense,
     },
 
@@ -106,6 +111,7 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: 4,
       fontSize: 12,
       fontWeight: "700",
+    fontFamily: typography.family.bold,
       color: colors.income,
     },
 
@@ -113,6 +119,7 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: 4,
       fontSize: 12,
       fontWeight: "700",
+    fontFamily: typography.family.bold,
       color: colors.warning,
     },
   });

@@ -1,3 +1,10 @@
+import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PremiumAmbient } from "../../src/components/PremiumAmbient";
+import { AppCard } from "../../src/components/AppCard";
+import { AppField } from "../../src/components/AppField";
+import { AppButton } from "../../src/components/AppButton";
+import { AppText as Text } from "../../src/components/AppText";
 import { useState } from "react";
 
 import {
@@ -6,18 +13,17 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
+
   View,
 } from "react-native";
 
 import { router } from "expo-router";
 
 import { AnimatedBlock } from "../../src/components/AnimatedListItem";
-import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { useUserSettings } from "../../src/hooks/use-user-settings";
 import { addAccount } from "../../src/services/account.service";
 import {
+  typography,
   ThemeColors,
   useThemeColors,
   useThemedStyles,
@@ -33,6 +39,7 @@ export default function OnboardingScreen() {
   const [saving, setSaving] = useState(false);
   const styles = useThemedStyles(createStyles);
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   async function handleContinue() {
     const salaryValue = Number(salary.replace(/\./g, "").replace(",", "."));
@@ -101,53 +108,53 @@ export default function OnboardingScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={24}
     >
+      <PremiumAmbient variant="subtle" />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
         <AnimatedBlock>
-          <Text style={styles.brand}>Wallet.ai</Text>
+          <Text variant="label" tone="primary">Bem-vindo</Text>
 
-          <Text style={styles.title}>Vamos começar.</Text>
+          <Text variant="title" style={styles.title}>Seu dinheiro,</Text>
 
           <Text style={styles.description}>
-            Primeiro, vamos entender quanto dinheiro entra no seu mês.
+            no seu controle.
           </Text>
 
+          <View style={styles.heroIcon}>
+            <Image source={require("../../assets/premium/onboarding-wallet.svg")} tintColor={colors.primary} style={{ width: 66, height: 66 }} accessible={false} />
+          </View>
+          <View style={styles.introduction}>
+            <Text style={styles.introductionTitle}>Organização sem complicação</Text>
+            <Text tone="muted">Contas, gastos, metas e alertas em uma experiência só.</Text>
+          </View>
+          <AppCard style={styles.privacyCard}>
+            <Image source={require("../../assets/premium/onboarding-shield.svg")} tintColor={colors.primary} style={{ width: 25, height: 25 }} accessible={false} />
+            <View style={{ flex: 1, gap: 8 }}>
+              <Text style={styles.privacyTitle}>Privacidade em primeiro lugar</Text>
+              <Text variant="caption" tone="muted">Seus dados financeiros ficam no próprio dispositivo.</Text>
+            </View>
+          </AppCard>
           <View style={styles.form}>
+            <Text variant="label" tone="muted">Configure seu primeiro acesso</Text>
             <View style={styles.field}>
-              <Text style={styles.label}>Salário mensal</Text>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.prefix}>R$</Text>
-
-                <TextInput
-                  style={styles.input}
+              <AppField label="Salário mensal (R$)" style={styles.fieldInput}
                   value={salary}
                   onChangeText={setSalary}
                   placeholder="0,00"
                   placeholderTextColor={colors.textSubtle}
-                  keyboardType="decimal-pad"
-                />
-              </View>
+                  keyboardType="decimal-pad" />
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>VA / Benefícios</Text>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.prefix}>R$</Text>
-
-                <TextInput
-                  style={styles.input}
+              <AppField label="VA / Benefícios (R$)" style={styles.fieldInput}
                   value={benefitAmount}
                   onChangeText={setBenefitAmount}
                   placeholder="0,00"
                   placeholderTextColor={colors.textSubtle}
-                  keyboardType="decimal-pad"
-                />
-              </View>
+                  keyboardType="decimal-pad" />
 
               <Text style={styles.helper}>
                 Se você não recebe VA ou outro benefício, coloque 0.
@@ -155,32 +162,20 @@ export default function OnboardingScreen() {
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Sua conta principal</Text>
-
-              <TextInput
-                style={styles.textInput}
+              <AppField label="Sua conta principal" style={styles.fieldInput}
                 value={accountName}
                 onChangeText={setAccountName}
                 placeholder="Ex.: Nubank"
-                placeholderTextColor={colors.textSubtle}
-              />
+                placeholderTextColor={colors.textSubtle} />
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Saldo atual da conta</Text>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.prefix}>R$</Text>
-
-                <TextInput
-                  style={styles.input}
+              <AppField label="Saldo atual da conta (R$)" style={styles.fieldInput}
                   value={initialBalance}
                   onChangeText={setInitialBalance}
                   placeholder="0,00"
                   placeholderTextColor={colors.textSubtle}
-                  keyboardType="decimal-pad"
-                />
-              </View>
+                  keyboardType="decimal-pad" />
 
               <Text style={styles.helper}>
                 Quanto você tem disponível nessa conta hoje?
@@ -190,16 +185,7 @@ export default function OnboardingScreen() {
         </AnimatedBlock>
 
         <AnimatedBlock delay={180}>
-          <AnimatedPressable
-            style={[styles.button, saving && styles.buttonDisabled]}
-            pressedOpacity={0.85}
-            onPress={handleContinue}
-            disabled={saving}
-          >
-            <Text style={styles.buttonText}>
-              {saving ? "Salvando..." : "Continuar"}
-            </Text>
-          </AnimatedPressable>
+          <AppButton label={saving ? "Salvando..." : "Começar agora →"} onPress={handleContinue} loading={saving} style={styles.button} />
         </AnimatedBlock>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -213,22 +199,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   content: {
-    justifyContent: "space-between",
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 24,
     paddingBottom: 32,
   },
 
+  heroIcon: { alignSelf: "center", marginTop: 36, marginBottom: 42, width: 162, height: 162, borderRadius: 45, alignItems: "center", justifyContent: "center", backgroundColor: colors.accentSurface },
+  introduction: { marginHorizontal: 20, gap: 14, marginBottom: 40 },
+  introductionTitle: { fontSize: 21, fontFamily: typography.family.bold, color: colors.text },
+  privacyCard: { flexDirection: "row", alignItems: "flex-start", gap: 16 },
+  privacyTitle: { fontSize: 15, fontFamily: typography.family.bold, color: colors.text },
+  fieldInput: { fontSize: 16 },
   brand: {
     fontSize: 18,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
     color: colors.primary,
   },
 
   title: {
-    marginTop: 42,
-    fontSize: 36,
+    marginTop: 18,
+    fontSize: 29,
     fontWeight: "800",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -240,7 +234,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   form: {
-    marginTop: 48,
+    marginTop: 32,
+    marginBottom: 32,
     gap: 24,
   },
 
@@ -251,13 +246,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    height: 58,
+    minHeight: 58,
     paddingHorizontal: 16,
     borderRadius: 14,
     backgroundColor: colors.surface,
@@ -266,7 +262,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   textInput: {
-    height: 58,
+    minHeight: 58,
     paddingHorizontal: 16,
     borderRadius: 14,
     backgroundColor: colors.surface,
@@ -280,6 +276,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginRight: 8,
     fontSize: 17,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
     color: colors.textMuted,
   },
 
@@ -287,6 +284,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: "600",
+    fontFamily: typography.family.bold,
     color: colors.text,
   },
 
@@ -297,7 +295,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   button: {
-    height: 58,
+    minHeight: 58,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
@@ -311,6 +309,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "700",
+    fontFamily: typography.family.bold,
     color: colors.onPrimary,
   },
 });

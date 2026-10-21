@@ -25,6 +25,11 @@ export type WalletIconName =
   | "more"
   | "success"
   | "error"
+  | "close"
+  | "search"
+  | "filter"
+  | "receipt"
+  | "chevron"
   | "insight";
 
 const symbols = {
@@ -50,6 +55,11 @@ const symbols = {
   more: { ios: "ellipsis", android: "more_horiz", web: "more_horiz" },
   success: { ios: "checkmark.circle", android: "check_circle", web: "check_circle" },
   error: { ios: "exclamationmark.circle", android: "error", web: "error" },
+  close: { ios: "xmark", android: "close", web: "close" },
+  search: { ios: "magnifyingglass", android: "search", web: "search" },
+  filter: { ios: "line.3.horizontal.decrease", android: "filter_list", web: "filter_list" },
+  receipt: { ios: "creditcard", android: "receipt_long", web: "receipt_long" },
+  chevron: { ios: "chevron.right", android: "chevron_right", web: "chevron_right" },
   insight: { ios: "sparkles", android: "auto_awesome", web: "auto_awesome" },
 } as const;
 
@@ -62,6 +72,12 @@ const approvedIcons = {
   income: require("../../assets/premium/income.svg"),
   expense: require("../../assets/premium/expense.svg"),
   insight: require("../../assets/premium/insight.svg"),
+  search: require("../../assets/premium/search.svg"),
+  filter: require("../../assets/premium/filter.svg"),
+  success: require("../../assets/premium/success.svg"),
+  transfer: require("../../assets/premium/transfer.svg"),
+  recurring: require("../../assets/premium/recurring.svg"),
+  receipt: require("../../assets/premium/receipt.svg"),
 };
 
 type WalletSymbolProps = {

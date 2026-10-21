@@ -32,7 +32,7 @@ export const easings = {
 /** Como cada tela entra ao ser empilhada. */
 export const screenTransition = {
   animation: "slide_from_right",
-  animationDuration: durations.base,
+  animationDuration: 260,
 } as const;
 
 /** Delay em cascata para itens de lista (limitado para listas longas). */

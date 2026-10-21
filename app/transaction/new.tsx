@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
@@ -17,6 +15,12 @@ import { router } from 'expo-router';
 import { AnimatedBlock } from '../../src/components/AnimatedListItem';
 import { AnimatedPressable } from '../../src/components/AnimatedPressable';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { AppText as Text } from '../../src/components/AppText';
+import { AppField } from '../../src/components/AppField';
+import { AppSelector } from '../../src/components/AppSelector';
+import { AppButton } from '../../src/components/AppButton';
+import { PremiumScreen } from '../../src/components/PremiumScreen';
+import { WalletSymbol } from '../../src/components/WalletSymbol';
 
 import { listAccounts } from '../../src/services/account.service';
 import {
@@ -170,6 +174,7 @@ export default function NewTransactionScreen() {
   }
 
   return (
+    <PremiumScreen ambient="subtle">
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -190,58 +195,8 @@ export default function NewTransactionScreen() {
       </AnimatedBlock>
 
       <AnimatedBlock delay={60} style={styles.typeSelector}>
-        <AnimatedPressable
-          pressedScale={0.96}
-          style={[
-            styles.typeButton,
-            type === 'expense' && styles.typeButtonActive,
-          ]}
-          onPress={() => setType('expense')}
-        >
-          <Text
-            style={[
-              styles.typeButtonText,
-              type === 'expense' && styles.typeButtonTextActive,
-            ]}
-          >
-            Despesa
-          </Text>
-        </AnimatedPressable>
-
-        <AnimatedPressable
-          pressedScale={0.96}
-          style={[
-            styles.typeButton,
-            type === 'income' && styles.typeButtonActive,
-          ]}
-          onPress={() => setType('income')}
-        >
-          <Text
-            style={[
-              styles.typeButtonText,
-              type === 'income' && styles.typeButtonTextActive,
-            ]}
-          >
-            Receita
-          </Text>
-        </AnimatedPressable>
-        <AnimatedPressable
-          pressedScale={0.96}
-          style={[
-            styles.typeButton,
-            type === 'transfer' && styles.typeButtonActive,
-          ]}
-          onPress={() => setType('transfer')}
-        >
-          <Text
-            style={[
-              styles.typeButtonText,
-              type === 'transfer' && styles.typeButtonTextActive,
-            ]}
-          >
-            Transferir
-          </Text>
-        </AnimatedPressable>
+        <AppSelector<TransactionType> accessibilityLabel="Tipo de movimentação" value={type} onChange={setType}
+          options={[{ value: 'expense', label: 'Despesa' }, { value: 'income', label: 'Receita' }, { value: 'transfer', label: 'Transferir' }]} />
       </AnimatedBlock>
 
       <View style={styles.field}>
@@ -251,6 +206,7 @@ export default function NewTransactionScreen() {
           <Text style={styles.prefix}>R$</Text>
 
           <TextInput
+            accessibilityLabel="Valor da transação"
             style={styles.input}
             value={amount}
             onChangeText={setAmount}
@@ -261,17 +217,8 @@ export default function NewTransactionScreen() {
         </View>
       </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Descrição</Text>
-
-        <TextInput
-          style={styles.textInput}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Ex.: Almoço"
-          placeholderTextColor={colors.textSubtle}
-        />
-      </View>
+      <AppField label="Descrição" containerStyle={styles.field} value={description}
+        onChangeText={setDescription} placeholder="Ex.: Almoço" />
 
       {type !== 'transfer' && <View style={styles.field}>
         <Text style={styles.label}>Categoria</Text>
@@ -285,6 +232,8 @@ export default function NewTransactionScreen() {
             <AnimatedPressable
               key={category.id}
               pressedScale={0.94}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selectedCategoryId === category.id }}
               style={[
                 styles.option,
                 selectedCategoryId === category.id && styles.optionActive,
@@ -320,12 +269,15 @@ export default function NewTransactionScreen() {
               <AnimatedPressable
                 key={account.id}
                 pressedScale={0.94}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: sourceAccountId === account.id }}
                 style={[
                   styles.option,
                   sourceAccountId === account.id && styles.optionActive,
                 ]}
                 onPress={() => setSelectedAccountId(account.id)}
               >
+                {isCard && <WalletSymbol name="card" size={18} color={sourceAccountId === account.id ? colors.onPrimary : colors.textMuted} />}
                 <Text
                   style={[
                     styles.optionText,
@@ -333,7 +285,6 @@ export default function NewTransactionScreen() {
                       styles.optionTextActive,
                   ]}
                 >
-                  {isCard ? '💳 ' : ''}
                   {account.name}
                 </Text>
               </AnimatedPressable>
@@ -349,6 +300,8 @@ export default function NewTransactionScreen() {
             <AnimatedPressable
               key={account.id}
               pressedScale={0.94}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: destinationAccountId === account.id }}
               style={[styles.option, destinationAccountId === account.id && styles.optionActive]}
               onPress={() => setSelectedDestinationAccountId(account.id)}
             >
@@ -362,33 +315,22 @@ export default function NewTransactionScreen() {
         {!destinationAccountId && <Text style={styles.label}>Cadastre pelo menos duas contas sem cartão de crédito para transferir.</Text>}
       </View>}
 
-      <AnimatedPressable
-        style={[
-          styles.saveButton,
-          (saving || (type === 'transfer' && !destinationAccountId)) && styles.saveButtonDisabled,
-        ]}
-        pressedOpacity={0.85}
-        onPress={handleSave}
+      <AppButton style={styles.saveButton} onPress={handleSave} loading={saving}
         disabled={saving || (type === 'transfer' && !destinationAccountId)}
-      >
-        {saving && <ActivityIndicator color={colors.onPrimary} size="small" />}
-        <Text style={styles.saveButtonText}>
-          {saving ? 'Salvando...' : type === 'transfer' ? 'Confirmar transferência' : 'Salvar transação'}
-        </Text>
-      </AnimatedPressable>
+        label={saving ? 'Salvando...' : type === 'transfer' ? 'Confirmar transferência' : 'Salvar transação'} />
       </ScrollView>
     </KeyboardAvoidingView>
+    </PremiumScreen>
   );
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 
   content: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
   },
@@ -407,10 +349,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   typeSelector: {
     flexDirection: 'row',
-    marginTop: 32,
-    padding: 4,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceMuted,
+    marginTop: 24,
   },
 
   typeButton: {
@@ -441,17 +380,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   label: {
     marginBottom: 8,
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontWeight: '700',
+    color: colors.textMuted,
   },
 
   moneyInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 60,
+    minHeight: 78,
     paddingHorizontal: 16,
-    borderRadius: 14,
+    borderRadius: 21,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -466,7 +407,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
   input: {
     flex: 1,
-    fontSize: 22,
+    fontFamily: 'Inter-Bold',
+    fontSize: 30,
     fontWeight: '600',
     color: colors.text,
   },
@@ -488,9 +430,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   option: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 11,
-    borderRadius: 12,
+    borderRadius: 10,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -512,13 +458,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
 
   saveButton: {
-    height: 58,
-    marginTop: 36,
+    minHeight: 52,
+    marginTop: 24,
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 14,
     backgroundColor: colors.primary,
   },
 

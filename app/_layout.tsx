@@ -4,6 +4,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
+import { useReducedMotion } from "react-native-reanimated";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { screenTransition } from "../src/animations";
@@ -18,6 +19,7 @@ import {
 
 function RootNavigator() {
   const colors = useThemeColors();
+  const reduceMotion = useReducedMotion();
   const themeName = useThemeName();
   const { loading } = useThemePreference();
   const [fontsLoaded, fontError] = useFonts({
@@ -83,7 +85,7 @@ function RootNavigator() {
         <Stack
           screenOptions={{
             headerShown: false,
-            animation: screenTransition.animation,
+            animation: reduceMotion ? "none" : screenTransition.animation,
             animationDuration: screenTransition.animationDuration,
             gestureEnabled: true,
             contentStyle: { backgroundColor: colors.background },

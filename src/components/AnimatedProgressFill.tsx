@@ -22,7 +22,7 @@ type AnimatedProgressFillProps = {
 export function AnimatedProgressFill({
   progress,
   delay = 80,
-  duration = durations.smooth,
+  duration = durations.slow,
   style,
 }: AnimatedProgressFillProps) {
   const animatedProgress = useSharedValue(0);

@@ -5,12 +5,21 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 
+import { AppText as Text } from "../src/components/AppText";
+import { AppCard } from "../src/components/AppCard";
+import { AppButton } from "../src/components/AppButton";
+import { AppField } from "../src/components/AppField";
+import { AppSelector } from "../src/components/AppSelector";
+import { PremiumScreen } from "../src/components/PremiumScreen";
+import { PremiumSheet } from "../src/components/PremiumSheet";
+import { ScreenHeader } from "../src/components/ScreenHeader";
+import { AnimatedProgressFill } from "../src/components/AnimatedProgressFill";
+import { AnimatedListItem } from "../src/components/AnimatedListItem";
+import { WalletSymbol } from "../src/components/WalletSymbol";
 import { listCategories } from "../src/services/category.service";
 import {
   deleteMonthlyBudget,
@@ -19,7 +28,7 @@ import {
   type MonthlyBudget,
 } from "../src/services/budget.service";
 import type { Category } from "../src/types/category";
-import { useThemedStyles, useThemeColors, spacing, radii } from "../src/theme";
+import { useThemedStyles, useThemeColors, spacing, radii, typography } from "../src/theme";
 
 function getMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -55,47 +64,43 @@ function parseAmount(value: string) {
 
 function createStyles(colors: import("../src/theme").ThemeColors) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: spacing.lg, paddingBottom: spacing["2xl"], gap: spacing.md },
+    content: { padding: spacing["2xl"], paddingBottom: spacing["4xl"], gap: spacing["2xl"] },
     header: { flexDirection: "row", alignItems: "center", gap: spacing.md },
     backButton: {
-      width: 42, height: 42, borderRadius: radii.md,
+      width: 44, height: 44, borderRadius: radii.md,
       alignItems: "center", justifyContent: "center",
       backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
     },
-    backText: { color: colors.text, fontSize: 24 },
-    titleArea: { flex: 1 },
-    title: { color: colors.text, fontSize: 27, fontWeight: "800" },
-    subtitle: { color: colors.textMuted, fontSize: 13, marginTop: 3 },
+    backText: { color: colors.text, fontSize: 24, lineHeight: 30 },
     monthCard: {
       flexDirection: "row", alignItems: "center", justifyContent: "space-between",
       padding: spacing.sm, borderRadius: radii.lg, backgroundColor: colors.surface,
       borderWidth: 1, borderColor: colors.border,
     },
     monthButton: {
-      width: 42, height: 42, borderRadius: radii.md,
+      width: 44, height: 44, borderRadius: radii.md,
       alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceMuted,
     },
-    monthArrow: { color: colors.text, fontSize: 24 },
-    monthLabel: { color: colors.text, fontWeight: "800", fontSize: 16 },
+    monthArrow: { color: colors.text, fontSize: 24, lineHeight: 30 },
+    monthLabel: { flex: 1, textAlign: "center", color: colors.text, fontWeight: "700", fontFamily: typography.family.bold, fontSize: 16 },
     summaryCard: {
-      padding: spacing.lg, borderRadius: radii.xl, backgroundColor: colors.primary,
+      padding: spacing.xl, borderRadius: radii.lg, backgroundColor: colors.surface,
       gap: spacing.xs,
     },
-    summaryLabel: { color: colors.onPrimary, opacity: 0.82, fontSize: 13 },
-    summaryValue: { color: colors.onPrimary, fontSize: 27, fontWeight: "800" },
-    summaryMeta: { color: colors.onPrimary, opacity: 0.88, fontSize: 12 },
-    sectionTitle: { color: colors.text, fontSize: 18, fontWeight: "800", marginBottom: spacing.xs },
+    summaryLabel: { color: colors.textMuted, fontSize: 11, textTransform: "uppercase" },
+    summaryValue: { color: colors.text, fontSize: 32, lineHeight: 40, fontVariant: ["tabular-nums"], fontWeight: "700", fontFamily: typography.family.bold },
+    summaryMeta: { color: colors.textMuted, fontSize: 12 },
+    sectionTitle: { color: colors.text, fontSize: 18, fontWeight: "700", fontFamily: typography.family.bold, marginBottom: spacing.xs },
     card: {
-      padding: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface,
+      padding: spacing.xl, borderRadius: radii.lg, backgroundColor: colors.surface,
       borderWidth: 1, borderColor: colors.border, gap: spacing.sm,
     },
-    budgetHeader: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
-    budgetInfo: { flex: 1, gap: 3 },
-    categoryName: { color: colors.text, fontSize: 16, fontWeight: "800" },
+    budgetHeader: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: spacing.sm },
+    budgetInfo: { flex: 1, minWidth: 110, gap: 3 },
+    categoryName: { color: colors.text, fontSize: 16, fontWeight: "700", fontFamily: typography.family.bold },
     budgetMeta: { color: colors.textMuted, fontSize: 12 },
     amountArea: { alignItems: "flex-end", gap: 2 },
-    spentValue: { color: colors.text, fontSize: 16, fontWeight: "800" },
+    spentValue: { color: colors.text, fontSize: 16, fontWeight: "700", fontFamily: typography.family.bold },
     limitValue: { color: colors.textMuted, fontSize: 12 },
     progressTrack: { height: 8, borderRadius: 8, overflow: "hidden", backgroundColor: colors.surfaceMuted },
     progressFill: { height: "100%", borderRadius: 8, backgroundColor: colors.primary },
@@ -103,34 +108,20 @@ function createStyles(colors: import("../src/theme").ThemeColors) {
     progressOver: { backgroundColor: colors.expense },
     statusRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
     statusText: { flex: 1, fontSize: 12, color: colors.textMuted },
-    warningText: { color: colors.warning, fontWeight: "700" },
-    overText: { color: colors.expense, fontWeight: "800" },
-    actions: { flexDirection: "row", justifyContent: "flex-end", gap: spacing.sm },
-    smallButton: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surfaceMuted },
-    smallButtonText: { color: colors.text, fontSize: 12, fontWeight: "700" },
-    deleteButtonText: { color: colors.expense, fontSize: 12, fontWeight: "700" },
-    primaryButton: { backgroundColor: colors.primary, padding: spacing.md, borderRadius: radii.md, alignItems: "center" },
-    primaryButtonText: { color: colors.onPrimary, fontWeight: "800" },
+    warningText: { color: colors.warning, fontWeight: "700", fontFamily: typography.family.bold },
+    overText: { color: colors.expense, fontWeight: "700", fontFamily: typography.family.bold },
+    actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: spacing.sm },
+    smallButton: { minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.md, backgroundColor: colors.surfaceMuted },
+    smallButtonText: { color: colors.text, fontSize: 12, fontWeight: "700", fontFamily: typography.family.bold },
+    deleteButtonText: { color: colors.expense, fontSize: 12, fontWeight: "700", fontFamily: typography.family.bold },
     emptyCard: {
       padding: spacing.lg, borderRadius: radii.lg, backgroundColor: colors.surface,
       borderWidth: 1, borderColor: colors.border, alignItems: "center", gap: spacing.sm,
     },
-    emptyTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "center" },
+    emptyTitle: { color: colors.text, fontSize: 16, fontWeight: "700", fontFamily: typography.family.bold, textAlign: "center" },
     emptyText: { color: colors.textMuted, textAlign: "center", lineHeight: 20, fontSize: 13 },
-    formCard: {
-      padding: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface,
-      borderWidth: 1, borderColor: colors.border, gap: spacing.sm,
-    },
-    fieldLabel: { color: colors.text, fontWeight: "700", fontSize: 13, marginTop: spacing.xs },
-    categoryOptions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-    categoryChip: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radii.md },
-    categoryChipSelected: { borderColor: colors.primary, backgroundColor: colors.accentSurface },
-    categoryChipText: { color: colors.text, fontSize: 12, fontWeight: "600" },
-    input: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, backgroundColor: colors.background, color: colors.text, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: 18 },
-    formActions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
-    secondaryButton: { flex: 1, padding: spacing.md, borderRadius: radii.md, alignItems: "center", backgroundColor: colors.surfaceMuted },
-    secondaryButtonText: { color: colors.text, fontWeight: "700" },
-    saveButton: { flex: 1, padding: spacing.md, borderRadius: radii.md, alignItems: "center", backgroundColor: colors.primary },
+    formActions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
+    formAction: { flex: 1, minWidth: 120 },
     loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, gap: spacing.md },
     loadingText: { color: colors.textMuted },
   });
@@ -250,17 +241,16 @@ export default function BudgetsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <PremiumScreen ambient="subtle">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Voltar">
             <Text style={styles.backText}>‹</Text>
           </Pressable>
-          <View style={styles.titleArea}>
-            <Text style={styles.title}>Orçamentos</Text>
-            <Text style={styles.subtitle}>Defina limites para seus gastos.</Text>
-          </View>
+
         </View>
+
+        <ScreenHeader title="Orçamentos" subtitle="Limites saudáveis para seus gastos." eyebrow="Planejamento" />
 
         <View style={styles.monthCard}>
           <Pressable style={styles.monthButton} onPress={() => setMonth((value) => shiftMonth(value, -1))} accessibilityLabel="Mês anterior">
@@ -272,15 +262,15 @@ export default function BudgetsScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Total orçado neste mês</Text>
-          <Text style={styles.summaryValue}>{formatCurrency(totalBudget)}</Text>
+        <AppCard style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Disponível para gastar</Text>
+          <Text style={styles.summaryValue}>{formatCurrency(totalRemaining)}</Text>
           <Text style={styles.summaryMeta}>
-            {formatCurrency(totalSpent)} gastos nas categorias orçadas · {formatCurrency(Math.abs(totalRemaining))} {totalRemaining >= 0 ? "restantes no total" : "acima do total orçado"}
+            {formatCurrency(totalSpent)} gastos de {formatCurrency(totalBudget)} orçados · {formatCurrency(Math.abs(totalRemaining))} {totalRemaining >= 0 ? "restantes no total" : "acima do total orçado"}
           </Text>
-        </View>
+        </AppCard>
 
-        <View>
+        <View style={{ gap: spacing.md }}>
           <Text style={styles.sectionTitle}>Limites por categoria</Text>
           {budgets.length === 0 ? (
             <View style={styles.emptyCard}>
@@ -291,7 +281,7 @@ export default function BudgetsScreen() {
             </View>
           ) : (
             <View style={{ gap: spacing.sm }}>
-              {budgets.map((budget) => {
+              {budgets.map((budget, index) => {
                 const ratio = budget.spent / budget.amount;
                 const progress = Math.min(ratio * 100, 100);
                 const isOver = ratio > 1;
@@ -299,7 +289,8 @@ export default function BudgetsScreen() {
                 const left = budget.amount - budget.spent;
 
                 return (
-                  <View key={budget.id} style={styles.card}>
+                  <AnimatedListItem key={budget.id} index={index}>
+                  <AppCard style={styles.card}>
                     <View style={styles.budgetHeader}>
                       <View style={styles.budgetInfo}>
                         <Text style={styles.categoryName}>{budget.categoryName}</Text>
@@ -312,9 +303,8 @@ export default function BudgetsScreen() {
                     </View>
 
                     <View style={styles.progressTrack}>
-                      <View style={[
+                      <AnimatedProgressFill progress={progress / 100} style={[
                         styles.progressFill,
-                        { width: `${progress}%` },
                         isWarning && styles.progressWarning,
                         isOver && styles.progressOver,
                       ]} />
@@ -343,53 +333,25 @@ export default function BudgetsScreen() {
                         <Text style={styles.deleteButtonText}>Excluir</Text>
                       </Pressable>
                     </View>
-                  </View>
+                  </AppCard>
+                  </AnimatedListItem>
                 );
               })}
             </View>
           )}
         </View>
 
-        {formVisible ? (
-          <View style={styles.formCard}>
-            <Text style={styles.sectionTitle}>{budgets.some((item) => item.categoryId === selectedCategoryId) ? "Editar orçamento" : "Novo orçamento"}</Text>
-            <Text style={styles.fieldLabel}>Categoria</Text>
-            <View style={styles.categoryOptions}>
-              {categories.map((category) => (
-                <Pressable
-                  key={category.id}
-                  style={[styles.categoryChip, selectedCategoryId === category.id && styles.categoryChipSelected]}
-                  onPress={() => setSelectedCategoryId(category.id)}
-                >
-                  <Text style={styles.categoryChipText}>{category.name}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Text style={styles.fieldLabel}>Limite mensal (R$)</Text>
-            <TextInput
-              value={amount}
-              onChangeText={setAmount}
-              placeholder="Ex.: 400,00"
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-              style={styles.input}
-              placeholderTextColor={colors.textSubtle}
-            />
-            <View style={styles.formActions}>
-              <Pressable style={styles.secondaryButton} onPress={() => setFormVisible(false)} disabled={saving}>
-                <Text style={styles.secondaryButtonText}>Cancelar</Text>
-              </Pressable>
-              <Pressable style={styles.saveButton} onPress={() => void handleSave()} disabled={saving}>
-                {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.primaryButtonText}>Salvar limite</Text>}
-              </Pressable>
-            </View>
-          </View>
-        ) : (
-          <Pressable style={styles.primaryButton} onPress={startNewBudget}>
-            <Text style={styles.primaryButtonText}>+ Definir orçamento por categoria</Text>
-          </Pressable>
-        )}
+        <AppButton label="Criar orçamento" onPress={startNewBudget} leading={<WalletSymbol name="plus" color={colors.onPrimary} size={18} />} />
       </ScrollView>
-    </View>
+      <PremiumSheet visible={formVisible} onClose={() => { if (!saving) setFormVisible(false); }} title={budgets.some((item) => item.categoryId === selectedCategoryId) ? "Editar orçamento" : "Novo orçamento"}>
+        <Text variant="label" tone="muted">Categoria</Text>
+        <AppSelector options={categories.map(category => ({ label: category.name, value: category.id }))} value={selectedCategoryId ?? -1} onChange={setSelectedCategoryId} accessibilityLabel="Categoria do orçamento" disabled={saving} />
+        <AppField label="Limite mensal (R$)" value={amount} onChangeText={setAmount} placeholder="Ex.: 400,00" keyboardType="decimal-pad" returnKeyType="done" editable={!saving} />
+        <View style={styles.formActions}>
+          <AppButton label="Cancelar" variant="secondary" onPress={() => setFormVisible(false)} disabled={saving} style={styles.formAction} />
+          <AppButton label="Salvar limite" onPress={() => void handleSave()} loading={saving} style={styles.formAction} />
+        </View>
+      </PremiumSheet>
+    </PremiumScreen>
   );
 }

@@ -10,11 +10,10 @@ import Animated, {
     useReducedMotion,
     useAnimatedStyle,
     useSharedValue,
-    withSpring,
     withTiming,
 } from "react-native-reanimated";
 
-import { easings, spring } from "../animations";
+import { durations, easings } from "../animations";
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
@@ -59,9 +58,9 @@ export function AnimatedPressable({
   const pressIn = useCallback((event: GestureResponderEvent) => {
     progress.set(
       reduceMotion
-        ? 1
+        ? 0
         : withTiming(1, {
-            duration: 80,
+            duration: durations.fast,
             easing: easings.out,
           }),
     );
@@ -72,8 +71,9 @@ export function AnimatedPressable({
     progress.set(
       reduceMotion
         ? 0
-        : withSpring(0, {
-            ...spring.press,
+        : withTiming(0, {
+            duration: durations.fast,
+            easing: easings.out,
           }),
     );
     onPressOut?.(event);
