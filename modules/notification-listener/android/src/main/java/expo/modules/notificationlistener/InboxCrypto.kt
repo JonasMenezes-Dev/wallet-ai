@@ -11,7 +11,10 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /** No plaintext fallback. Keys never leave Android Keystore. Call off the main thread. */
-internal class InboxCrypto {
+internal class InboxCrypto(
+  private val aesAlias: String = AES_ALIAS,
+  private val hmacAlias: String = HMAC_ALIAS
+) {
   private fun key(alias: String, hmac: Boolean, create: Boolean): SecretKey {
     synchronized(KEY_LOCK) {
       val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -33,18 +36,18 @@ internal class InboxCrypto {
   }
 
   fun ensureAvailable(allowCreate: Boolean) {
-    key(AES_ALIAS, false, allowCreate)
-    key(HMAC_ALIAS, true, allowCreate)
+    key(aesAlias, false, allowCreate)
+    key(hmacAlias, true, allowCreate)
   }
 
   fun fingerprint(value: String): String = Mac.getInstance("HmacSHA256").run {
-    init(key(HMAC_ALIAS, true, false))
+    init(key(hmacAlias, true, false))
     doFinal(value.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it.toInt() and 255) }
   }
 
   fun encrypt(value: String, aad: String): ByteArray {
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-    cipher.init(Cipher.ENCRYPT_MODE, key(AES_ALIAS, false, false))
+    cipher.init(Cipher.ENCRYPT_MODE, key(aesAlias, false, false))
     cipher.updateAAD(aad.toByteArray(Charsets.UTF_8))
     val ciphertext = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
     return ByteBuffer.allocate(1 + 12 + ciphertext.size)
@@ -54,7 +57,7 @@ internal class InboxCrypto {
   fun decrypt(value: ByteArray, aad: String): String {
     require(value.size >= 29 && value[0] == 1.toByte()) { "Invalid inbox ciphertext" }
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-    cipher.init(Cipher.DECRYPT_MODE, key(AES_ALIAS, false, false), GCMParameterSpec(128, value.copyOfRange(1, 13)))
+    cipher.init(Cipher.DECRYPT_MODE, key(aesAlias, false, false), GCMParameterSpec(128, value.copyOfRange(1, 13)))
     cipher.updateAAD(aad.toByteArray(Charsets.UTF_8))
     return String(cipher.doFinal(value.copyOfRange(13, value.size)), Charsets.UTF_8)
   }

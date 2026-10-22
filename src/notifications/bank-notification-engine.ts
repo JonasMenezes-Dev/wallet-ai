@@ -9,7 +9,7 @@ export interface BankNotification {
 }
 
 export type BankOperation = 'pix' | 'debit_purchase' | 'credit_purchase' |
-  'transfer' | 'own_account_transfer' | 'payment' | 'receipt';
+  'transfer' | 'own_account_transfer' | 'payment' | 'receipt' | 'refund';
 
 export interface InterpretedBankNotification {
   status: 'recognized' | 'pending' | 'ignored' | 'duplicate';
@@ -19,6 +19,9 @@ export interface InterpretedBankNotification {
   amountCents: number | null;
   operation: BankOperation | null;
   direction: 'incoming' | 'outgoing' | 'internal' | null;
+  /** Explicit message evidence only; never inferred from source app or merchant. */
+  paymentChannel: 'contactless' | 'online' | 'in_person' | null;
+  paymentMethod: 'debit' | 'credit' | null;
   description: string;
   /** Message date (YYYY-MM-DD), otherwise the original notification's ISO timestamp. */
   date: string | null;
@@ -64,48 +67,75 @@ export function interpretBankNotification(input: BankNotification): InterpretedB
     packageName: input.packageName?.trim() || null,
     notificationId: input.notificationId?.trim() || null,
     amountCents: null, operation: null, direction: null,
+    paymentChannel: null, paymentMethod: null,
     description: (input.text?.trim() || input.title?.trim() || '').slice(0, 500),
     date: timestamp.date, time: timestamp.time, dateSource: timestamp.dateSource,
   };
   const ignore = (reason: string): InterpretedBankNotification => ({ ...result, status: 'ignored', reason });
   const pending = (reason: string): InterpretedBankNotification => ({ ...result, status: 'pending', reason });
 
-  if (/\b(oferta|promocao|ganhe|aproveite|cobranca|agendad[oa]|pendente|processamento|aguardando|recusad[oa]|cancelad[oa]|solicitad[oa]|solicitacao|vencimento|vence)\b/.test(text) ||
+  // A security challenge can quote a proposed transaction; it is never evidence of completion.
+  if (/\b(senha|token|otp|cvv|cvc|pin)\b|\bcodigo\s*(?::|e\b|\d|(?:de |para )?(?:seguranca|verificacao|acesso|autenticacao|confirmacao|validacao|uso unico))/.test(text)) {
+    return { ...ignore('sensitive_content'), description: '' };
+  }
+  if (/\bconteudo (?:oculto|indisponivel)\b|\bnotificacao (?:oculta|indisponivel)\b|\bdesbloqueie\b|\babra (?:o )?(?:app|aplicativo) para (?:ver|visualizar)\b/.test(text)) {
+    return pending('unavailable_content');
+  }
+  if (/\b(oferta|promocao|ganhe|ganhar|aproveite|cobranca|agendad[oa]|pendente|processamento|aguardando|recusad[oa]|cancelad[oa]|solicitad[oa]|solicitacao|pedido|vencimento|vence|confirme|autorize|receba)\b/.test(text) ||
       /\bnao\b.{0,30}(realizad|concluid|enviad|recebid|aprovad|autorizad|efetuad)/.test(text) ||
-      /\bnao foi possivel\b|\b(?:sera|seria|podera|poderia|for)\s+(?:enviad|recebid|realizad|efetuad|aprovad|concluid)/.test(text) ||
+      /\bnao foi possivel\b|\b(?:sera|seria|podera|poderia|for)\s+(?:enviad|recebid|realizad|efetuad|aprovad|concluid|estornad|reembolsad|devolvid)/.test(text) ||
+      /\bem analise\b|\bsem sucesso\b/.test(text) ||
       /\b(pague|a pagar|para pagar)\b/.test(text)) return ignore('unconfirmed_or_non_movement');
-  if (!/\b(pix|compra|comprou|transferencia|pagamento|recebimento|recebeu)\b/.test(text)) return ignore('no_movement');
+  if (!/\b(pix|compra|comprou|transferencia|transferiu|pagamento|recebimento|recebeu|estorno|estornad[oa]|reembolso|reembolsad[oa]|devolucao)\b/.test(text)) return ignore('no_movement');
 
-  const incoming = /\b(recebid[oa]|recebeu|recebimento)\b/.test(text);
-  const outgoing = /\b(enviad[oa]|enviou)\b/.test(text) ||
+  const incoming = /\b(recebid[oa]|recebeu|recebimento|creditad[oa])\b/.test(text);
+  const outgoing = /\b(enviad[oa]|enviou|transferiu|debitad[oa])\b/.test(text) ||
     (!incoming && /\b(efetuad[oa]|realizad[oa])\b/.test(text));
-  const confirmed = /\b(recebid[oa]|recebeu|enviad[oa]|enviou|efetuad[oa]|realizad[oa]|aprovad[oa]|concluid[oa]|pago|paga|comprou)\b/.test(text);
+  const confirmed = /\b(recebid[oa]|recebeu|enviad[oa]|enviou|transferiu|efetuad[oa]|realizad[oa]|aprovad[oa]|autorizad[oa]|confirmad[oa]|concluid[oa]|pago|paga|comprou|creditad[oa]|debitad[oa]|estornad[oa]|reembolsad[oa])\b/.test(text);
   const own = /\bentre (?:as )?(?:suas|minhas|proprias) contas\b|\bentre contas proprias\b|\bmesma titularidade\b|\bpara (?:sua|minha) (?:outra )?conta\b/.test(text);
   const debit = /\bdebito\b/.test(text);
   const credit = /\bcredito\b/.test(text);
+  const refund = /\b(estorno|estornad[oa]|reembolso|reembolsad[oa]|devolucao)\b/.test(text);
+  const purchase = /\b(compra|comprou)\b/.test(text);
+  const transfer = /\b(pix|transferencia|transferiu)\b/.test(text);
+  const contactless = /\b(aproximacao|nfc|contactless)\b/.test(text);
+  const online = /\bonline\b|\b(?:pela|na|via) internet\b/.test(text);
+  const inPerson = /\bpresencial\b/.test(text);
+  if ((purchase || refund) && debit !== credit) result.paymentMethod = debit ? 'debit' : 'credit';
+  if (purchase && !(online && (contactless || inPerson))) {
+    result.paymentChannel = contactless ? 'contactless' : online ? 'online' : inPerson ? 'in_person' : null;
+  }
   const families = [
-    /\b(pix|transferencia)\b/.test(text),
-    /\b(compra|comprou)\b/.test(text),
+    transfer,
+    purchase,
     /\b(pagamento|recebimento)\b/.test(text) && !/\b(?:pagamento|recebimento) (?:via |por |com )?pix\b/.test(text),
   ].filter(Boolean).length;
 
-  if (own && /\b(pix|transferencia)\b/.test(text) && confirmed) {
+  if (refund) {
+    result.operation = 'refund';
+    // A reversed card purchase returns money. A Pix return needs an explicit direction.
+    result.direction = incoming ? 'incoming' : /\b(enviad[oa]|enviou|debitad[oa])\b/.test(text) ? 'outgoing' :
+      !transfer && (purchase || /\b(estorno|reembolso|reembolsad[oa])\b/.test(text)) && confirmed ? 'incoming' : null;
+  } else if (own && transfer && confirmed) {
     result.operation = 'own_account_transfer'; result.direction = 'internal';
   } else if (/\bpix\b/.test(text)) {
     result.operation = 'pix'; result.direction = incoming ? 'incoming' : outgoing ? 'outgoing' : null;
-  } else if (/\b(compra|comprou)\b/.test(text) && debit !== credit) {
+  } else if (purchase && debit !== credit) {
     result.operation = debit ? 'debit_purchase' : 'credit_purchase'; result.direction = 'outgoing';
-  } else if (/\btransferencia\b/.test(text)) {
+  } else if (/\b(transferencia|transferiu)\b/.test(text)) {
     result.operation = 'transfer'; result.direction = incoming ? 'incoming' : outgoing ? 'outgoing' : null;
   } else if (/\b(pagamento|recebimento)\b/.test(text)) {
     result.operation = incoming ? 'receipt' : 'payment'; result.direction = incoming ? 'incoming' : confirmed ? 'outgoing' : null;
   }
 
-  const amounts = [...text.matchAll(/r\$\s*([+-]?\d+(?:[.,]\d+)*)/g)];
+  const amounts = [...text.matchAll(/(?:r\$|\bbrl\b)\s*([+-]?\d+(?:[.,]\d+)*)/g)];
   if (amounts.length === 1) result.amountCents = moneyInCents(amounts[0][1]);
   // Do not choose a purchase amount in the presence of an unlabelled balance/limit.
-  const contextAmount = /\b(saldo|limite|total da fatura)\b.{0,25}\d/.test(text);
-  if (amounts.length > 1 || contextAmount || incoming && outgoing || /\?/.test(text) || debit && credit || families > 1) {
+  const contextAmount = /\b(saldo|limite|total da fatura|total|tarifa|taxa|juros)\b.{0,25}\d/.test(text);
+  const additionalAmount = /\b\d+[.,]\d{1,2}\b/.test(text.replace(/(?:r\$|\bbrl\b)\s*[+-]?\d+(?:[.,]\d+)*/g, ''));
+  const foreignCurrency = /\b(usd|eur|gbp|jpy|cad|aud|ars|mxn|chf|cny|dolar|dolares|euro|euros)\b|(?:us|u|a|c)\$|[€£¥]|(?:^|[^r])\$/.test(text);
+  if (amounts.length > 1 || contextAmount || additionalAmount || foreignCurrency || incoming && outgoing ||
+      /\?/.test(text) || debit && credit || families > 1 || online && (contactless || inPerson)) {
     result.amountCents = null;
     return pending('ambiguous_content');
   }

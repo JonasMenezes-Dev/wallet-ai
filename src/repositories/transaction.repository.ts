@@ -1,4 +1,5 @@
 import { getDatabase, withTransferTransaction } from "../database/database";
+import { beginFinancialConfirmation, finishFinancialConfirmation, type FinancialConfirmationContext } from "./notification-confirmation.repository";
 
 import {
   applyTransactionToAccount,
@@ -100,12 +101,17 @@ export async function getAllTransactions(): Promise<
 
 export async function createTransaction(
   transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
+  confirmation?: FinancialConfirmationContext,
 ): Promise<number> {
   const now = new Date().toISOString();
 
   let transactionId = 0;
 
   await withTransferTransaction(async (database) => {
+    if (confirmation) {
+      const receipt = await beginFinancialConfirmation(database, confirmation);
+      if (receipt) { transactionId = Number(receipt.reference); return; }
+    }
     if (transaction.externalId && transaction.provider && transaction.institution) {
       const duplicate = await database.getFirstAsync<{ id: number }>(
         `SELECT id FROM transactions
@@ -221,6 +227,7 @@ export async function createTransaction(
         $accountId: account.id,
       },
     );
+    if (confirmation) await finishFinancialConfirmation(database, confirmation, String(transactionId));
   });
 
   return transactionId;
@@ -234,17 +241,18 @@ interface LinkedMovementInput {
   date: string;
 }
 
-export function createAccountTransfer(input: LinkedMovementInput): Promise<string> {
-  return createLinkedMovement(input, false);
+export function createAccountTransfer(input: LinkedMovementInput, confirmation?: FinancialConfirmationContext): Promise<string> {
+  return createLinkedMovement(input, false, confirmation);
 }
 
 export function createCardPayment(input: LinkedMovementInput): Promise<string> {
   return createLinkedMovement(input, true);
 }
 
-async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boolean): Promise<string> {
+async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boolean, confirmation?: FinancialConfirmationContext): Promise<string> {
   const now = new Date().toISOString();
-  const transferId = `transfer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  let transferId = confirmation ? `notification-transfer-${confirmation.eventKey}`
+    : `transfer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
   if (input.fromAccountId === input.toAccountId) {
     throw new Error("Escolha duas contas diferentes para a transferência.");
@@ -258,6 +266,10 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
   }
 
   await withTransferTransaction(async (database) => {
+    if (confirmation) {
+      const receipt = await beginFinancialConfirmation(database, confirmation);
+      if (receipt) { transferId = receipt.reference; return; }
+    }
     const from = await database.getFirstAsync<{ id: number; balance: number; type: Account["type"] }>(
       "SELECT id, balance, type FROM accounts WHERE id = $id",
       { $id: input.fromAccountId },
@@ -291,7 +303,7 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
           created_at, updated_at, transfer_id
         ) VALUES (
           $amount, $type, $description, NULL, $date, NULL, $accountId,
-          NULL, 0, 'manual', NULL, NULL, NULL, $createdAt, $updatedAt, $transferId
+          NULL, 0, $source, NULL, NULL, NULL, $createdAt, $updatedAt, $transferId
         )`,
         {
           $amount: input.amount,
@@ -302,6 +314,7 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
           $createdAt: now,
           $updatedAt: now,
           $transferId: transferId,
+          $source: confirmation ? "notification" : "manual",
         },
       );
     }
@@ -314,6 +327,7 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
       "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
       { $balance: destinationBalance, $now: now, $id: to.id },
     );
+    if (confirmation) await finishFinancialConfirmation(database, confirmation, transferId);
   });
 
   return transferId;

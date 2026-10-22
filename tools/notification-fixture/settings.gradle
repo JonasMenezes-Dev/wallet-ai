@@ -1,0 +1,16 @@
+pluginManagement {
+  repositories {
+    google()
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+
+rootProject.name = 'notification-fixture'
+
+dependencyResolutionManagement {
+  repositories {
+    google()
+    mavenCentral()
+  }
+}

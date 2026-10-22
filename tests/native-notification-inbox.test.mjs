@@ -13,7 +13,7 @@ const NOW = 1_800_000_000_000;
 const DAY = 86400000;
 let db;
 let directory;
-const migrate = () => sql.schema.forEach(statement => db.exec(statement));
+const migrate = () => [...sql.schema, ...(sql.confirmationSchema ?? [])].forEach(statement => db.exec(statement));
 const get = id => db.prepare(sql.byId).get(id);
 const run = (name, ...args) => db.prepare(sql[name]).run(...args).changes;
 function insert(id, identity = `stable-${id}`, fingerprint = 'same-content-fingerprint', received = NOW) {
@@ -34,6 +34,133 @@ beforeEach(() => {
   migrate();
 });
 afterEach(() => { db.close(); rmSync(directory, { recursive: true, force: true }); });
+
+const reserveReview = (id, token, now = NOW) => run('reviewReserve', token, now + 1000, now, id, now, now);
+const finishReview = (id, token, now = NOW) => run('reviewFinish', Buffer.from('review-cipher'), now, id, token, now, now);
+const discardReview = (id, token, now = NOW) => run('reviewDiscard', now, id, token, now, now);
+
+test('durable confirmation blocks discard and interpretation after lease expiry and restart', () => {
+  insert('confirm'); reserveReview('confirm','owner');
+  assert.ok(sql.confirmationBegin, 'durable confirmation SQL is required');
+  assert.equal(run('confirmationBegin','confirm','namespace:event',Buffer.from('encrypted-approved-data'),NOW,'confirm','wrong',NOW,NOW),0);
+  assert.equal(run('confirmationBegin','confirm','namespace:event',Buffer.from('encrypted-approved-data'),NOW,'confirm','owner',NOW,NOW),1);
+  assert.equal(discardReview('confirm','owner'),0);
+  db.close(); db = new DatabaseSync(join(directory,'notification-inbox.db'));
+  run('recover', NOW+2000,NOW+2000,NOW+2000);
+  assert.equal(reserveReview('confirm','next',NOW+2000),0);
+  run('purgeStructured',NOW+31*DAY,NOW+31*DAY);
+  assert.equal(get('confirm').state,'error');
+  assert.equal(db.prepare(sql.reviewList).all(NOW+31*DAY,25,0).length,1);
+  assert.equal(db.prepare('SELECT count(*) n FROM inbox_confirmation_intents').get().n,1);
+});
+
+test('confirmation intent is unique, ciphertext only, and cannot attach to discarded history', () => {
+  insert('confirm'); reserveReview('confirm','owner');
+  assert.ok(sql.confirmationBegin);
+  assert.equal(run('confirmationBegin','confirm','namespace:event','plaintext',NOW,'confirm','owner',NOW,NOW),0);
+  assert.equal(run('confirmationBegin','confirm','namespace:event',Buffer.from('cipher'),NOW,'confirm','owner',NOW,NOW),1);
+  assert.equal(run('confirmationBegin','confirm','namespace:event',Buffer.from('other'),NOW,'confirm','owner',NOW,NOW),0);
+  assert.throws(()=>db.prepare("UPDATE inbox_events SET state='ignored' WHERE local_id='confirm'").run());
+  assert.throws(()=>db.prepare("UPDATE inbox_events SET local_id='reused' WHERE local_id='confirm'").run());
+  assert.throws(()=>db.prepare("DELETE FROM inbox_events WHERE local_id='confirm'").run());
+});
+
+test('native acknowledgement and reference roll back together and preserve confirmed history',()=>{
+  insert('confirm'); reserveReview('confirm','owner');
+  run('confirmationBegin','confirm','namespace:event',Buffer.from('cipher'),NOW,'confirm','owner',NOW,NOW);
+  db.exec("CREATE TRIGGER fail_ack BEFORE UPDATE OF reference ON inbox_confirmation_intents BEGIN SELECT RAISE(ABORT,'ack failure'); END");
+  db.exec('BEGIN');
+  assert.equal(run('confirmationFinish','expense:123',NOW,'confirm'),1);
+  assert.throws(()=>run('confirmationAcknowledge','expense:123','confirm'),/ack failure/);
+  db.exec('ROLLBACK'); assert.equal(get('confirm').state,'received');
+  db.exec('DROP TRIGGER fail_ack; BEGIN');
+  run('confirmationFinish','expense:123',NOW,'confirm');run('confirmationAcknowledge','expense:123','confirm');db.exec('COMMIT');
+  assert.equal(get('confirm').state,'confirmed');assert.equal(get('confirm').confirmation_reference,'expense:123');
+  assert.equal(reserveReview('confirm','other'),0);
+  run('purgeStructured',NOW+31*DAY,NOW+31*DAY);
+  assert.equal(get('confirm').state,'confirmed');assert.equal(get('confirm').confirmation_reference,'expense:123');
+});
+
+test('migration 2 extends an existing v1 queue without replacing identities or ciphertext',()=>{
+  insert('legacy');const original=get('legacy');
+  db.exec(`DROP TABLE inbox_confirmation_intents; DROP TABLE inbox_metadata;
+    DROP TRIGGER protect_confirmation_state; DROP TRIGGER protect_event_identity; DROP TRIGGER retain_event_identity;`);
+  migrate();migrate();
+  assert.deepEqual(get('legacy'),original);
+  assert.equal(get('legacy').local_id,'legacy');
+});
+
+test('review reserves pending events atomically across connections and requires a live owner token', () => {
+  insert('review'); update('review', 'received', 'pending');
+  const other = new DatabaseSync(join(directory, 'notification-inbox.db'));
+  try {
+    assert.equal(reserveReview('review', 'owner'), 1);
+    assert.equal(other.prepare(sql.reviewReserve).run('competitor', NOW + 1000, NOW, 'review', NOW, NOW).changes, 0);
+    assert.equal(finishReview('review', 'wrong'), 0);
+    assert.equal(discardReview('review', null), 0);
+    assert.equal(discardReview('review', 'wrong'), 0);
+    assert.equal(finishReview('review', 'owner'), 1);
+    assert.equal(get('review').state, 'pending');
+    assert.equal(get('review').lease_token, null);
+  } finally { other.close(); }
+});
+
+test('review expired reservation is reclaimed without losing data and rejects the stale owner', () => {
+  insert('review'); update('review', 'received', 'pending');
+  reserveReview('review', 'old');
+  assert.equal(finishReview('review', 'old', NOW + 1000), 0);
+  assert.equal(discardReview('review', 'old', NOW + 1000), 0);
+  db.close();
+  db = new DatabaseSync(join(directory, 'notification-inbox.db'));
+  assert.equal(reserveReview('review', 'new', NOW + 1000), 1);
+  assert.equal(finishReview('review', 'old', NOW + 1001), 0);
+  assert.equal(discardReview('review', 'old', NOW + 1001), 0);
+  assert.ok(get('review').raw_cipher instanceof Uint8Array);
+  assert.equal(finishReview('review', 'new', NOW + 1001), 1);
+});
+
+test('review interpretation failure preserves ciphertext and can be retried', () => {
+  insert('review'); reserveReview('review', 'failed');
+  assert.equal(run('reviewFail', NOW, 'review', 'wrong', NOW, NOW), 0);
+  assert.equal(run('reviewFail', NOW, 'review', 'failed', NOW, NOW), 1);
+  assert.equal(get('review').state, 'error');
+  assert.ok(get('review').raw_cipher instanceof Uint8Array);
+  assert.equal(reserveReview('review', 'retry'), 1);
+  assert.equal(finishReview('review', 'retry'), 1);
+  assert.equal(get('review').state, 'pending');
+});
+
+test('review discard clears content but preserves the persistent deduplication tombstone', () => {
+  insert('review', 'review-identity'); reserveReview('review', 'owner');
+  assert.equal(discardReview('review', 'owner'), 1);
+  assert.equal(get('review').state, 'ignored');
+  assert.equal(get('review').raw_cipher, null);
+  assert.equal(get('review').structured_cipher, null);
+  assert.equal(insert('replay', 'review-identity'), 0);
+  assert.equal(reserveReview('review', 'again'), 0);
+  assert.equal(finishReview('review', 'owner'), 0);
+});
+
+test('review listing is read-only, excludes finalized or expired events and never selects raw content', () => {
+  insert('review'); insert('ignored'); insert('expired', 'expired', 'fingerprint', NOW - 31 * DAY);
+  update('ignored', 'received', 'ignored');
+  reserveReview('review', 'owner');
+  const before = get('review');
+  const rows = db.prepare(sql.reviewList).all(NOW, 25, 0);
+  assert.deepEqual(rows.map(row => row.local_id), ['review']);
+  assert.equal('raw_cipher' in rows[0], false);
+  assert.equal('android_identity_cipher' in rows[0], false);
+  assert.equal('lease_token' in rows[0], false);
+  assert.deepEqual(get('review'), before);
+});
+
+test('review maintenance releases expired pending reservations without dropping the event', () => {
+  insert('review'); update('review', 'received', 'pending'); reserveReview('review', 'owner');
+  assert.equal(run('recover', NOW + 1000, NOW + 1000, NOW + 1000), 1);
+  assert.equal(get('review').state, 'pending');
+  assert.equal(get('review').lease_token, null);
+  assert.ok(get('review').raw_cipher instanceof Uint8Array);
+});
 
 test('initial schema is idempotent and preserves rows after reopening the separate inbox', () => {
   insert('first');
@@ -63,6 +190,22 @@ test('equal content alone never suppresses different or unidentified events', ()
   insert('unknown-1', null);
   insert('unknown-2', null);
   assert.equal(db.prepare(sql.list).all('received', 100).length, 4);
+});
+
+test('fixture duplicate delivery preserves exactly one encrypted row across restart', () => {
+  const write = (id) => run('insert', id, 'com.walletai.notificationfixture', NOW, NOW,
+    'same-android-key-user-id-post-time-and-content-hmac', 'fixture-fingerprint-hmac',
+    Buffer.from('opaque-identity-cipher'), Buffer.from('opaque-raw-cipher'), null,
+    NOW + DAY, NOW + 30 * DAY, NOW);
+  assert.equal(write('fixture-original'), 1);
+  db.close();
+  db = new DatabaseSync(join(directory, 'notification-inbox.db'));
+  assert.equal(write('fixture-duplicate'), 0);
+  const count = db.prepare('SELECT count(*) AS n FROM inbox_events WHERE source = ?')
+    .get('com.walletai.notificationfixture').n;
+  assert.equal(count, 1);
+  assert.equal(db.prepare(sql.existing).get('same-android-key-user-id-post-time-and-content-hmac').local_id, 'fixture-original');
+  assert.ok(get('fixture-original').raw_cipher instanceof Uint8Array);
 });
 
 test('query by state and limit returns only the requested events', () => {

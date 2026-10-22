@@ -4,34 +4,140 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ApplicationInfo
 import android.os.Build
+import android.os.UserManager
 import android.provider.Settings
-import org.json.JSONArray
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class NotificationListenerModule : Module() {
   companion object {
-    private const val PREFS = "wallet_notification_listener"
-    private const val KEY_EVENTS = "captured_events"
     private const val CHANNEL_ID = "wallet_expense_recorded"
+  }
+
+  private fun debuggable(context: Context) = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
+  private fun captureSupported(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q && activityManager.isLowRamDevice) return false
+    val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
+    return Build.VERSION.SDK_INT < Build.VERSION_CODES.N || !userManager.isManagedProfile
+  }
+
+  private fun notificationAccessGranted(context: Context): Boolean {
+    val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: return false
+    val component = ComponentName(context, WalletNotificationListenerService::class.java)
+    return enabled.split(":").any { ComponentName.unflattenFromString(it) == component }
+  }
+
+  @Suppress("DEPRECATION")
+  private fun installedBanks(context: Context): List<Map<String, String>> {
+    val catalog = if (debuggable(context)) SupportedNotificationApps.catalog +
+      (CaptureAuthorization.FIXTURE_PACKAGE to "Wallet AI · notificações fictícias") else SupportedNotificationApps.catalog
+    return catalog.mapNotNull { (pkg, name) ->
+      try {
+        if (context.packageManager.getApplicationInfo(pkg, 0).enabled) mapOf("name" to name, "packageName" to pkg) else null
+      } catch (_: PackageManager.NameNotFoundException) { null }
+    }
   }
 
   override fun definition() = ModuleDefinition {
     Name("WalletNotificationListener")
 
+    // In-process application queries only. Backlog access does not depend on capture permission.
+    AsyncFunction("listNotificationReview") { limit: Int, offset: Int ->
+      val context = appContext.reactContext ?: error("Application unavailable")
+      NotificationInboxStore(context).use { it.listReview(limit, offset) }
+    }
+    AsyncFunction("reserveNotificationReview") { localId: String, readContent: Boolean ->
+      val context = appContext.reactContext ?: error("Application unavailable")
+      NotificationInboxStore(context).use { it.reserveReview(localId, readContent) }
+    }
+    AsyncFunction("completeNotificationReview") { localId: String, token: String, interpretation: String? ->
+      val context = appContext.reactContext ?: error("Application unavailable")
+      NotificationInboxStore(context).use { it.completeReview(localId, token, interpretation) }
+    }
+    AsyncFunction("discardNotificationReview") { localId: String, token: String ->
+      val context = appContext.reactContext ?: error("Application unavailable")
+      NotificationInboxStore(context).use { it.discardReview(localId, token) }
+    }
+
+    AsyncFunction("getDevelopmentCaptureDiagnostics") {
+      val context = appContext.reactContext ?: return@AsyncFunction null
+      if (!debuggable(context)) return@AsyncFunction null
+      NotificationInboxStore(context).use { store ->
+        mapOf(
+          "states" to store.developmentFixtureCounts(),
+          "duplicateChecks" to WalletNotificationListenerService.fixtureDuplicateChecks.get(),
+          "duplicateFailures" to WalletNotificationListenerService.fixtureDuplicateFailures.get()
+        )
+      }
+    }
+
+    AsyncFunction("beginNotificationConfirmation") { localId: String, token: String, request: String ->
+      val context = appContext.reactContext ?: error("Application unavailable")
+      NotificationInboxStore(context).use { it.beginConfirmation(localId, token, request) }
+    }
+    AsyncFunction("getNotificationConfirmation") { localId: String ->
+      val context = appContext.reactContext ?: error("Application unavailable")
+      NotificationInboxStore(context).use { it.confirmation(localId) }
+    }
+    AsyncFunction("listPendingNotificationConfirmations") {
+      val context = appContext.reactContext ?: error("Application unavailable")
+      NotificationInboxStore(context).use { it.pendingConfirmations() }
+    }
+    AsyncFunction("finishNotificationConfirmation") { localId: String, key: String, request: String, reference: String ->
+      val context = appContext.reactContext ?: error("Application unavailable")
+      NotificationInboxStore(context).use { it.finishConfirmation(localId, key, request, reference) }
+    }
+
+    Function("isCaptureSupported") {
+      val context = appContext.reactContext ?: return@Function false
+      captureSupported(context)
+    }
+
+    AsyncFunction("getInstalledBankApps") {
+      val context = appContext.reactContext ?: error("Android context unavailable")
+      installedBanks(context)
+    }
+
+    AsyncFunction("getCaptureAuthorization") {
+      val context = appContext.reactContext
+      val policy = try {
+        if (context == null) CaptureAuthorization() else CapturePreferences(context).read()
+      } catch (_: Exception) { CaptureAuthorization() }
+      mapOf("enabled" to policy.enabled, "authorizedPackages" to policy.authorizedPackages.sorted())
+    }
+
+    AsyncFunction("updateCaptureAuthorization") { enabled: Boolean, packages: List<String> ->
+      val context = appContext.reactContext ?: return@AsyncFunction false
+      try {
+        synchronized(CapturePreferences.LOCK) {
+          val policy = CaptureAuthorization.validated(enabled, packages, debuggable(context))
+          if (enabled && (!captureSupported(context) || !notificationAccessGranted(context)
+              || policy.authorizedPackages.isEmpty())) return@synchronized false
+          val preferences = CapturePreferences(context)
+          val newlySelected = policy.authorizedPackages - preferences.read().authorizedPackages
+          val installed = if (enabled || newlySelected.isNotEmpty()) {
+            installedBanks(context).map { it.getValue("packageName") }.toSet()
+          } else emptySet()
+          if (!installed.containsAll(newlySelected)
+              || (enabled && !installed.containsAll(policy.authorizedPackages))) return@synchronized false
+          preferences.update(enabled, policy.authorizedPackages.toList())
+        }
+      } catch (_: Exception) { false }
+    }
+
     Function("hasPermission") {
       val context = appContext.reactContext ?: return@Function false
-      val enabled = Settings.Secure.getString(
-        context.contentResolver,
-        "enabled_notification_listeners"
-      ) ?: return@Function false
-      val component = ComponentName(context, WalletNotificationListenerService::class.java)
-      enabled.split(":").any { it.equals(component.flattenToString(), ignoreCase = true) }
+      notificationAccessGranted(context)
     }
 
     Function("openSettings") {
@@ -77,34 +183,12 @@ class NotificationListenerModule : Module() {
     }
 
     Function("getCapturedNotifications") {
-      val context = appContext.reactContext ?: return@Function emptyList<Map<String, Any>>()
-      val json = try {
-        JSONArray(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_EVENTS, "[]"))
-      } catch (_: Exception) { JSONArray() }
-      (0 until json.length()).mapNotNull { index ->
-        val item = json.optJSONObject(index) ?: return@mapNotNull null
-        mapOf(
-          "key" to item.optString("key"),
-          "title" to item.optString("title"),
-          "text" to item.optString("text"),
-          "packageName" to item.optString("packageName"),
-          "postedAt" to item.optLong("postedAt")
-        )
-      }
+      // Compatibility stub: legacy plaintext content is no longer accessible.
+      emptyList<Map<String, Any>>()
     }
 
-    Function("removeCapturedNotification") { key: String ->
-      val context = appContext.reactContext ?: return@Function false
-      val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-      val current = try { JSONArray(prefs.getString(KEY_EVENTS, "[]")) } catch (_: Exception) { JSONArray() }
-      val updated = JSONArray()
-      var removed = false
-      for (index in 0 until current.length()) {
-        val item = current.optJSONObject(index) ?: continue
-        if (item.optString("key") == key) removed = true else updated.put(item)
-      }
-      prefs.edit().putString(KEY_EVENTS, updated.toString()).apply()
-      removed
+    Function("removeCapturedNotification") { _: String ->
+      false
     }
   }
 }

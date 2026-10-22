@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { database, closeDatabase } from './sqlite.mjs';
 
 const phase = process.argv[2];
-// The pre-migration schema intentionally omits columns introduced by versions 1–9.
+// The pre-migration schema intentionally omits structures introduced by versions 1–10.
 if (phase === 'legacy-upgrade') {
   database.native.exec(`
     CREATE TABLE user_settings (id INTEGER PRIMARY KEY, salary REAL NOT NULL DEFAULT 0,
@@ -102,7 +102,7 @@ try {
   } else {
     throw new Error(`Unknown phase: ${phase}`);
   }
-  assert.equal(database.native.prepare('PRAGMA user_version').get().user_version, 9);
+  assert.equal(database.native.prepare('PRAGMA user_version').get().user_version, 10);
   assert.equal(database.native.prepare('PRAGMA foreign_keys').get().foreign_keys, 1);
   assert.deepEqual(database.native.prepare('PRAGMA foreign_key_check').all(), []);
   assert.equal(database.native.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');

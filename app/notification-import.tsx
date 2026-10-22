@@ -20,7 +20,7 @@ function operationLabel(summary: ReviewSummary | null) {
     : summary.direction === "outgoing" ? "Pix enviado" : "Pix · direção não identificada";
   return { debit_purchase: "Compra no débito", credit_purchase: "Compra no crédito",
     transfer: "Transferência", own_account_transfer: "Entre contas próprias",
-    payment: "Pagamento", receipt: "Recebimento" }[summary.operation];
+    payment: "Pagamento", receipt: "Recebimento", refund: "Estorno" }[summary.operation];
 }
 
 function eventDate(item: ReviewItem) {
@@ -33,12 +33,18 @@ function eventDate(item: ReviewItem) {
 }
 
 function reviewNotice(summary: ReviewSummary | null) {
+  if (summary?.reason === "sensitive_content") return "Conteúdo sensível bloqueado. Nenhum lançamento foi criado.";
+  if (summary?.reason === "unavailable_content") return "A notificação não disponibilizou dados suficientes. Nenhum valor foi presumido.";
   if (summary?.reason === "ambiguous_content") return "Conteúdo ambíguo. Nenhum valor foi escolhido.";
   if (summary?.reason === "truncated_content") return "Texto incompleto. Tipo e valor precisam de conferência.";
   if (summary?.reason === "content_unavailable") return "O conteúdo original não está mais disponível.";
   if (summary?.status === "ignored") return "A mensagem não confirma uma movimentação financeira.";
   if (summary?.status === "recognized") return "Dados identificados para conferência. Nenhum lançamento foi criado.";
   return "Dados incompletos ou ambíguos. Confira a notificação antes de qualquer lançamento.";
+}
+
+function channelLabel(summary: ReviewSummary | null) {
+  return summary?.paymentChannel ? { contactless: "Aproximação informada na mensagem", online: "Compra online informada", in_person: "Compra presencial informada" }[summary.paymentChannel] : null;
 }
 
 export default function NotificationImportScreen() {
@@ -182,6 +188,7 @@ export default function NotificationImportScreen() {
     const cents = item.summary?.amountCents;
     return <>
       <Text style={styles.cardTitle}>{operationLabel(item.summary)}</Text>
+      {channelLabel(item.summary) ? <Text style={styles.body}>{channelLabel(item.summary)}</Text> : null}
       <Text style={[styles.amount, item.summary?.direction === "incoming" ? styles.income : styles.expense]}>
         {cents == null ? "Valor não identificado" : (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
       </Text>
@@ -223,8 +230,8 @@ export default function NotificationImportScreen() {
             <Text style={styles.cardTitle}>{detail.title ?? "Título indisponível"}</Text>
             <Text style={styles.body}>{detail.text ?? "Texto original indisponível ou expirado. Os dados já interpretados foram preservados."}</Text>
             </>}
-            <NotificationConfirmationForm key={`${detail.localId}:${detail.confirmationPending === true}`} localId={detail.localId} summary={detail.summary} postedAt={detail.postedAt}
-              pending={detail.confirmationPending === true} disabled={busy} onConfirm={confirmMovement} />
+            {(detail.confirmationPending || detail.summary?.status !== "ignored") && <NotificationConfirmationForm key={`${detail.localId}:${detail.confirmationPending === true}`} localId={detail.localId} summary={detail.summary} postedAt={detail.postedAt}
+              pending={detail.confirmationPending === true} disabled={busy} onConfirm={confirmMovement} />}
             <AppButton disabled={busy || detail.confirmationPending} variant="secondary"
               onPress={() => confirmDiscard(detail)} label="Descartar notificação" />
           </View> : <>

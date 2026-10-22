@@ -1,70 +1,74 @@
 package expo.modules.notificationlistener
 
 import android.app.Notification
+import android.content.pm.ApplicationInfo
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import org.json.JSONArray
-import org.json.JSONObject
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 class WalletNotificationListenerService : NotificationListenerService() {
   companion object {
-    private const val PREFS = "wallet_notification_listener"
-    private const val KEY_EVENTS = "captured_events"
-    private val BANK_PACKAGES = setOf(
-      "com.nu.production",
-      "br.com.intermedium",
-      "com.itau",
-      "com.santander.app",
-      "com.bradesco",
-      "br.com.bb.android",
-      "br.gov.caixa.tem",
-      "com.picpay",
-      "com.mercadopago.wallet",
-      "com.c6bank.app",
-      "com.original.bank",
-      "com.pagsmile"
-    )
-    private val FINANCIAL_TERMS = Regex(
-      "\\b(pix|compra|pagamento|cart[aã]o|transfer[eê]ncia|recebeu|recebido|debito|d[eé]bito|cr[eé]dito|compra aprovada|compra realizada)\\b",
-      RegexOption.IGNORE_CASE
-    )
-    private val MONEY = Regex("R\\$\\s?\\d")
+    // Counts only; reset when the native process restarts. No notification payloads.
+    internal val fixtureDuplicateChecks = AtomicLong()
+    internal val fixtureDuplicateFailures = AtomicLong()
+  }
+  private val executor = ThreadPoolExecutor(
+    1, 1, 0L, TimeUnit.MILLISECONDS, ArrayBlockingQueue<Runnable>(64),
+    { task -> Thread(task, "wallet-notification-capture") }, ThreadPoolExecutor.AbortPolicy()
+  )
+  private val preferences by lazy { CapturePreferences(applicationContext) }
+  private val dispatcher by lazy {
+    NotificationCaptureDispatcher(CapturePreferences.LOCK, { preferences.read() }, executor,
+      { CapturePreferences.revision })
   }
 
   override fun onNotificationPosted(sbn: StatusBarNotification) {
-    if (!BANK_PACKAGES.contains(sbn.packageName)) return
-    val extras = sbn.notification.extras ?: return
-    val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim().orEmpty()
-    val text = (
-      extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
-        ?: extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-        ?: ""
-    ).trim()
-    if (title.isBlank() || text.isBlank()) return
-    if (!FINANCIAL_TERMS.containsMatchIn("$title $text") && !MONEY.containsMatchIn(text)) return
-
-    val eventKey = "${sbn.packageName}:${sbn.postTime}:${title.hashCode()}:${text.hashCode()}"
-    val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-    val existing = try { JSONArray(prefs.getString(KEY_EVENTS, "[]")) } catch (_: Exception) { JSONArray() }
-    for (i in 0 until existing.length()) {
-      if (existing.optJSONObject(i)?.optString("key") == eventKey) return
+    try {
+      var repeatFixtureDelivery = false
+      // The worker checks authorization before this closure can access any content.
+      dispatcher.capture(sbn.packageName, {
+        val extras = sbn.notification.extras
+        repeatFixtureDelivery = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0 &&
+          sbn.packageName == CaptureAuthorization.FIXTURE_PACKAGE &&
+          extras?.getBoolean(CaptureAuthorization.FIXTURE_DUPLICATE_EXTRA, false) == true
+        InboxCapture(
+          source = sbn.packageName,
+          androidKey = sbn.key,
+          androidId = sbn.id,
+          androidTag = sbn.tag,
+          androidUser = sbn.user.toString(),
+          postedAt = sbn.postTime,
+          title = extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString(),
+          text = (extras?.getCharSequence(Notification.EXTRA_BIG_TEXT)
+            ?: extras?.getCharSequence(Notification.EXTRA_TEXT))?.toString()
+        )
+      }, persist@ { capture ->
+        // Do not persist OTPs, passwords or credentials, even from explicitly authorized apps.
+        if (!NotificationContentPrivacy.allows(capture.title, capture.text)) return@persist
+        NotificationInboxStore(applicationContext).use { store ->
+          val id = store.insert(capture)
+          if (repeatFixtureDelivery) {
+            try {
+              // Replay the SAME Android identity/time/content, not a newly posted notification.
+              check(store.insert(capture) == id) { "Fixture deduplication failed" }
+              fixtureDuplicateChecks.incrementAndGet()
+            } catch (error: Exception) {
+              fixtureDuplicateFailures.incrementAndGet()
+              throw error
+            }
+          }
+        }
+      })
+    } catch (_: Exception) {
+      // No plaintext fallback and no sensitive logging.
     }
-
-    val event = JSONObject()
-      .put("key", eventKey)
-      .put("title", title.take(160))
-      .put("text", text.take(500))
-      .put("packageName", sbn.packageName)
-      .put("postedAt", sbn.postTime)
-    val updated = JSONArray()
-    updated.put(event)
-    for (i in 0 until minOf(existing.length(), 49)) {
-      existing.optJSONObject(i)?.let { updated.put(it) }
-    }
-    prefs.edit().putString(KEY_EVENTS, updated.toString()).apply()
   }
 
-  override fun onNotificationRemoved(sbn: StatusBarNotification) {
-    // Mantemos a notificação capturada até o usuário importar ou dispensá-la no Wallet.
+  override fun onDestroy() {
+    executor.shutdown() // Already accepted events finish on the serial native worker.
+    super.onDestroy()
   }
 }

@@ -77,7 +77,7 @@ export function BankNotificationSettings() {
     const packages = current.includes(packageName)
       ? current.filter((pkg) => pkg !== packageName) : [...current, packageName];
     const allInstalled = packages.every((pkg) => snapshot.apps.some((app) => app.packageName === pkg));
-    // Removing the last bank stops capture; selecting a bank never turns it on.
+    // Removing the last app stops capture; selecting an app never turns it on.
     void save(snapshot.authorization.enabled && snapshot.permissionGranted && packages.length > 0 && allInstalled, packages);
   }
 
@@ -94,9 +94,9 @@ export function BankNotificationSettings() {
 
   return (
     <AppCard style={styles.section} padded={false}>
-      <Text style={styles.title}>Notificações bancárias</Text>
+      <Text style={styles.title}>Notificações financeiras</Text>
       <Text style={styles.description}>
-        Escolha quais bancos podem enviar notificações para a captura segura do Wallet AI.
+        Escolha bancos, carteiras digitais e apps de pagamento para a captura segura do Wallet AI.
         Nenhuma transação é registrada automaticamente.
       </Text>
 
@@ -133,20 +133,20 @@ export function BankNotificationSettings() {
               <Text style={styles.detail}>
                 {loading ? "Verificando…" : !snapshot ? "Não foi possível consultar" : !enabled ? "Desativada"
                   : !snapshot.permissionGranted ? "Ativada · pausada sem acesso Android"
-                    : unavailable.length === selected.length ? "Ativada · sem bancos disponíveis" : "Ativada"}
+                    : unavailable.length === selected.length ? "Ativada · sem apps disponíveis" : "Ativada"}
               </Text>
             </View>
             <Switch value={enabled} disabled={busy || !snapshot || (!enabled && !canEnable)}
               onValueChange={(value) => void save(value, selected)}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.onPrimary} accessibilityLabel="Ativar captura de notificações bancárias" />
+              thumbColor={colors.onPrimary} accessibilityLabel="Ativar captura de notificações financeiras" />
           </View>
 
           {snapshot && (
             <>
-              {!enabled && !canEnable && <Text style={styles.detail}>Conceda o acesso Android e selecione um banco antes de ativar.</Text>}
-              <Text style={styles.bankTitle}>Bancos instalados e compatíveis</Text>
-              {snapshot.apps.length === 0 && <Text style={styles.detail}>Nenhum banco do catálogo compatível foi encontrado neste dispositivo.</Text>}
+              {!enabled && !canEnable && <Text style={styles.detail}>Conceda o acesso Android e selecione um app financeiro antes de ativar.</Text>}
+              <Text style={styles.bankTitle}>Apps financeiros instalados e compatíveis</Text>
+              {snapshot.apps.length === 0 && <Text style={styles.detail}>Nenhum app financeiro do catálogo compatível foi encontrado neste dispositivo.</Text>}
               {snapshot.apps.map((app) => {
                 const checked = selected.includes(app.packageName);
                 return (

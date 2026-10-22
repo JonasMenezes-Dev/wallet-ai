@@ -2,13 +2,13 @@
   "expo": {
     "name": "Wallet AI",
     "slug": "wallet-ai",
-    "version": "1.0.2",
+    "version": "2.0.0",
     "orientation": "portrait",
     "scheme": "walletai",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.walletai.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "predictiveBackGestureEnabled": false,
       "permissions": ["POST_NOTIFICATIONS"],
       "adaptiveIcon": {

@@ -4,6 +4,18 @@ Aplicativo de controle financeiro pessoal para Android, desenvolvido com **Expo,
 
 > **Status: beta Android 1.0.2 (versionCode 3), APK preview gerado via EAS; validação no aparelho real ainda pendente.** O app ainda está sendo testado. Não use como única fonte de informação financeira e confira os lançamentos com o aplicativo ou extrato oficial do banco.
 
+## Premium 2.0 — beta Android
+
+Versão **2.0.0**, Android **versionCode 4**, package `com.walletai.app`. Reúne as 14 telas Premium, fonte Inter local, superfícies escuras/esmeralda, temas claro/escuro/sistema, ícone Android reenquadrado, filtros combináveis em painel e movimento com redução de animações respeitada.
+
+A captura local agora oferece um catálogo de **12 aplicativos financeiros**, incluindo Google Wallet, Samsung Wallet e apps de pagamento. Os identificadores foram conferidos em páginas oficiais: [catálogo e fontes](docs/supported-notification-apps.md). Isso comprova os identificadores, **não a compatibilidade real de notificações ou pagamentos NFC**. Uma carteira pode não notificar uma compra, ocultar o conteúdo ou deixar de informar valor/modalidade.
+
+Débito, crédito, Pix, transferências e estornos são candidatos à revisão quando o texto os confirma. Aproximação, online e presencial só são indicados quando explícitos. Valores ausentes, moedas conflitantes e conteúdo ambíguo não geram valores presumidos. Não há leitura direta de NFC, cartão, extrato ou Open Finance.
+
+**Nenhuma notificação cria lançamento automaticamente.** O usuário revisa conta, categoria, tipo, valor e data/hora original antes de confirmar. Possíveis duplicatas de notificações diferentes ou lançamentos manuais já existentes bloqueiam uma segunda gravação e permanecem em revisão. A checagem é conservadora e pode segurar compras distintas de mesmo valor em instantes próximos; não mescla nem descarta eventos automaticamente.
+
+Captura desligada/lista vazia por padrão; acesso Android, seleção de apps instalados e ativação interna são decisões separadas. A fila e autorizações continuam criptografadas com Android Keystore; indicadores de OTP/senha/credenciais/cartão completo são bloqueados antes de persistir e não são registrados em logs. O conteúdo de notificações não é enviado a servidores. Consulte [limites e validação do beta 2.0](docs/PREMIUM_2_BETA.md) e [emissor de notificações fictícias](tools/notification-fixture/README.md).
+
 ## O que já existe
 
 - **Contas e cartões:** cadastro de contas, cartões e limites de crédito.
@@ -21,7 +33,7 @@ Aplicativo de controle financeiro pessoal para Android, desenvolvido com **Expo,
 
 No APK beta gerado em 20/10/2026, a Central de revisão permite conferir uma notificação capturada e **confirmar explicitamente** uma receita, despesa ou transferência, revisando conta, categoria, valor, data e hora antes de gravar. A data/hora são sugeridas a partir da notificação no fuso local, e permanecem editáveis. Notificações sem horário válido exigem preenchimento manual. A implementação inclui mecanismos de prevenção de duplicidade e de recuperação de confirmações interrompidas.
 
-**Atenção à sincronização do código:** estas últimas alterações foram validadas no projeto local usado para gerar o APK (229 testes automatizados informados, TypeScript e ESLint aprovados), mas **ainda não estão integralmente publicadas nesta branch remota**. Não considere o código no GitHub equivalente ao APK até incorporar os commits locais finais. O APK também ainda não foi validado no aparelho real sem Metro.
+As fontes locais de confirmação, recuperação e captura da beta 1.0.2 foram preservadas e incorporadas à branch `feat/premium-redesign` no ciclo Premium 2.0. O histórico do APK 1.0.2 abaixo permanece como referência; ele não contém o redesign atual.
 
 ## Importante antes de testar
 
@@ -51,7 +63,7 @@ npm ci
 npm run typecheck
 npm run lint
 npx eas-cli login
-npx eas-cli build --platform android --profile preview
+npx eas-cli build --platform android --profile preview --freeze-credentials
 ```
 
 O perfil `preview` está configurado para gerar um APK de distribuição interna. Quando o EAS terminar, abra o link de instalação no Android.

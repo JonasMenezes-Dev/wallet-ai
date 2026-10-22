@@ -1,11 +1,18 @@
 import { requireNativeModule } from "expo-modules-core";
+import { Platform } from "react-native";
+import { interpretBankNotification } from "../notifications/bank-notification-engine";
+import { createNotificationReview, type NotificationReviewBridge } from "./notification-review.service";
+import { createNotificationConfirmation, type NotificationConfirmationBridge } from "./notification-confirmation.service";
+import { confirmNotificationFinancial, getNotificationFinancialReceipt } from "./transaction.service";
+
+import { createNotificationCaptureSettings, type NotificationCaptureNativeBridge } from "./notification-capture-settings";
 
 import type { CapturedFinancialNotification } from "./financial-notification-parser";
 
 export { parseFinancialNotification } from "./financial-notification-parser";
 export type { CapturedFinancialNotification, NotificationReviewReason } from "./financial-notification-parser";
 
-interface NotificationListenerBridge {
+interface NotificationListenerBridge extends NotificationCaptureNativeBridge, NotificationReviewBridge, NotificationConfirmationBridge {
   hasPermission(): boolean;
   openSettings(): void;
   getCapturedNotifications(): CapturedFinancialNotification[];
@@ -19,6 +26,11 @@ try {
 } catch {
   // Native module is available only in a compiled Android build, not Expo Go/web.
 }
+
+export const notificationCaptureSettings = createNotificationCaptureSettings(Platform.OS === "android" ? bridge : null);
+export const notificationReview = createNotificationReview(Platform.OS === "android" ? bridge : null, interpretBankNotification);
+export const notificationConfirmation = createNotificationConfirmation(Platform.OS === "android" ? bridge : null,
+  { confirm: confirmNotificationFinancial, getReceipt: getNotificationFinancialReceipt });
 
 export const isNotificationListenerAvailable = () => bridge !== null;
 export const hasNotificationAccess = () => bridge?.hasPermission() ?? false;

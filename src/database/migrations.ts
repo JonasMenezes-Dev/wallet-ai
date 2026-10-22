@@ -179,6 +179,20 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 10,
+    name: "notification-confirmation-receipts",
+    up: async (database) => {
+      // No foreign key to movements: deleting one must never enable reimport.
+      await database.execAsync(`CREATE TABLE IF NOT EXISTS notification_confirmation_receipts (
+        event_key TEXT PRIMARY KEY NOT NULL,
+        request_json TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK(kind IN ('income','expense','internal_transfer')),
+        reference TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );`);
+    },
+  },
 ];
 
 export async function runMigrations(

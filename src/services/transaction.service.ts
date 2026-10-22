@@ -8,6 +8,28 @@ import {
 } from "../repositories/transaction.repository";
 
 import { Transaction, TransactionWithRelations } from "../types/transaction";
+import { getNotificationFinancialReceipt, type FinancialConfirmationContext, type NotificationFinancialReceipt } from "../repositories/notification-confirmation.repository";
+import { normalizeNotificationConfirmation, validateNotificationEventKey, type NotificationConfirmationInput } from "./notification-confirmation-data";
+
+export { getNotificationFinancialReceipt };
+
+/** Invoked only by explicit notification confirmation; recovery must only read receipts. */
+export async function confirmNotificationFinancial(eventKey: string, input: NotificationConfirmationInput): Promise<NotificationFinancialReceipt> {
+  validateNotificationEventKey(eventKey);
+  const data = normalizeNotificationConfirmation(input);
+  const context = { eventKey, requestJson: JSON.stringify(data), kind: data.kind };
+  let reference: string;
+  if (data.kind === "internal_transfer") {
+    reference = await transferBetweenAccounts({ amount: data.amountCents / 100, fromAccountId: data.accountId,
+      toAccountId: data.toAccountId!, description: data.description, date: data.date }, context);
+  } else {
+    reference = String(await addTransaction({ amount: data.amountCents / 100, type: data.kind,
+      description: data.description, merchant: null, date: data.date, categoryId: data.categoryId,
+      accountId: data.accountId, paymentMethod: null, goalId: null, isAutomatic: false,
+      source: "notification", externalId: eventKey, provider: "wallet-notification-listener", institution: null }, context));
+  }
+  return { ...context, reference };
+}
 
 export async function listTransactions(): Promise<TransactionWithRelations[]> {
   return getAllTransactions();
@@ -15,10 +37,11 @@ export async function listTransactions(): Promise<TransactionWithRelations[]> {
 
 export async function addTransaction(
   transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
+  confirmation?: FinancialConfirmationContext,
 ): Promise<number> {
   validateTransaction(transaction.amount, transaction.type, transaction.accountId);
   validateTransactionPurpose(transaction.type, transaction.goalId);
-  return createTransaction(transaction);
+  return createTransaction(transaction, confirmation);
 }
 
 export async function transferBetweenAccounts(input: {
@@ -27,7 +50,7 @@ export async function transferBetweenAccounts(input: {
   toAccountId: number;
   description: string | null;
   date?: string;
-}): Promise<string> {
+}, confirmation?: FinancialConfirmationContext): Promise<string> {
   if (!Number.isInteger(input.fromAccountId) || input.fromAccountId <= 0 ||
       !Number.isInteger(input.toAccountId) || input.toAccountId <= 0) {
     throw new Error("Selecione as contas de origem e destino.");
@@ -41,7 +64,7 @@ export async function transferBetweenAccounts(input: {
   return createAccountTransfer({
     ...input,
     date: input.date ?? new Date().toISOString(),
-  });
+  }, confirmation);
 }
 
 export async function removeTransaction(id: number): Promise<void> {

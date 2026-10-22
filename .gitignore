@@ -32,6 +32,12 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.*
+credentials.json
+/.aws/
+/.codex/
+/.agents/
 
 # typescript
 *.tsbuildinfo
@@ -41,3 +47,11 @@ example
 # generated native folders
 /ios
 /android
+
+# Local native/fixture build outputs
+/modules/notification-listener/android/build/
+/modules/notification-listener/android/.gradle/
+/modules/notification-listener/android/.cxx/
+/tools/notification-fixture/build/
+/tools/notification-fixture/.gradle/
+/cmake-diagnostico.log
