@@ -1,3 +1,4 @@
+import type { SQLiteDatabase } from "expo-sqlite";
 import { getDatabase, withTransferTransaction } from "../database/database";
 
 import {
@@ -29,6 +30,7 @@ export async function getAllTransactions(): Promise<
     account_id: number | null;
     payment_method: string | null;
     is_automatic: number;
+    is_refund: number;
     source: Transaction["source"];
     external_id: string | null;
     provider: string | null;
@@ -84,6 +86,7 @@ export async function getAllTransactions(): Promise<
     goalName: row.goal_name,
     transferId: row.transfer_id,
     isAutomatic: row.is_automatic === 1,
+    isRefund: row.is_refund === 1,
     source: row.source,
     externalId: row.external_id,
     provider: row.provider,
@@ -104,14 +107,23 @@ export async function getAllTransactions(): Promise<
 export async function createTransaction(
   transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
 ): Promise<number> {
-  if (transaction.type === "transfer" || transaction.goalId != null) {
+  let id = 0;
+  await withTransferTransaction(async database => { id = await createTransactionInDatabase(database, transaction); });
+  return id;
+}
+
+/** Internal composition boundary: caller must own the enclosing SQLite transaction. */
+export async function createTransactionInDatabase(
+  database: SQLiteDatabase,
+  transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
+): Promise<number> {
+  if (transaction.type === "transfer" || transaction.goalId != null || (transaction.isRefund && transaction.type !== "income")) {
     throw new Error("Use o fluxo de metas ou de transferência entre contas.");
   }
   const now = new Date().toISOString();
 
   let transactionId = 0;
 
-  await withTransferTransaction(async (database) => {
     if (transaction.externalId && transaction.provider && transaction.institution) {
       const duplicate = await database.getFirstAsync<{ id: number }>(
         `SELECT id FROM transactions
@@ -150,6 +162,7 @@ export async function createTransaction(
           account_id,
           payment_method,
           is_automatic,
+          is_refund,
           source,
           external_id,
           provider,
@@ -167,6 +180,7 @@ export async function createTransaction(
           $accountId,
           $paymentMethod,
           $isAutomatic,
+          $isRefund,
           $source,
           $externalId,
           $provider,
@@ -185,6 +199,7 @@ export async function createTransaction(
         $accountId: transaction.accountId,
         $paymentMethod: transaction.paymentMethod,
         $isAutomatic: transaction.isAutomatic ? 1 : 0,
+        $isRefund: transaction.isRefund ? 1 : 0,
         $source: transaction.source,
         $externalId: transaction.externalId,
         $provider: transaction.provider,
@@ -209,7 +224,7 @@ export async function createTransaction(
       transaction.amount,
     );
 
-    if (isBalanceInvalid(newBalance, account.type)) {
+    if (isBalanceInvalid(newBalance, account.type) || !Number.isSafeInteger(Math.round(newBalance * 100))) {
       throw new Error("Saldo insuficiente na conta.");
     }
 
@@ -227,7 +242,6 @@ export async function createTransaction(
         $accountId: account.id,
       },
     );
-  });
 
   return transactionId;
 }
@@ -249,6 +263,13 @@ export function createCardPayment(input: LinkedMovementInput): Promise<string> {
 }
 
 async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boolean): Promise<string> {
+  let reference = "";
+  await withTransferTransaction(async database => { reference = await createLinkedMovementInDatabase(database, input, cardPayment); });
+  return reference;
+}
+
+/** Internal composition boundary: caller must own the enclosing SQLite transaction. */
+export async function createLinkedMovementInDatabase(database: SQLiteDatabase, input: LinkedMovementInput, cardPayment: boolean, source: "manual" | "import" = "manual"): Promise<string> {
   const now = new Date().toISOString();
   const transferId = `transfer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -263,7 +284,6 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
     throw new Error("Informe um valor em centavos, com até duas casas decimais.");
   }
 
-  await withTransferTransaction(async (database) => {
     const from = await database.getFirstAsync<{ id: number; balance: number; type: Account["type"] }>(
       "SELECT id, balance, type FROM accounts WHERE id = $id",
       { $id: input.fromAccountId },
@@ -308,7 +328,7 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
           $createdAt: now,
           $updatedAt: now,
           $transferId: transferId,
-          $source: "manual",
+          $source: source,
         },
       );
     }
@@ -321,7 +341,6 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
       "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
       { $balance: destinationBalance, $now: now, $id: to.id },
     );
-  });
 
   return transferId;
 }
@@ -674,6 +693,7 @@ export async function updateTransaction(
         SET
           amount = $amount,
           type = $type,
+          is_refund = CASE WHEN $type = 'income' THEN is_refund ELSE 0 END,
           description = $description,
           category_id = $categoryId,
           account_id = $accountId,

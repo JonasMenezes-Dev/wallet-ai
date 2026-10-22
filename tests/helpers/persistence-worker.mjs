@@ -115,7 +115,7 @@ try {
   } else {
     throw new Error(`Unknown phase: ${phase}`);
   }
-  assert.equal(database.native.prepare('PRAGMA user_version').get().user_version, 11);
+  assert.equal(database.native.prepare('PRAGMA user_version').get().user_version, 12);
   assert.equal(database.native.prepare('PRAGMA foreign_keys').get().foreign_keys, 1);
   assert.deepEqual(database.native.prepare('PRAGMA foreign_key_check').all(), []);
   assert.equal(database.native.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');

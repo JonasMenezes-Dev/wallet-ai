@@ -25,6 +25,8 @@ export interface Transaction {
   /** Identificador compartilhado pelos dois lados de uma transferência entre contas. */
   transferId?: string | null;
   isAutomatic: boolean;
+  /** Refunds restore cash/debt and offset consumption, rather than creating revenue. */
+  isRefund?: boolean;
   source: TransactionSource;
   /**
    * Identificador da transação na origem (notificação, extrato ou Open Finance).

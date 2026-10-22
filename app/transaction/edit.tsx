@@ -192,7 +192,7 @@ export default function EditTransactionScreen() {
 
       {!transaction.goalId && <AnimatedBlock delay={120} style={styles.typeSelector}>
         <AppSelector<TransactionType> accessibilityLabel="Tipo de movimentação" value={type} onChange={setType}
-          options={[{ value: "expense", label: "Despesa" }, { value: "income", label: "Receita" }]} />
+          options={[{ value: "expense", label: "Despesa" }, { value: "income", label: transaction.isRefund ? "Estorno" : "Receita" }]} />
       </AnimatedBlock>}
 
       <AppField label="Valor" containerStyle={styles.field}

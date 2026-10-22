@@ -2,6 +2,18 @@
 
 As notas abaixo resumem o estado do projeto e não substituem a validação no dispositivo. Este histórico será atualizado conforme os betas forem testados.
 
+## 2.1 — Etapa 2 (2026-10-22)
+
+- Pipeline local OFX SGML/XML e CSV configurável: seleção, decodificação, normalização, identificação, categorias, deduplicação, revisão e persistência atômica.
+- Interface Premium com conta/cartão, amostra e mapeamento CSV, período, seleção múltipla, edição, resolução de ambiguidades e confirmação explícita.
+- Deduplicação persistente por arquivo/linha, identificador bancário e correspondências conservadoras com registros existentes. Revisão atualizada após edição/conflito e tratamento de horários equivalentes entre fusos.
+- Categorias iniciais adicionadas sem renomear categorias existentes; aprendizado por estabelecimento exato, somente mediante escolha do usuário.
+- Migração 12 aditiva: recibos, regras e marcação de estorno. Estornos compensam consumo em relatórios/orçamento/dashboard sem gerar receita; compras, pagamentos de cartão, transferências e reservas preservados.
+- Módulos Expo compatíveis para seleção local, leitura e SHA-256. Arquivos temporários removidos após leitura; sem APIs, IA generativa, envio de extratos ou logs de conteúdo financeiro.
+- Limites: 5 MiB/10.000 registros, BRL, um extrato/conta por arquivo. [Formatos e limitações](docs/FINANCIAL_V2_STAGE2.md).
+- Verificação local: 139 testes direcionados aprovados, TypeScript, ESLint e revisão independente; validação Android permanece pendente.
+- Sem novo onboarding, insights 2.0, lembretes, APK, merge, push ou Etapa 3.
+
 ## 2.1 — Etapa 1 (2026-10-22)
 
 - Descontinuados módulo Kotlin, listener, permissão especial, catálogo, regras de interpretação, fila criptografada, autorização, serviços, central de revisão, componentes, emissor de testes e testes exclusivos da captura bancária.

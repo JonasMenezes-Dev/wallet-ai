@@ -431,7 +431,7 @@ export default function TransactionsScreen() {
                               : styles.expenseBadgeText,
                         ]}
                       >
-                        {item.goalMovement === "withdrawal" ? "Resgate de meta" : getTransactionLabel(item.type, isAccountTransfer)}
+                        {item.isRefund ? "Estorno" : item.goalMovement === "withdrawal" ? "Resgate de meta" : getTransactionLabel(item.type, isAccountTransfer)}
                       </Text>
                     </View>
 

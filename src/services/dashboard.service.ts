@@ -153,8 +153,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income' AND transfer_id IS NULL
-              THEN amount
+              WHEN type = 'income' AND is_refund = 0 AND transfer_id IS NULL
+              THEN CASE WHEN is_refund = 1 THEN -amount ELSE amount END
               ELSE 0
             END
           ),
@@ -164,8 +164,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense' AND transfer_id IS NULL
-              THEN amount
+              WHEN (type = 'expense' OR is_refund = 1) AND transfer_id IS NULL
+              THEN CASE WHEN is_refund = 1 THEN -amount ELSE amount END
               ELSE 0
             END
           ),
@@ -177,10 +177,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income' AND transfer_id IS NULL
-              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+              WHEN type = 'income' AND is_refund = 0 AND transfer_id IS NULL
+              AND (CASE WHEN length(date) = 10 OR (date NOT LIKE '%Z' AND substr(date, -6, 1) NOT IN ('+', '-')) THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
                 = strftime('%Y-%m', 'now', 'localtime')
-              THEN amount
+              THEN CASE WHEN is_refund = 1 THEN -amount ELSE amount END
               ELSE 0
             END
           ),
@@ -190,10 +190,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense' AND transfer_id IS NULL
-              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+              WHEN (type = 'expense' OR is_refund = 1) AND transfer_id IS NULL
+              AND (CASE WHEN length(date) = 10 OR (date NOT LIKE '%Z' AND substr(date, -6, 1) NOT IN ('+', '-')) THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
                 = strftime('%Y-%m', 'now', 'localtime')
-              THEN amount
+              THEN CASE WHEN is_refund = 1 THEN -amount ELSE amount END
               ELSE 0
             END
           ),
@@ -201,7 +201,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         ) AS monthExpenses,
 
         COUNT(DISTINCT CASE
-          WHEN (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+          WHEN (CASE WHEN length(date) = 10 OR (date NOT LIKE '%Z' AND substr(date, -6, 1) NOT IN ('+', '-')) THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
             = strftime('%Y-%m', 'now', 'localtime')
           THEN COALESCE(transfer_id, 'transaction-' || id)
         END) AS monthTransactionCount,
@@ -209,10 +209,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'income' AND transfer_id IS NULL
-              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+              WHEN type = 'income' AND is_refund = 0 AND transfer_id IS NULL
+              AND (CASE WHEN length(date) = 10 OR (date NOT LIKE '%Z' AND substr(date, -6, 1) NOT IN ('+', '-')) THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
                 = strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month')
-              THEN amount
+              THEN CASE WHEN is_refund = 1 THEN -amount ELSE amount END
               ELSE 0
             END
           ),
@@ -222,10 +222,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         COALESCE(
           SUM(
             CASE
-              WHEN type = 'expense' AND transfer_id IS NULL
-              AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
+              WHEN (type = 'expense' OR is_refund = 1) AND transfer_id IS NULL
+              AND (CASE WHEN length(date) = 10 OR (date NOT LIKE '%Z' AND substr(date, -6, 1) NOT IN ('+', '-')) THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END)
                 = strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month')
-              THEN amount
+              THEN CASE WHEN is_refund = 1 THEN -amount ELSE amount END
               ELSE 0
             END
           ),
@@ -255,13 +255,13 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       SELECT
         transactions.category_id AS category_id,
         categories.name AS name,
-        SUM(transactions.amount) AS total
+        SUM(CASE WHEN transactions.is_refund = 1 THEN -transactions.amount ELSE transactions.amount END) AS total
       FROM transactions
       LEFT JOIN categories
         ON categories.id = transactions.category_id
-      WHERE transactions.type = 'expense'
+      WHERE (transactions.type = 'expense' OR transactions.is_refund = 1)
         AND transactions.transfer_id IS NULL
-        AND (CASE WHEN length(transactions.date) = 10 THEN substr(transactions.date, 1, 7) ELSE strftime('%Y-%m', transactions.date, 'localtime') END)
+        AND (CASE WHEN length(transactions.date) = 10 OR (transactions.date NOT LIKE '%Z' AND substr(transactions.date, -6, 1) NOT IN ('+', '-')) THEN substr(transactions.date, 1, 7) ELSE strftime('%Y-%m', transactions.date, 'localtime') END)
           = strftime('%Y-%m', 'now', 'localtime')
       GROUP BY transactions.category_id
       ORDER BY total DESC
@@ -291,7 +291,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       FROM transactions
       LEFT JOIN goals
         ON goals.id = transactions.goal_id
-      WHERE transactions.transfer_id IS NULL OR transactions.type = 'expense'
+      WHERE transactions.transfer_id IS NULL OR (transactions.type = 'expense' OR transactions.is_refund = 1)
       ORDER BY transactions.date DESC, transactions.id DESC
       LIMIT $limit
     `,

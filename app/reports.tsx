@@ -59,7 +59,7 @@ export default function ReportsScreen() {
             </AppCard>
             <View style={styles.summaryRow}>
               <AppCard style={styles.summaryCard}><Text style={styles.label}>Entradas</Text><Text style={styles.income}>{formatCurrency(report.income)}</Text></AppCard>
-              <AppCard style={styles.summaryCard}><Text style={styles.label}>Saídas</Text><Text style={styles.expense}>{formatCurrency(report.expenses)}</Text></AppCard>
+              <AppCard style={styles.summaryCard}><Text style={styles.label}>Consumo líquido</Text><Text style={styles.expense}>{formatCurrency(report.expenses)}</Text></AppCard>
             </View>
             <AppCard style={styles.card}>
               <Text style={styles.sectionTitle}>Reservas próprias</Text>
@@ -76,7 +76,7 @@ export default function ReportsScreen() {
                   <View key={item.label} style={styles.chartColumn}>
                     <Text variant="caption" tone="muted">{formatCurrency(item.value)}</Text>
                     <View style={styles.chartTrack}>
-                      <View style={[styles.chartBar, { height: `${item.value / Math.max(1, report.previousExpenses, report.expenses) * 100}%`, backgroundColor: index === 1 ? colors.primary : colors.accentSurface }]} />
+                      <View style={[styles.chartBar, { height: `${Math.max(0, item.value) / Math.max(1, report.previousExpenses, report.expenses) * 100}%`, backgroundColor: index === 1 ? colors.primary : colors.accentSurface }]} />
                     </View>
                     <Text variant="caption" tone="muted">{item.label}</Text>
                   </View>

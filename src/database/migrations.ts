@@ -203,6 +203,44 @@ const migrations: Migration[] = [
         "TEXT CHECK(goal_movement IS NULL OR goal_movement IN ('contribution','withdrawal'))");
     },
   },
+  {
+    version: 12,
+    name: "statement-import-receipts-and-category-rules",
+    up: async database => {
+      await addColumnIfMissing(database, "transactions", "is_refund", "INTEGER NOT NULL DEFAULT 0 CHECK(is_refund IN (0,1))");
+      await database.execAsync(`
+        CREATE TABLE IF NOT EXISTS statement_import_receipts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          account_id INTEGER NOT NULL,
+          bank_scope TEXT NOT NULL,
+          bank_id TEXT,
+          file_hash TEXT NOT NULL,
+          row_number INTEGER NOT NULL,
+          source_date TEXT NOT NULL,
+          amount_cents INTEGER NOT NULL,
+          description_key TEXT NOT NULL,
+          reference TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          UNIQUE(account_id, file_hash, row_number)
+        );
+        CREATE INDEX IF NOT EXISTS idx_statement_bank_identity
+          ON statement_import_receipts(account_id, bank_scope, bank_id);
+        CREATE INDEX IF NOT EXISTS idx_statement_fingerprint
+          ON statement_import_receipts(account_id, source_date, amount_cents);
+        CREATE INDEX IF NOT EXISTS idx_statement_reference
+          ON statement_import_receipts(account_id, reference);
+        CREATE TABLE IF NOT EXISTS statement_category_rules (
+          merchant_key TEXT PRIMARY KEY NOT NULL,
+          category_id INTEGER NOT NULL REFERENCES categories(id),
+          updated_at TEXT NOT NULL
+        );
+      `);
+      for (const name of ["Supermercado", "Alimentação fora de casa", "Transporte", "Compras", "Lazer", "Saúde",
+        "Educação", "Moradia", "Assinaturas", "Serviços", "Transferências", "Outros"]) {
+        await database.runAsync("INSERT OR IGNORE INTO categories (name, created_at) VALUES (?, ?)", name, new Date().toISOString());
+      }
+    },
+  },
 ];
 
 export async function runMigrations(

@@ -1,14 +1,29 @@
-# Wallet AI 2.1 — Etapa 1
+# Wallet AI 2.1 — Etapa 2
 
 Aplicativo de controle financeiro pessoal para Android, desenvolvido com **Expo, React Native e SQLite**. O objetivo é reunir contas, movimentações, metas e acompanhamento mensal em uma experiência simples, com dados armazenados localmente no dispositivo.
 
-> **Status: código da versão 2.1.0 (versionCode 5), Etapa 1; nenhum APK gerado nesta etapa.** A validação da atualização em Android real permanece pendente. Confira os lançamentos com o extrato oficial do banco.
+> **Status: código da versão 2.1.0 (versionCode 5), Etapa 2; nenhum APK gerado nesta etapa.** A validação da atualização em Android real permanece pendente. Confira os lançamentos com o extrato oficial do banco.
 
 ## Premium 2.0 — base preservada
 
 Versão **2.0.0**, Android **versionCode 4**, package `com.walletai.app`. Reúne as 14 telas Premium, fonte Inter local, superfícies escuras/esmeralda, temas claro/escuro/sistema, ícone Android reenquadrado, filtros combináveis em painel e movimento com redução de animações respeitada.
 
-O visual e os fluxos Premium 2.0 foram preservados. Na versão 2.1 a captura de notificações bancárias foi descontinuada; OFX/CSV, novo onboarding e insights 2.0 serão desenvolvidos nas próximas etapas.
+O visual e os fluxos Premium 2.0 foram preservados. A captura bancária foi descontinuada na Etapa 1. A Etapa 2 adiciona importação local OFX/CSV; novo onboarding, insights 2.0 e lembretes semanais ficam para as próximas etapas.
+
+## Importação local de extratos
+
+No dashboard, abra **Importar extrato**, selecione a conta/cartão e um arquivo OFX ou CSV. Confirme o mapeamento das colunas CSV, revise o período, as sugestões e duplicidades, edite as movimentações e confirme explicitamente o lote. Nenhuma prévia cria lançamentos.
+
+- OFX SGML e XML, incluindo namespace OFX padrão, conta bancária ou cartão; CSV com cabeçalho, delimitadores `;`, `,` ou tabulação, aspas e campos multilinha.
+- Valores brasileiros/decimais em centavos exatos, datas brasileiras/ISO; horários só quando fornecidos. UTF-8, UTF-16 com BOM e Windows-1252.
+- Identificação conservadora, categorias locais e correções de estabelecimento lembradas somente quando autorizadas. Pix, transferências próprias e pagamentos de fatura exigem revisão; Pix recebido não vira salário automaticamente.
+- Recibos persistentes e revalidação dentro da transação impedem reimportar o mesmo arquivo/FITID. Semelhanças com lançamentos manuais ou outros arquivos ficam pendentes; operações legítimas semelhantes podem ser confirmadas como distintas.
+- Lote atômico: falha não deixa importação parcial. Estornos comprovados reduzem consumo sem criar receita. Aportes e reservas permanecem separados.
+- Apenas BRL; moeda ausente exige confirmação. Limite de 5 MiB e 10.000 movimentações. O saldo cadastrado deve representar o início do período ainda não lançado, pois importar aplica cada movimentação confirmada ao saldo existente.
+
+Extratos não são enviados a servidores. A cópia temporária de leitura é removida após o uso; somente lançamentos confirmados, metadados de deduplicação e regras autorizadas permanecem no SQLite. Os novos módulos Expo de seleção, leitura e SHA-256 precisam estar presentes na próxima distribuição nativa. Sem necessidade de reinstalar ou limpar dados.
+
+Formatos, arquitetura, recuperação e limitações em [Etapa 2](docs/FINANCIAL_V2_STAGE2.md).
 
 ## Contabilização financeira
 
@@ -24,6 +39,7 @@ Veja [migração e descontinuação](docs/FINANCIAL_V2_STAGE1.md). Não limpe da
 
 - **Contas e cartões:** cadastro de contas, cartões e limites de crédito.
 - **Movimentações:** registro, consulta, edição e exclusão de entradas e despesas.
+- **Extratos:** importação local OFX/CSV com revisão, categorização e antiduplicação.
 - **Metas:** acompanhamento de objetivos e aportes.
 - **Dashboard:** resumo financeiro calculado a partir dos dados locais.
 - **Orçamentos:** limites mensais por categoria.

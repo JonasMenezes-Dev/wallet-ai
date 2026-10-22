@@ -20,11 +20,11 @@ export async function getFinancialInsights(): Promise<FinancialInsight[]> {
   );
 
   const monthly = await database.getFirstAsync<{ total: number }>(
-    `SELECT COALESCE(SUM(amount), 0) AS total
+    `SELECT COALESCE(SUM(CASE WHEN is_refund = 1 THEN -amount ELSE amount END), 0) AS total
      FROM transactions
-     WHERE type = 'expense'
+     WHERE (type = 'expense' OR is_refund = 1)
        AND transfer_id IS NULL
-       AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = strftime('%Y-%m', 'now', 'localtime')`,
+       AND (CASE WHEN length(date) = 10 OR (date NOT LIKE '%Z' AND substr(date, -6, 1) NOT IN ('+', '-')) THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = strftime('%Y-%m', 'now', 'localtime')`,
   );
 
   const salary = settings?.salary ?? 0;

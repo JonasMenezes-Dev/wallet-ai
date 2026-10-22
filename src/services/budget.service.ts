@@ -49,11 +49,11 @@ export async function listMonthlyBudgets(month: string): Promise<MonthlyBudget[]
       INNER JOIN categories
         ON categories.id = budgets.category_id
       LEFT JOIN (
-        SELECT category_id, SUM(amount) AS total
+        SELECT category_id, SUM(CASE WHEN is_refund = 1 THEN -amount ELSE amount END) AS total
         FROM transactions
-        WHERE type = 'expense'
+        WHERE (type = 'expense' OR is_refund = 1)
           AND transfer_id IS NULL
-          AND (CASE WHEN length(date) = 10 THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = $month
+          AND (CASE WHEN length(date) = 10 OR (date NOT LIKE '%Z' AND substr(date, -6, 1) NOT IN ('+', '-')) THEN substr(date, 1, 7) ELSE strftime('%Y-%m', date, 'localtime') END) = $month
         GROUP BY category_id
       ) AS spending
         ON spending.category_id = budgets.category_id
