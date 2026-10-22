@@ -209,7 +209,9 @@ export default function TransactionsScreen() {
      * usuário precisa confirmar sabendo qual.
      */
     const impactMessage = isGoalContribution
-      ? "O valor será devolvido ao saldo da conta e retirado da meta."
+      ? transaction.goalMovement === "withdrawal"
+        ? "O valor será retirado da conta e devolvido à meta."
+        : "O valor será devolvido ao saldo da conta e retirado da meta."
       : isAccountTransfer
         ? "A transferência inteira será removida e os saldos das duas contas serão restaurados."
       : isCardTransaction
@@ -429,16 +431,10 @@ export default function TransactionsScreen() {
                               : styles.expenseBadgeText,
                         ]}
                       >
-                        {getTransactionLabel(item.type, isAccountTransfer)}
+                        {item.goalMovement === "withdrawal" ? "Resgate de meta" : getTransactionLabel(item.type, isAccountTransfer)}
                       </Text>
                     </View>
 
-                    {/*
-                     * Origem: separa o que o usuário lançou do que veio de
-                     * notificação/importação. O círculo (🟢/🔵) é o código
-                     * visual que a leitura automática de notificações vai
-                     * reaproveitar quando entrar.
-                     */}
                     <View
                       style={[
                         styles.sourceBadge,
@@ -492,7 +488,7 @@ export default function TransactionsScreen() {
               </View>
 
                   <View style={styles.cardButtons}>
-                    {!isGoalContribution && !isAccountTransfer && (
+                    {!isAccountTransfer && (
                       <AnimatedPressable
                         style={styles.editButton}
                         pressedScale={0.93}

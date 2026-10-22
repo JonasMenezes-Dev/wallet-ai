@@ -14,7 +14,7 @@ export interface ImportedTransaction {
   description: string;
   merchant: string | null;
   date: string;
-  source: "import" | "notification";
+  source: "import";
   isAutomatic: true;
 }
 
@@ -27,37 +27,4 @@ export interface OpenFinanceProvider {
   connect(institutionId: string): Promise<OpenFinanceConnection>;
   sync(connectionId: string): Promise<ImportedTransaction[]>;
   disconnect(connectionId: string): Promise<void>;
-}
-
-/**
- * Analisa o texto de uma notificação bancária sem guardar a notificação original.
- * A leitura em segundo plano exige módulo nativo Android e consentimento explícito.
- */
-export function parseBankNotification(
-  text: string,
-  date = new Date().toISOString(),
-): ImportedTransaction | null {
-  const value = text.match(
-    /(?:R\$\s*)?([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2}|[0-9]+(?:\.[0-9]{2})?)/i,
-  );
-  if (!value) return null;
-
-  const amount = Number(value[1].replace(/\./g, "").replace(",", "."));
-  if (!Number.isFinite(amount) || amount <= 0) return null;
-
-  const normalized = text.toLowerCase();
-  const isIncome =
-    /receb|pix recebido|depósito|deposito|entrada|salário|salario/.test(
-      normalized,
-    );
-
-  return {
-    amount,
-    type: isIncome ? "income" : "expense",
-    description: text.trim().slice(0, 120),
-    merchant: null,
-    date,
-    source: "notification",
-    isAutomatic: true,
-  };
 }

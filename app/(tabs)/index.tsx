@@ -97,7 +97,7 @@ export default function HomeScreen() {
     (account) => account.type !== "credit_card",
   );
 
-  const remainingThisMonth = summary.monthBalance;
+  const remainingThisMonth = summary.availableBalance;
 
   const categoryMax = summary.expensesByCategory[0]?.total ?? 0;
 
@@ -141,7 +141,7 @@ export default function HomeScreen() {
           <View style={styles.balanceHeader}>
             <View style={styles.balanceLabelRow}>
               <WalletSymbol name="accounts" color={colors.primary} size={18} />
-              <Text style={styles.balanceLabel}>Saldo total</Text>
+              <Text style={styles.balanceLabel}>Patrimônio total</Text>
             </View>
             <AnimatedPressable
               style={styles.balanceToggle}
@@ -157,10 +157,11 @@ export default function HomeScreen() {
             adjustsFontSizeToFit
             minimumFontScale={0.72}
           >
-            {balanceVisible ? formatCurrency(summary.balance) : "R$ ••••••"}
+            {balanceVisible ? formatCurrency(summary.totalBalance) : "R$ ••••••"}
           </Text>
 
           <Text style={styles.balanceMeta}>
+            {balanceVisible ? `Reservado em metas: ${formatCurrency(summary.reservedBalance)} · ` : ""}
             {summary.accounts.length}{" "}
             {summary.accounts.length === 1 ? "conta" : "contas"}
             {summary.creditCardUsedTotal > 0
@@ -225,7 +226,7 @@ export default function HomeScreen() {
                 <WalletSymbol name="budget" color={colors.primary} size={20} />
               </View>
               <View style={styles.availableCopy}>
-                <Text style={styles.availableLabel}>Disponível no mês</Text>
+                <Text style={styles.availableLabel}>Saldo livre</Text>
                 <Text style={styles.availableHint}>Entradas menos despesas registradas</Text>
               </View>
             </View>
@@ -375,11 +376,6 @@ export default function HomeScreen() {
               </AnimatedPressable>
             </View>
             <View style={styles.quickRow}>
-              <AnimatedPressable style={styles.quickAction} pressedScale={0.98} onPress={() => router.push("/notification-import")}>
-                <View style={styles.quickIcon}><WalletSymbol name="notification" color={colors.primary} size={20} /></View>
-                <Text style={styles.quickTitle}>Importar gastos</Text>
-                <Text style={styles.quickDescription}>Notificações bancárias</Text>
-              </AnimatedPressable>
               <AnimatedPressable style={styles.quickAction} pressedScale={0.98} onPress={() => router.push("/reports")}>
                 <View style={styles.quickIcon}><WalletSymbol name="reports" color={colors.primary} size={20} /></View>
                 <Text style={styles.quickTitle}>Relatórios</Text>

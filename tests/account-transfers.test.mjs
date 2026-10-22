@@ -39,7 +39,7 @@ test('migration 9 upgrades v8 without changing existing transactions and can rer
     VALUES (1, 12, 'expense', '2026-10-01', 1, 'old', 'old');`);
   await runMigrations(database);
   await runMigrations(database);
-  assert.equal(database.native.prepare('PRAGMA user_version').get().user_version, 10);
+  assert.equal(database.native.prepare('PRAGMA user_version').get().user_version, 11);
   assert.equal(entries()[0].transfer_id, null);
   assert.equal(entries()[0].amount, 12);
   assert.ok(database.native.prepare("SELECT name FROM sqlite_master WHERE name = 'idx_transactions_transfer'").get());

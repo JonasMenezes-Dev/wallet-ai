@@ -20,6 +20,7 @@ export interface Transaction {
   accountId: number | null;
   paymentMethod: string | null;
   goalId: number | null;
+  goalMovement?: "contribution" | "withdrawal" | null;
   goalName?: string | null;
   /** Identificador compartilhado pelos dois lados de uma transferência entre contas. */
   transferId?: string | null;

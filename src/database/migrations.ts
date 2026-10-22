@@ -183,6 +183,7 @@ const migrations: Migration[] = [
     version: 10,
     name: "notification-confirmation-receipts",
     up: async (database) => {
+      // Historical v10 schema only; bank capture and all receipt consumers were retired in v2.1.
       // No foreign key to movements: deleting one must never enable reimport.
       await database.execAsync(`CREATE TABLE IF NOT EXISTS notification_confirmation_receipts (
         event_key TEXT PRIMARY KEY NOT NULL,
@@ -191,6 +192,15 @@ const migrations: Migration[] = [
         reference TEXT NOT NULL,
         created_at TEXT NOT NULL
       );`);
+    },
+  },
+  {
+    version: 11,
+    name: "goal-withdrawal-direction",
+    up: async (database) => {
+      // NULL on existing goal transfers means contribution. Preserve all old records.
+      await addColumnIfMissing(database, "transactions", "goal_movement",
+        "TEXT CHECK(goal_movement IS NULL OR goal_movement IN ('contribution','withdrawal'))");
     },
   },
 ];

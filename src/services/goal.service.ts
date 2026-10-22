@@ -1,5 +1,7 @@
 import {
   addGoalContribution,
+  addGoalWithdrawal,
+  updateGoalMovement,
   createGoal,
   deleteGoal,
   getAllGoals,
@@ -8,6 +10,14 @@ import {
 } from "../repositories/goal.repository";
 
 import { Goal } from "../types/goal";
+
+export async function withdrawFromGoal(goalId: number, accountId: number, amount: number): Promise<void> {
+  await addGoalWithdrawal(goalId, accountId, amount);
+}
+
+export async function editGoalMovement(id: number, accountId: number, amount: number): Promise<void> {
+  await updateGoalMovement(id, accountId, amount);
+}
 
 export interface GoalPlan {
   monthlyAmount: number;

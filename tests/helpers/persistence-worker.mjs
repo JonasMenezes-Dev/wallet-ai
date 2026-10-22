@@ -23,6 +23,7 @@ if (phase === 'legacy-upgrade') {
   `);
 }
 
+const { addGoalWithdrawal, updateGoalMovement } = await import('../../src/repositories/goal.repository.ts');
 const { getDatabase } = await import('../../src/database/database.ts');
 const { createAccount, getAllAccounts } = await import('../../src/repositories/account.repository.ts');
 const { createTransaction, createAccountTransfer, getAllTransactions, deleteTransaction } = await import('../../src/repositories/transaction.repository.ts');
@@ -81,6 +82,18 @@ try {
     assert.equal(budgets[0].amount, 250);
     assert.equal(budgets[0].spent, 10.25);
     assert.equal((await getAllGoals())[0].currentAmount, 20);
+  } else if (phase === 'withdraw-and-edit') {
+    await assertOriginal();
+    await addGoalWithdrawal(1, 1, 5);
+    const withdrawal = (await getAllTransactions()).find(t => t.goalMovement === 'withdrawal');
+    await updateGoalMovement(withdrawal.id, 1, 10);
+  } else if (phase === 'read-withdrawal') {
+    assert.deepEqual((await getAllAccounts()).map(a => a.balance), [959.75, 30]);
+    assert.equal((await getAllGoals())[0].currentAmount, 10);
+    const withdrawal = (await getAllTransactions()).find(t => t.goalMovement === 'withdrawal');
+    assert.equal(withdrawal.amount, 10);
+    await deleteTransaction(withdrawal.id);
+    await assertOriginal();
   } else if (phase === 'fail-contribution') {
     await assertOriginal();
     database.native.exec(`CREATE TRIGGER fail_contribution BEFORE INSERT ON transactions
@@ -102,7 +115,7 @@ try {
   } else {
     throw new Error(`Unknown phase: ${phase}`);
   }
-  assert.equal(database.native.prepare('PRAGMA user_version').get().user_version, 10);
+  assert.equal(database.native.prepare('PRAGMA user_version').get().user_version, 11);
   assert.equal(database.native.prepare('PRAGMA foreign_keys').get().foreign_keys, 1);
   assert.deepEqual(database.native.prepare('PRAGMA foreign_key_check').all(), []);
   assert.equal(database.native.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');

@@ -62,6 +62,13 @@ export default function ReportsScreen() {
               <AppCard style={styles.summaryCard}><Text style={styles.label}>Saídas</Text><Text style={styles.expense}>{formatCurrency(report.expenses)}</Text></AppCard>
             </View>
             <AppCard style={styles.card}>
+              <Text style={styles.sectionTitle}>Reservas próprias</Text>
+              <Text style={styles.helper}>Aportes: {formatCurrency(report.contributions)}</Text>
+              <Text style={styles.helper}>Resgates: {formatCurrency(report.withdrawals)}</Text>
+              <Text style={styles.helper}>Economia efetiva: {formatCurrency(report.effectiveSavings)}</Text>
+              <Text style={styles.helper}>Economia = receitas reais menos despesas de consumo. Mover dinheiro para metas não gera receita nem consumo.</Text>
+            </AppCard>
+            <AppCard style={styles.card}>
               <Text style={styles.sectionTitle}>Evolução financeira</Text>
               <Text style={styles.helper}>Despesas em comparação com o mês anterior</Text>
               <View style={styles.chart}>

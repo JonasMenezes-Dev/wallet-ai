@@ -24,6 +24,7 @@ import {
     editTransaction,
     listTransactions,
 } from "../../src/services/transaction.service";
+import { editGoalMovement } from "../../src/services/goal.service";
 import { Account } from "../../src/types/account";
 import { Category } from "../../src/types/category";
 import { Transaction, TransactionType } from "../../src/types/transaction";
@@ -89,10 +90,10 @@ export default function EditTransactionScreen() {
         ]);
         const current = transactions.find((item) => item.id === transactionId);
 
-        if (!current || current.type === "transfer" || current.goalId) {
+        if (!current || current.transferId || (current.type === "transfer" && !current.goalId)) {
           Alert.alert(
             "Edição indisponível",
-            "Aportes de metas não podem ser editados.",
+            "Esta transferência não pode ser editada individualmente.",
             [{ text: "OK", onPress: () => router.back() }],
           );
           return;
@@ -128,6 +129,9 @@ export default function EditTransactionScreen() {
 
     try {
       setSaving(true);
+      if (transaction.goalId) {
+        await editGoalMovement(transaction.id, accountId, amountValue);
+      } else {
       await editTransaction(transaction.id, {
         amount: amountValue,
         type,
@@ -136,6 +140,7 @@ export default function EditTransactionScreen() {
         accountId,
         date: date.toISOString(),
       });
+      }
       router.back();
     } catch (error) {
       const message =
@@ -185,10 +190,10 @@ export default function EditTransactionScreen() {
         />
       </AnimatedBlock>
 
-      <AnimatedBlock delay={120} style={styles.typeSelector}>
+      {!transaction.goalId && <AnimatedBlock delay={120} style={styles.typeSelector}>
         <AppSelector<TransactionType> accessibilityLabel="Tipo de movimentação" value={type} onChange={setType}
           options={[{ value: "expense", label: "Despesa" }, { value: "income", label: "Receita" }]} />
-      </AnimatedBlock>
+      </AnimatedBlock>}
 
       <AppField label="Valor" containerStyle={styles.field}
         value={amount}
@@ -197,6 +202,7 @@ export default function EditTransactionScreen() {
         placeholder="0,00"
         style={styles.amountInput}
       />
+      {!transaction.goalId && <>
       <Text style={styles.label}>Data</Text>
       <AnimatedPressable
         pressedScale={0.98}
@@ -302,17 +308,18 @@ export default function EditTransactionScreen() {
           </AnimatedPressable>
         ))}
       </ScrollView>
-      <Text style={styles.label}>Conta ou cartão</Text>
-      <Text style={styles.helper}>
+      </>}
+      <Text style={styles.label}>{transaction.goalId ? "Conta da movimentação" : "Conta ou cartão"}</Text>
+      {!transaction.goalId && <Text style={styles.helper}>
         Escolher um cartão lança o gasto no limite dele (aumenta o utilizado,
         reduz o disponível). Contas comuns movimentam o saldo.
-      </Text>
+      </Text>}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.options}
       >
-        {accounts.map((account) => {
+        {accounts.filter(account => !transaction.goalId || account.type !== "credit_card").map((account) => {
           const isCard = account.type === "credit_card";
 
           return (

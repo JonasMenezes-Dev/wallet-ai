@@ -49,9 +49,6 @@ example
 /android
 
 # Local native/fixture build outputs
-/modules/notification-listener/android/build/
-/modules/notification-listener/android/.gradle/
-/modules/notification-listener/android/.cxx/
 /tools/notification-fixture/build/
 /tools/notification-fixture/.gradle/
 /cmake-diagnostico.log

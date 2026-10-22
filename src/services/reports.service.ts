@@ -1,6 +1,11 @@
 import { getDatabase } from "../database/database";
 
+import { getReservePeriodTotals } from "./reserve-totals";
+
 export interface MonthlyReport {
+  contributions: number;
+  withdrawals: number;
+  effectiveSavings: number;
   month: string;
   income: number;
   expenses: number;
@@ -48,7 +53,9 @@ export async function getMonthlyReport(month: string): Promise<MonthlyReport> {
   `, { $month: month });
   const income = totals?.income ?? 0;
   const expenses = totals?.expenses ?? 0;
+  const reserves = await getReservePeriodTotals(month);
   return {
+    ...reserves, effectiveSavings: Math.round((income - expenses) * 100) / 100,
     month, income, expenses, balance: income - expenses,
     transactionCount: totals?.transaction_count ?? 0,
     previousIncome: previous?.income ?? 0,

@@ -7,6 +7,12 @@ import {
 } from "../services/dashboard.service";
 
 const initialSummary: DashboardSummary = {
+  availableBalance: 0,
+  reservedBalance: 0,
+  totalBalance: 0,
+  monthContributions: 0,
+  monthWithdrawals: 0,
+  effectiveSavings: 0,
   totalIncome: 0,
   totalExpenses: 0,
   balance: 0,

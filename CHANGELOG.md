@@ -2,6 +2,15 @@
 
 As notas abaixo resumem o estado do projeto e não substituem a validação no dispositivo. Este histórico será atualizado conforme os betas forem testados.
 
+## 2.1 — Etapa 1 (2026-10-22)
+
+- Descontinuados módulo Kotlin, listener, permissão especial, catálogo, regras de interpretação, fila criptografada, autorização, serviços, central de revisão, componentes, emissor de testes e testes exclusivos da captura bancária.
+- Premium 2.0, SQLite e permissão para notificações próprias preservados. Nenhuma dependência compartilhada removida; o manifesto inicial não tinha `expo-notifications` como dependência direta.
+- Aportes e resgates parciais/totais movimentam conta e reserva atomicamente, em centavos, sem inflar receitas, consumo ou patrimônio. Estornos sem fundos são rejeitados; edição de valor/conta disponível no histórico.
+- Dashboard separa patrimônio (incluindo reservas e descontando dívida), saldo livre e reservado. Relatórios separam aportes, resgates e economia efetiva.
+- Migração 11 apenas adiciona direção opcional da movimentação. Históricos, saldos e transações confirmadas anteriormente permanecem intactos; metadados antigos ficam inativos. Estratégia em [Etapa 1](docs/FINANCIAL_V2_STAGE1.md).
+- OFX/CSV, onboarding e insights 2.0 não fazem parte desta entrega. Sem APK, merge ou push.
+
 ## 2.0.0 — Premium beta (2026-10-21)
 
 - 14 telas e auxiliares com fundação Premium, Inter, temas existentes, texturas estáticas e ícone Android centralizado.

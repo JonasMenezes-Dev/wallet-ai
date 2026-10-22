@@ -1,5 +1,4 @@
 import { getDatabase, withTransferTransaction } from "../database/database";
-import { beginFinancialConfirmation, finishFinancialConfirmation, type FinancialConfirmationContext } from "./notification-confirmation.repository";
 
 import {
   applyTransactionToAccount,
@@ -16,6 +15,7 @@ export async function getAllTransactions(): Promise<
   const rows = await database.getAllAsync<{
     id: number;
     goal_id: number | null;
+    goal_movement: "contribution" | "withdrawal" | null;
     transfer_id: string | null;
     goal_name: string | null;
     category_name: string | null;
@@ -39,6 +39,7 @@ export async function getAllTransactions(): Promise<
     SELECT
       transactions.*,
       transactions.transfer_id AS transfer_id,
+      transactions.goal_movement AS goal_movement,
       goals.name AS goal_name,
       categories.name AS category_name,
       accounts.name AS account_name
@@ -63,7 +64,7 @@ export async function getAllTransactions(): Promise<
       row.transfer_id
         ? row.description
         : row.type === "transfer" && row.goal_name
-          ? `Aporte para: ${row.goal_name}`
+          ? `${row.goal_movement === "withdrawal" ? "Resgate de" : "Aporte para"}: ${row.goal_name}`
           : row.description,
     merchant: row.merchant,
     date: row.date,
@@ -79,6 +80,7 @@ export async function getAllTransactions(): Promise<
       : null,
     paymentMethod: row.payment_method,
     goalId: row.goal_id,
+    goalMovement: row.goal_movement,
     goalName: row.goal_name,
     transferId: row.transfer_id,
     isAutomatic: row.is_automatic === 1,
@@ -101,24 +103,22 @@ export async function getAllTransactions(): Promise<
 
 export async function createTransaction(
   transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">,
-  confirmation?: FinancialConfirmationContext,
 ): Promise<number> {
+  if (transaction.type === "transfer" || transaction.goalId != null) {
+    throw new Error("Use o fluxo de metas ou de transferência entre contas.");
+  }
   const now = new Date().toISOString();
 
   let transactionId = 0;
 
   await withTransferTransaction(async (database) => {
-    if (confirmation) {
-      const receipt = await beginFinancialConfirmation(database, confirmation);
-      if (receipt) { transactionId = Number(receipt.reference); return; }
-    }
     if (transaction.externalId && transaction.provider && transaction.institution) {
       const duplicate = await database.getFirstAsync<{ id: number }>(
         `SELECT id FROM transactions
          WHERE external_id = $externalId AND provider = $provider AND institution = $institution`,
         { $externalId: transaction.externalId, $provider: transaction.provider, $institution: transaction.institution },
       );
-      if (duplicate) throw new Error("Esta notificação já foi registrada.");
+      if (duplicate) throw new Error("Esta transação já foi registrada.");
     }
 
     const account = await database.getFirstAsync<{
@@ -227,7 +227,6 @@ export async function createTransaction(
         $accountId: account.id,
       },
     );
-    if (confirmation) await finishFinancialConfirmation(database, confirmation, String(transactionId));
   });
 
   return transactionId;
@@ -241,18 +240,17 @@ interface LinkedMovementInput {
   date: string;
 }
 
-export function createAccountTransfer(input: LinkedMovementInput, confirmation?: FinancialConfirmationContext): Promise<string> {
-  return createLinkedMovement(input, false, confirmation);
+export function createAccountTransfer(input: LinkedMovementInput): Promise<string> {
+  return createLinkedMovement(input, false);
 }
 
 export function createCardPayment(input: LinkedMovementInput): Promise<string> {
   return createLinkedMovement(input, true);
 }
 
-async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boolean, confirmation?: FinancialConfirmationContext): Promise<string> {
+async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boolean): Promise<string> {
   const now = new Date().toISOString();
-  let transferId = confirmation ? `notification-transfer-${confirmation.eventKey}`
-    : `transfer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const transferId = `transfer-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
   if (input.fromAccountId === input.toAccountId) {
     throw new Error("Escolha duas contas diferentes para a transferência.");
@@ -266,10 +264,6 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
   }
 
   await withTransferTransaction(async (database) => {
-    if (confirmation) {
-      const receipt = await beginFinancialConfirmation(database, confirmation);
-      if (receipt) { transferId = receipt.reference; return; }
-    }
     const from = await database.getFirstAsync<{ id: number; balance: number; type: Account["type"] }>(
       "SELECT id, balance, type FROM accounts WHERE id = $id",
       { $id: input.fromAccountId },
@@ -314,7 +308,7 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
           $createdAt: now,
           $updatedAt: now,
           $transferId: transferId,
-          $source: confirmation ? "notification" : "manual",
+          $source: "manual",
         },
       );
     }
@@ -327,7 +321,6 @@ async function createLinkedMovement(input: LinkedMovementInput, cardPayment: boo
       "UPDATE accounts SET balance = $balance, updated_at = $now WHERE id = $id",
       { $balance: destinationBalance, $now: now, $id: to.id },
     );
-    if (confirmation) await finishFinancialConfirmation(database, confirmation, transferId);
   });
 
   return transferId;
@@ -340,6 +333,7 @@ export async function deleteTransaction(id: number): Promise<void> {
       type: Transaction["type"];
       account_id: number | null;
       goal_id: number | null;
+    goal_movement: "contribution" | "withdrawal" | null;
       transfer_id: string | null;
     }>(
       `
@@ -348,6 +342,7 @@ export async function deleteTransaction(id: number): Promise<void> {
           type,
           account_id,
           goal_id,
+          goal_movement,
           transfer_id
         FROM transactions
         WHERE id = $id
@@ -440,12 +435,12 @@ export async function deleteTransaction(id: number): Promise<void> {
         throw new Error("Meta do aporte não encontrada.");
       }
 
-      const newAccountBalance = account.balance + transaction.amount;
-
-      const newGoalAmount = Math.max(
-        goal.current_amount - transaction.amount,
-        0,
-      );
+      const delta = (transaction.goal_movement === "withdrawal" ? -1 : 1) * Math.round(transaction.amount * 100);
+      const newAccountBalance = (Math.round(account.balance * 100) + delta) / 100;
+      const newGoalAmount = (Math.round(goal.current_amount * 100) - delta) / 100;
+      if (!Number.isFinite(newAccountBalance) || !Number.isFinite(newGoalAmount) || newAccountBalance < 0 || newGoalAmount < 0) {
+        throw new Error("Não é possível estornar esta movimentação: saldo insuficiente na conta ou na meta.");
+      }
 
       await database.runAsync(
         `
@@ -557,6 +552,7 @@ export async function updateTransaction(
       type: Transaction["type"];
       account_id: number | null;
       goal_id: number | null;
+    goal_movement: "contribution" | "withdrawal" | null;
       transfer_id: string | null;
       date: string;
     }>(

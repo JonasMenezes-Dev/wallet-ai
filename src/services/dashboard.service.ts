@@ -1,5 +1,7 @@
 import { getDatabase } from "../database/database";
 
+import { getReservePeriodTotals } from "./reserve-totals";
+
 export interface DashboardAccount {
   id: number;
   name: string;
@@ -80,6 +82,14 @@ export interface DashboardInsight {
 }
 
 export interface DashboardSummary {
+  /** Cash available in ordinary accounts, excluding all reserves. */
+  availableBalance: number;
+  reservedBalance: number;
+  /** Free money + own reserves - credit card debt. */
+  totalBalance: number;
+  monthContributions: number;
+  monthWithdrawals: number;
+  effectiveSavings: number;
   totalIncome: number;
   totalExpenses: number;
   balance: number;
@@ -262,6 +272,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     id: number;
     description: string | null;
     goal_name: string | null;
+    goal_movement: string | null;
     amount: number;
     type: DashboardRecentTransaction["type"];
     source: string;
@@ -272,6 +283,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         transactions.id AS id,
         transactions.description AS description,
         goals.name AS goal_name,
+        transactions.goal_movement AS goal_movement,
         transactions.amount AS amount,
         CASE WHEN transactions.transfer_id IS NOT NULL THEN 'transfer' ELSE transactions.type END AS type,
         transactions.source AS source,
@@ -407,7 +419,16 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       ? (monthExpenses - previousMonthExpenses) / previousMonthExpenses
       : null;
 
+  const now = new Date();
+  const reserves = await getReservePeriodTotals(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+  const reservedBalance = Math.round(goalRows.reduce((sum, goal) => sum + Math.round(goal.current_amount * 100), 0)) / 100;
   return {
+    availableBalance: Math.round(balance * 100) / 100,
+    reservedBalance,
+    totalBalance: Math.round((balance + reservedBalance - creditCardUsedTotal) * 100) / 100,
+    monthContributions: reserves.contributions,
+    monthWithdrawals: reserves.withdrawals,
+    effectiveSavings: Math.round((monthIncome - monthExpenses) * 100) / 100,
     totalIncome,
     totalExpenses,
     balance,
@@ -433,7 +454,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       id: row.id,
       description:
         row.type === "transfer" && row.goal_name
-          ? `Aporte para: ${row.goal_name}`
+          ? `${row.goal_movement === "withdrawal" ? "Resgate de" : "Aporte para"}: ${row.goal_name}`
           : (row.description ?? "Sem descrição"),
       amount: row.amount,
       type: row.type,

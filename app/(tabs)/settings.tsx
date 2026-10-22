@@ -4,7 +4,6 @@ import { AnimatedPressable } from "../../src/components/AnimatedPressable";
 import { AppCard } from "../../src/components/AppCard";
 import { AppText as Text } from "../../src/components/AppText";
 import { PremiumScreen } from "../../src/components/PremiumScreen";
-import { BankNotificationSettings } from "../../src/components/BankNotificationSettings";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import {
   ThemeColors,
@@ -101,7 +100,6 @@ export default function SettingsScreen() {
           mesmo quando o tema do sistema mudar.
         </Text>
       </View>
-      <BankNotificationSettings />
     </ScrollView>
     </PremiumScreen>
   );

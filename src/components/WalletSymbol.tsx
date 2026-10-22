@@ -12,7 +12,6 @@ export type WalletIconName =
   | "budget"
   | "recurring"
   | "reports"
-  | "notification"
   | "plus"
   | "income"
   | "expense"
@@ -42,7 +41,6 @@ const symbols = {
   budget: { ios: "chart.bar.fill", android: "bar_chart", web: "bar_chart" },
   recurring: { ios: "calendar", android: "calendar_month", web: "calendar_month" },
   reports: { ios: "chart.pie.fill", android: "pie_chart", web: "pie_chart" },
-  notification: { ios: "bell.badge.fill", android: "notifications_active", web: "notifications_active" },
   plus: { ios: "plus", android: "add", web: "add" },
   income: { ios: "arrow.down.left", android: "south_west", web: "south_west" },
   expense: { ios: "arrow.up.right", android: "north_east", web: "north_east" },

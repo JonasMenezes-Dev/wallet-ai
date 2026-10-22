@@ -23,7 +23,7 @@ test('Android foreground centers the approved wallet inside the circular safe ar
   assert.ok(Math.abs((bounds[1] + bounds[3] + 1) / 2 - height / 2) < height * .012, `Vertical center: ${bounds}`);
   const radius = width * 33 / 108;
   for (const p of mark) assert.ok(Math.hypot(p % width + .5 - width / 2, Math.floor(p / width) + .5 - height / 2) <= radius, 'Wallet remains inside the Android safe circle');
-  assert.equal(config.version, '2.0.0');
-  assert.equal(config.android.versionCode, 4);
+  assert.equal(config.version, '2.1.0');
+  assert.equal(config.android.versionCode, 5);
   assert.equal(config.android.package, 'com.walletai.app');
 });

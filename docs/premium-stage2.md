@@ -34,8 +34,8 @@ Os SVGs específicos ficam em `assets/premium`. Busca, filtros, transferências,
 ```powershell
 node node_modules/typescript/bin/tsc --noEmit
 node node_modules/eslint/bin/eslint.js .
-node --experimental-strip-types --test tests/transaction-filter-panel.test.mjs tests/premium-components.test.mjs tests/card-payment-ui.test.mjs tests/notification-confirmation-ui.test.mjs tests/notification-confirmation-datetime.test.mjs
-node --experimental-strip-types --test tests/account-transfers.test.mjs tests/transactions-card.test.mjs tests/recurring.test.mjs tests/persistence.test.mjs tests/notification-confirmation-integration.test.mjs tests/notification-review.test.mjs tests/notification-financial-confirmation.test.mjs
+node --experimental-strip-types --test tests/transaction-filter-panel.test.mjs tests/premium-components.test.mjs tests/card-payment-ui.test.mjs
+node --experimental-strip-types --test tests/account-transfers.test.mjs tests/transactions-card.test.mjs tests/recurring.test.mjs tests/persistence.test.mjs
 ```
 
 Na próxima execução autorizada em aparelho: conferir os 14 fluxos em claro/escuro/sistema, 320–430px, fonte ampliada, teclado e recortes do sistema; confirmar rolagem de painéis, retorno/cancelamento, ausência de flashes e fluidez com histórico extenso. Não produzir APK nesta etapa.

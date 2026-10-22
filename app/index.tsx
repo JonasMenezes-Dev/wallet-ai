@@ -33,8 +33,6 @@ export default function IndexScreen() {
 
     const openApp = async () => {
       // Esta permissão permite ao Wallet.ai exibir suas próprias notificações.
-      // O acesso para ler notificações bancárias é uma permissão especial separada,
-      // ativada pelo usuário na tela "Importar notificações".
       if (Platform.OS === "android" && Number(Platform.Version) >= 33) {
         try {
           const permission = PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS;

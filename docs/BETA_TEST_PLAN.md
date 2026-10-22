@@ -45,19 +45,14 @@
 - [ ] Conferir totais mensais e despesas por categoria.
 - [ ] Testar mês sem movimentações e mês com entradas e despesas.
 
-## 6. Importação de notificações bancárias
+## 6. Atualização 2.1 e reservas
 
-- [ ] Abrir a área de importação e seguir as instruções para conceder acesso às notificações no Android.
-- [ ] Confirmar que a importação só funciona após a permissão ser concedida.
-- [ ] Testar uma notificação compatível contendo um único valor.
-- [ ] Testar uma notificação com valor da transação e saldo juntos.
-- [ ] Testar uma notificação ambígua ou sem valor confiável e conferir se exige revisão ou é recusada.
-- [ ] Testar a mesma notificação novamente e observar o tratamento de duplicatas.
-- [ ] Conferir conta, categoria, tipo, valor e data antes de confirmar.
-- [ ] Confirmar que nenhuma movimentação é criada sem a ação de confirmação do usuário.
-- [ ] Revogar a permissão e observar se o app trata a situação sem travar.
-
-**Privacidade:** habilite o acesso somente no dispositivo de teste e compreenda que ele permite ao app ler notificações. Não compartilhe capturas de tela com dados bancários ou pessoais.
+- [ ] Atualizar a instalação existente com a mesma assinatura e preservar contas, cartões, metas, recorrências, orçamentos e transações confirmadas anteriormente.
+- [ ] Verificar ausência da tela e do acesso especial para captura bancária, mantendo os alertas próprios.
+- [ ] Com conta de R$ 100 e meta zerada: aportar R$ 40 deve resultar em R$ 60 livres, R$ 40 reservados, patrimônio de R$ 100 e nenhuma receita/despesa nova.
+- [ ] Resgatar R$ 15 e depois R$ 25: saldo livre volta a R$ 100, reserva a zero, sem receita nova.
+- [ ] Editar e excluir aportes/resgates no histórico; estorno sem fundos deve ser recusado sem alterar dados.
+- [ ] Conferir aportes/resgates separados de consumo nos relatórios e persistência após reiniciar.
 
 ## 7. Registro dos resultados
 
@@ -75,7 +70,7 @@ Não registre senhas, códigos de autenticação, números completos de cartão,
 - [ ] O app abre e navega sem falhas bloqueantes.
 - [ ] Contas e movimentações mantêm saldos consistentes após criar, editar e excluir.
 - [ ] Metas, orçamento e relatórios batem com os dados de teste.
-- [ ] A importação de notificações não gera lançamentos ambíguos ou duplicados sem revisão.
+- [ ] Captura bancária ausente e dados financeiros legados preservados.
 - [ ] Persistência após reiniciar e atualização sobre a instalação anterior foram verificadas.
 
 Este documento é um roteiro; os itens não devem ser considerados aprovados até serem testados em dispositivo real.

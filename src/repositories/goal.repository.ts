@@ -1,4 +1,4 @@
-import { getDatabase } from '../database/database';
+import { getDatabase, withTransferTransaction } from '../database/database';
 import { Goal } from '../types/goal';
 
 export async function getAllGoals(): Promise<Goal[]> {
@@ -52,155 +52,78 @@ export async function createGoal(
   return result.lastInsertRowId;
 }
 
-export async function addGoalContribution(
-  goalId: number,
-  accountId: number,
-  amount: number
+/** Money lives either in a free account or in a goal, never in both. */
+export async function addGoalContribution(goalId: number, accountId: number, amount: number): Promise<void> {
+  await moveGoalMoney(goalId, accountId, amount, "contribution");
+}
+
+export async function addGoalWithdrawal(goalId: number, accountId: number, amount: number): Promise<void> {
+  await moveGoalMoney(goalId, accountId, amount, "withdrawal");
+}
+
+export async function updateGoalMovement(id: number, accountId: number, amount: number): Promise<void> {
+  await moveGoalMoney(null, accountId, amount, null, id);
+}
+
+async function moveGoalMoney(
+  goalId: number | null, accountId: number, amount: number,
+  direction: "contribution" | "withdrawal" | null, id?: number,
 ): Promise<void> {
-  const database = await getDatabase();
-
-  const now = new Date().toISOString();
-
-  await database.withTransactionAsync(async () => {
-    const goal = await database.getFirstAsync<{
-      id: number;
-      name: string;
-      current_amount: number;
-      target_amount: number;
-    }>(
-      `
-        SELECT
-          id,
-          current_amount,
-          target_amount
-        FROM goals
-        WHERE id = $goalId
-      `,
-      { $goalId: goalId },
-    );
-
-    if (!goal) {
-      throw new Error('Meta não encontrada.');
+  const cents = Math.round(amount * 100);
+  if (!Number.isFinite(amount) || !Number.isSafeInteger(cents) || cents <= 0 || Math.abs(amount * 100 - cents) > 1e-7 ||
+      !Number.isSafeInteger(accountId) || accountId <= 0 ||
+      (id !== undefined && (!Number.isSafeInteger(id) || id <= 0)) ||
+      (id === undefined && (!Number.isSafeInteger(goalId) || (goalId ?? 0) <= 0))) {
+    throw new Error("Informe conta, meta e valor válidos, com no máximo duas casas decimais.");
+  }
+  await withTransferTransaction(async (database) => {
+    const old = id === undefined ? null : await database.getFirstAsync<{
+      goal_id: number; account_id: number; amount: number; goal_movement: string | null; type: string; transfer_id: string | null;
+    }>("SELECT goal_id, account_id, amount, goal_movement, type, transfer_id FROM transactions WHERE id = ?", id);
+    if (id !== undefined && (!old?.goal_id || old.type !== "transfer" || old.transfer_id)) {
+      throw new Error("Movimentação de meta não encontrada.");
     }
-
-    const account = await database.getFirstAsync<{
-      id: number;
-      balance: number;
-      name: string;
-      type: string;
-    }>(
-      `
-        SELECT
-          id,
-          balance,
-          name,
-          type
-        FROM accounts
-        WHERE id = $accountId
-      `,
-      { $accountId: accountId },
-    );
-
-    if (!account) {
-      throw new Error('Conta não encontrada.');
+    const targetGoalId = old?.goal_id ?? goalId!;
+    const movement = old ? (old.goal_movement ?? "contribution") : direction!;
+    const goal = await database.getFirstAsync<{ current_amount: number; target_amount: number; name: string }>(
+      "SELECT current_amount, target_amount, name FROM goals WHERE id = ?", targetGoalId);
+    if (!goal) throw new Error("Meta não encontrada.");
+    const accountIds = new Set([accountId, ...(old ? [old.account_id] : [])]);
+    const balances = new Map<number, number>();
+    for (const accountKey of accountIds) {
+      const account = await database.getFirstAsync<{ balance: number; type: string }>(
+        "SELECT balance, type FROM accounts WHERE id = ?", accountKey);
+      if (!account || account.type === "credit_card") throw new Error("Selecione uma conta comum para movimentar a meta.");
+      balances.set(accountKey, Math.round(account.balance * 100));
     }
-
-    if (account.type === 'credit_card') {
-      throw new Error('Não é possível usar cartão de crédito para aportar em uma meta.');
+    // Reverse and apply in memory; validate the final state before any writes.
+    let reserved = Math.round(goal.current_amount * 100);
+    if (old) {
+      const oldDelta = (old.goal_movement === "withdrawal" ? -1 : 1) * Math.round(old.amount * 100);
+      reserved -= oldDelta;
+      balances.set(old.account_id, balances.get(old.account_id)! + oldDelta);
     }
-
-    if (amount <= 0) {
-      throw new Error(
-        'O valor do aporte deve ser maior que zero.'
-      );
+    const delta = (movement === "withdrawal" ? -1 : 1) * cents;
+    reserved += delta;
+    balances.set(accountId, balances.get(accountId)! - delta);
+    if (reserved < 0 || (movement === "contribution" && reserved > Math.round(goal.target_amount * 100)) ||
+        !Number.isSafeInteger(reserved) || [...balances.values()].some(value => !Number.isSafeInteger(value) || value < 0)) {
+      throw new Error("Saldo insuficiente ou valor acima da meta. Os saldos não foram alterados.");
     }
-
-    if (account.balance < amount) {
-      throw new Error(
-        'Saldo insuficiente na conta.'
-      );
+    const now = new Date().toISOString();
+    for (const [accountKey, balance] of balances) {
+      await database.runAsync("UPDATE accounts SET balance = ?, updated_at = ? WHERE id = ?", balance / 100, now, accountKey);
     }
-
-    if (
-      goal.current_amount + amount >
-      goal.target_amount
-    ) {
-      throw new Error(
-        'O aporte ultrapassa o valor da meta.'
-      );
+    await database.runAsync("UPDATE goals SET current_amount = ?, updated_at = ? WHERE id = ?", reserved / 100, now, targetGoalId);
+    if (id !== undefined) {
+      await database.runAsync("UPDATE transactions SET amount = ?, account_id = ?, updated_at = ? WHERE id = ?", cents / 100, accountId, now, id);
+    } else {
+      await database.runAsync(`INSERT INTO transactions
+        (amount, type, description, date, account_id, goal_id, goal_movement, is_automatic, source, created_at, updated_at)
+        VALUES (?, 'transfer', ?, ?, ?, ?, ?, 0, 'manual', ?, ?)`,
+        cents / 100, `${movement === "withdrawal" ? "Resgate da" : "Aporte para a"} meta: ${goal.name}`,
+        now, accountId, targetGoalId, movement, now, now);
     }
-
-    const newGoalAmount =
-      goal.current_amount + amount;
-
-    const newAccountBalance =
-      account.balance - amount;
-
-    await database.runAsync(
-      `
-        UPDATE goals
-        SET
-          current_amount = $currentAmount,
-          updated_at = $updatedAt
-        WHERE id = $goalId
-      `,
-      {
-        $currentAmount: newGoalAmount,
-        $updatedAt: now,
-        $goalId: goalId,
-      },
-    );
-
-    await database.runAsync(
-      `
-        UPDATE accounts
-        SET
-          balance = $balance,
-          updated_at = $updatedAt
-        WHERE id = $accountId
-      `,
-      {
-        $balance: newAccountBalance,
-        $updatedAt: now,
-        $accountId: accountId,
-      },
-    );
-
-    await database.runAsync(
-    `
-      INSERT INTO transactions (
-        amount,
-        type,
-        description,
-        merchant,
-        date,
-        category_id,
-        account_id,
-        payment_method,
-        is_automatic,
-        source,
-        created_at,
-        updated_at,
-        goal_id
-      )
-      VALUES ($amount, $type, $description, $merchant, $date, $categoryId, $accountId, $paymentMethod, $isAutomatic, $source, $createdAt, $updatedAt, $goalId)
-    `,
-    {
-      $amount: amount,
-      $type: 'transfer',
-      $description: `Aporte para a meta: ${goal.name}`,
-      $merchant: null,
-      $date: now,
-      $categoryId: null,
-      $accountId: accountId,
-      $paymentMethod: null,
-      $isAutomatic: 0,
-      $source: 'manual',
-      $createdAt: now,
-      $updatedAt: now,
-      $goalId: goalId,
-    },
-  );
   });
 }
 

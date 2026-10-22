@@ -148,7 +148,8 @@ export default function NewGoalScreen() {
             keyboardType="decimal-pad"
             style={styles.moneyFieldInput} />
 
-          <AppField label="Quanto já tenho guardado?" containerStyle={styles.field}
+          <AppField label="Reserva inicial fora das contas do Wallet" containerStyle={styles.field}
+            hint="Informe apenas dinheiro ainda não incluído nas suas contas. Para reservar saldo de uma conta cadastrada, crie a meta zerada e faça um aporte."
             value={currentAmount}
             onChangeText={setCurrentAmount}
             placeholder="Ex.: 500,00"

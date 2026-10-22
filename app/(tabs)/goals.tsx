@@ -4,7 +4,7 @@ import { PremiumScreen } from "../../src/components/PremiumScreen";
 import { AppCard } from "../../src/components/AppCard";
 import { AppField } from "../../src/components/AppField";
 import { AppText as Text } from "../../src/components/AppText";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -28,6 +28,7 @@ import { useGoals } from "../../src/hooks/use-goals";
 import {
   calculateGoalProgress,
   contributeToGoal,
+  withdrawFromGoal,
   removeGoal,
 } from "../../src/services/goal.service";
 
@@ -74,15 +75,20 @@ export default function GoalsScreen() {
     null,
   );
 
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [savingMovement, setSavingMovement] = useState(false);
+  const movementPending = useRef(false);
+
   const [amount, setAmount] = useState("");
 
   async function handleContribution(goalId: number) {
+    if (movementPending.current) return;
     const amountValue = Number(amount.replace(/\./g, "").replace(",", "."));
 
     if (!selectedAccountId) {
       Alert.alert(
         "Conta obrigatória",
-        "Selecione a conta de onde o dinheiro será retirado.",
+        "Selecione a conta da movimentação.",
       );
       return;
     }
@@ -93,7 +99,9 @@ export default function GoalsScreen() {
     }
 
     try {
-      await contributeToGoal(goalId, selectedAccountId, amountValue);
+      movementPending.current = true;
+      setSavingMovement(true);
+      await (withdrawing ? withdrawFromGoal : contributeToGoal)(goalId, selectedAccountId, amountValue);
 
       setContributingGoalId(null);
       setSelectedAccountId(null);
@@ -101,7 +109,7 @@ export default function GoalsScreen() {
 
       await Promise.all([reloadGoals(), reloadAccounts()]);
 
-      Alert.alert("Aporte realizado", "O valor foi adicionado à sua meta.");
+      Alert.alert(withdrawing ? "Resgate realizado" : "Aporte realizado", "Saldos da conta e da meta atualizados.");
     } catch (error) {
       console.error("Erro ao realizar aporte:", error);
 
@@ -111,13 +119,17 @@ export default function GoalsScreen() {
           : "Não foi possível realizar o aporte.";
 
       Alert.alert("Erro", message);
+    } finally {
+      movementPending.current = false;
+      setSavingMovement(false);
     }
   }
 
-  function openContribution(goalId: number) {
+  function openContribution(goalId: number, withdrawal = false) {
+    setWithdrawing(withdrawal);
     setContributingGoalId(goalId);
 
-    setSelectedAccountId(accounts[0]?.id ?? null);
+    setSelectedAccountId(accounts.find(account => account.type !== "credit_card")?.id ?? null);
 
     setAmount("");
   }
@@ -413,9 +425,9 @@ export default function GoalsScreen() {
 
               {isContributing ? (
                 <View style={styles.contributionBox}>
-                  <Text style={styles.contributionTitle}>Fazer aporte</Text>
+                  <Text style={styles.contributionTitle}>{withdrawing ? "Resgatar da meta" : "Fazer aporte"}</Text>
 
-                  <AppField label="Valor do aporte"
+                  <AppField label={withdrawing ? "Valor do resgate" : "Valor do aporte"}
                     value={amount}
                     onChangeText={setAmount}
                     placeholder="0,00"
@@ -423,10 +435,10 @@ export default function GoalsScreen() {
                     style={styles.amountInput}
                   />
 
-                  <Text style={styles.accountLabel}>Retirar de:</Text>
+                  <Text style={styles.accountLabel}>{withdrawing ? "Depositar em:" : "Retirar de:"}</Text>
 
                   <View style={styles.accountsRow}>
-                    {accounts.map((account) => (
+                    {accounts.filter(account => account.type !== "credit_card").map((account) => (
                       <AnimatedPressable
                         key={account.id}
                         accessibilityRole="button"
@@ -479,10 +491,11 @@ export default function GoalsScreen() {
                     <AnimatedPressable
                       style={styles.confirmButton}
                       pressedOpacity={0.85}
+                      disabled={savingMovement}
                       onPress={() => handleContribution(goal.id)}
                     >
                       <Text style={styles.confirmButtonText}>
-                        Confirmar aporte
+                        {savingMovement ? "Salvando..." : withdrawing ? "Confirmar resgate" : "Confirmar aporte"}
                       </Text>
                     </AnimatedPressable>
                   </View>
@@ -499,6 +512,12 @@ export default function GoalsScreen() {
                 </AnimatedPressable>
               )}
 
+              {goal.currentAmount > 0 && !isContributing && (
+                <AnimatedPressable style={styles.managementButton} accessibilityRole="button"
+                  onPress={() => openContribution(goal.id, true)}>
+                  <Text style={styles.managementButtonText}>Resgatar da meta</Text>
+                </AnimatedPressable>
+              )}
               <View style={styles.managementRow}>
                 <AnimatedPressable
                   style={styles.managementButton}

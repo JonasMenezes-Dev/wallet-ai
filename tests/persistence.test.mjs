@@ -36,3 +36,8 @@ test('persistence retains rollback after a failed goal contribution and reopenin
 test('legacy migrations preserve financial records across reopening and reinitialization', () => {
   withDatabase(['legacy-upgrade', 'read-legacy']);
 });
+
+
+test('withdrawals and edits survive reopening and reverse exactly once', () => {
+  withDatabase(['seed', 'withdraw-and-edit', 'read-withdrawal', 'read-original']);
+});
