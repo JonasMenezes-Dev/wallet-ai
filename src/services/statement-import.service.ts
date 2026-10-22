@@ -83,7 +83,8 @@ async function checkAccount(database: SQLiteDatabase, draft: ImportDraft) {
 }
 
 export async function prepareStatementImport(statement: ParsedStatement, accountId: number, fileHash: string, bankScope: string): Promise<ImportDraft> {
-  const draft: ImportDraft = { statement, accountId, fileHash, bankScope, currencyConfirmed: statement.currency?.toUpperCase() === "BRL", rows: [] };
+  const draft: ImportDraft = { statement, accountId, fileHash, bankScope, currencyConfirmed: statement.currency?.toUpperCase() === "BRL",
+    extractionConfirmed: statement.format !== "pdf", rows: [] };
   // Validate size using the unprocessed source rows as well.
   if (!statement.rows.length || statement.rows.length > 10000) throw new Error("Extrato vazio ou com mais de 10.000 linhas.");
   draft.rows = statement.rows.map(row => ({ ...row, original: { ...row, errors: [...row.errors] },
@@ -159,6 +160,9 @@ function validateRow(row: ImportDraftRow) {
 
 export async function confirmStatementImport(draft: ImportDraft): Promise<{ imported: number; ignored: number }> {
   validateDraft(draft);
+  if (draft.statement.format === "pdf" && (!draft.statement.pdfSummary || !draft.extractionConfirmed)) {
+    throw new Error("Confira o período, as movimentações, as linhas ignoradas e possíveis falhas do PDF antes de confirmar.");
+  }
   if (!draft.currencyConfirmed) throw new Error("Confirme que o extrato está em BRL antes de importar.");
   const selected = draft.rows.filter(row => row.selected);
   if (!selected.length) throw new Error("Selecione ao menos uma movimentação resolvida.");

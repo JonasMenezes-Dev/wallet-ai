@@ -1,4 +1,4 @@
-export type StatementFormat = "ofx" | "csv";
+export type StatementFormat = "ofx" | "csv" | "pdf";
 export type StatementAccountKind = "bank" | "card" | "unknown";
 export interface StatementRow {
   line: number;
@@ -17,6 +17,17 @@ export interface ParsedStatement {
   accountKey: string | null;
   accountKind: StatementAccountKind;
   warnings: string[];
+  pdfSummary?: {
+    pageCount: number;
+    periodStart: string;
+    periodEnd: string;
+    emittedDate: string | null;
+    ignoredBalanceLines: number;
+    ignoredOtherLines: number;
+    suspiciousLines: number;
+    emptyPages: number;
+    issues: { page: number; line: number; reason: string }[];
+  };
 }
 export interface CsvMapping {
   date: number | null;
@@ -68,4 +79,5 @@ export interface ImportDraft {
   statement: ParsedStatement;
   rows: ImportDraftRow[];
   currencyConfirmed: boolean;
+  extractionConfirmed?: boolean;
 }

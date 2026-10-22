@@ -2,6 +2,14 @@
 
 As notas abaixo resumem o estado do projeto e não substituem a validação no dispositivo. Este histórico será atualizado conforme os betas forem testados.
 
+## 2.1 — Etapa 2.5 (2026-10-22)
+
+- PDF textual Itaú integrado ao mesmo pipeline OFX/CSV, revisão, categorias, deduplicação e confirmação atômica. Sem migração adicional ou alteração de saldos existentes.
+- Extração local Android por módulo Expo/PDFBox: colunas por coordenadas, múltiplas páginas, datas de lançamento preservadas, linhas de saldo excluídas. Prévia exibe período, entradas/saídas, linhas ignoradas e possíveis falhas; exige conferência explícita da extração.
+- Pix/TED permanecem ambíguos até revisão; devoluções Pix e rendimentos abreviados distinguem estorno de receita. Compras iguais permanecem revisáveis como operações distintas.
+- Arquivo de referência privado excluído de Git/EAS; fixtures exclusivamente fictícias. Sem OCR ou envio externo. PDFs criptografados e sem texto são recusados.
+- Requer nova development build Android. Preparação nativa, limites e validações em [Etapa 2.5](docs/FINANCIAL_V2_STAGE2_5.md). Nenhum APK, merge ou onboarding nesta entrega.
+
 ## 2.1 — Etapa 2 (2026-10-22)
 
 - Pipeline local OFX SGML/XML e CSV configurável: seleção, decodificação, normalização, identificação, categorias, deduplicação, revisão e persistência atômica.

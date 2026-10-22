@@ -17,6 +17,7 @@ export function createStatementScreen({accounts,categories,file,parsers,service}
   'react-native-reanimated':{useReducedMotion:()=>true},
   '../src/services/account.service':{listAccounts:async()=>accounts},'../src/services/category.service':{listCategories:async()=>categories},
   '../src/services/statement-parsers':parsers,'../src/services/statement-import.service':service,
+  '../src/services/statement-pdf-parser':{parseItauPdf:async document=>(await import('../../src/services/statement-pdf-parser.ts')).parseItauPdf(document)},
   '../src/services/statement-file':{pickStatementFile:async()=>file,statementBankScope:async()=> 'csv:unspecified'},
   '../src/theme':{useThemeColors:()=>({primary:'#0c6'}),radii:{sm:8},spacing:{sm:8,md:12,lg:16,xl:24}},
  };

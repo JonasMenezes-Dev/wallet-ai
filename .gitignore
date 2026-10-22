@@ -52,3 +52,8 @@ example
 /tools/notification-fixture/build/
 /tools/notification-fixture/.gradle/
 /cmake-diagnostico.log
+# Private bank statement supplied only as a local layout reference.
+/itau_extrato_072025.pdf
+
+/modules/statement-pdf/android/build/
+/modules/statement-pdf/android/.gradle/

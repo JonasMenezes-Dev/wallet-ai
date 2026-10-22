@@ -15,6 +15,7 @@ import { WalletSymbol } from "../src/components/WalletSymbol";
 import { listAccounts } from "../src/services/account.service";
 import { listCategories } from "../src/services/category.service";
 import { inspectCsv, parseCsv, parseOfx, normalizeStatementDate, parseStatementAmount } from "../src/services/statement-parsers";
+import { parseItauPdf } from "../src/services/statement-pdf-parser";
 import { pickStatementFile, statementBankScope } from "../src/services/statement-file";
 import { prepareStatementImport, confirmStatementImport, refreshStatementImport } from "../src/services/statement-import.service";
 import type { Account } from "../src/types/account";
@@ -74,7 +75,8 @@ export default function StatementImportScreen() {
   async function preview() {
     await run(async () => {
       if (!file || !accountId) throw new Error("Escolha o arquivo e a conta ou cartão.");
-      const statement = file.format === "ofx" ? await parseOfx(file.text) : await parseCsv(file.text, mapping!);
+      const statement = file.format === "pdf" ? await parseItauPdf(file.pdf!) :
+        file.format === "ofx" ? await parseOfx(file.text) : await parseCsv(file.text, mapping!);
       const scope = await statementBankScope(statement.accountKey, file.format);
       setDraft(await prepareStatementImport(statement, accountId, file.hash, scope)); setCompleted(null);
     });
@@ -112,9 +114,12 @@ export default function StatementImportScreen() {
   const unresolved = draft?.rows.filter(row => row.errors.length || row.resolution === "unresolved" || (row.duplicate === "possible" && !row.allowPossibleDuplicate)).length ?? 0;
   const selectedCount = draft?.rows.filter(row => row.selected).length ?? 0;
   const dates = draft?.rows.map(row => row.date.slice(0, 10)).filter(Boolean).sort();
+  const pdfSummary = draft?.statement.pdfSummary;
+  const incoming = draft?.rows.reduce((sum, row) => sum + (!row.errors.length && row.amountCents > 0 ? row.amountCents : 0), 0) ?? 0;
+  const outgoing = draft?.rows.reduce((sum, row) => sum + (!row.errors.length && row.amountCents < 0 ? -row.amountCents : 0), 0) ?? 0;
   const header = <View style={styles.header}>
     <AppButton label="Voltar" variant="secondary" disabled={busy} onPress={() => router.back()} />
-    <ScreenHeader title="Importar extrato" subtitle="OFX e CSV, processados somente neste aparelho." eyebrow="Inteligência financeira" />
+    <ScreenHeader title="Importar extrato" subtitle="OFX, CSV e PDF textual Itaú, processados neste aparelho." eyebrow="Inteligência financeira" />
     {completed && <AppCard><Text variant="title">Importação concluída</Text><Text>{completed.imported} movimentações salvas. {completed.ignored} não selecionadas.</Text></AppCard>}
     {error ? <Text accessibilityRole="alert" tone="error">{error}</Text> : null}
     <AppCard>
@@ -123,7 +128,7 @@ export default function StatementImportScreen() {
         options={accounts.map(account => ({ value: account.id, label: `${account.name}${account.type === "credit_card" ? " · cartão" : ""}` }))} />
       {!accounts.length && <Text>Cadastre uma conta antes de importar.</Text>}
       {selectedAccount && <Text tone="muted">Saldo atual: {money(Math.round(selectedAccount.balance * 100))}. O saldo cadastrado deve representar o início do período ainda não lançado.</Text>}
-      <AppButton label={file ? "Trocar arquivo" : "Selecionar arquivo OFX/CSV"} disabled={busy} onPress={() => { void chooseFile(); }} />
+      <AppButton label={file ? "Trocar arquivo" : "Selecionar arquivo OFX/CSV/PDF"} disabled={busy} onPress={() => { void chooseFile(); }} />
       {file && <Text>{file.name} · limite 5 MiB / 10.000 movimentações</Text>}
     </AppCard>
     {file && !draft && <>
@@ -144,6 +149,15 @@ export default function StatementImportScreen() {
     {draft && <AppCard>
       <Text variant="title">Revise antes de salvar</Text>
       <Text>{dates?.[0]} a {dates?.at(-1)} · {draft.rows.length} linhas</Text>
+      <Text>Valores extraídos: entradas {money(incoming)} · saídas {money(outgoing)}. Entradas não são necessariamente receitas.</Text>
+      {pdfSummary && <>
+        <Text>{draft.rows.length} movimentações em {pdfSummary.pageCount} páginas · período {pdfSummary.periodStart} a {pdfSummary.periodEnd}</Text>
+        {pdfSummary.emittedDate && <Text tone="muted">Emissão: {pdfSummary.emittedDate}. As movimentações usam a data de lançamento.</Text>}
+        <Text>{pdfSummary.ignoredBalanceLines} linhas de saldo ignoradas · {pdfSummary.ignoredOtherLines} outras linhas ignoradas · {pdfSummary.suspiciousLines} possíveis falhas</Text>
+        {pdfSummary.issues.slice(0, 10).map((issue, index) => <Text key={index} tone="muted">Página {issue.page}, linha {issue.line}: {issue.reason}</Text>)}
+        <AppButton variant="secondary" disabled={busy} label={draft.extractionConfirmed ? "✓ Conferi a extração e as linhas ignoradas do PDF" : "Conferi a extração e as linhas ignoradas do PDF"}
+          onPress={() => setDraft(current => current ? { ...current, extractionConfirmed: !current.extractionConfirmed } : current)} />
+      </>}
       <Text>{recognized} reconhecidas · {duplicates} duplicadas/semelhantes · {unresolved} pendentes</Text>
       {draft.statement.warnings.map((warning, index) => <Text key={index} tone="muted">{warning}</Text>)}
       {!draft.statement.currency && <AppButton variant="secondary" disabled={busy} label={draft.currencyConfirmed ? "✓ Valores em BRL confirmados" : "Confirmo que os valores estão em BRL"}
@@ -151,7 +165,7 @@ export default function StatementImportScreen() {
       <AppButton variant="secondary" disabled={busy} label="Selecionar todas as resolvidas sem duplicidade"
         onPress={() => setDraft(current => current ? { ...current, rows: current.rows.map(row => ({ ...row, selected: !row.errors.length && row.resolution !== "unresolved" && row.duplicate === "none" })) } : current)} />
       <AppButton variant="secondary" disabled={busy} label="Desmarcar todas" onPress={() => setDraft(current => current ? { ...current, rows: current.rows.map(row => ({ ...row, selected: false })) } : current)} />
-      <AppButton label={`Revisar e confirmar ${selectedCount} selecionadas`} disabled={busy || !selectedCount || !draft.currencyConfirmed} onPress={askConfirmation} />
+      <AppButton label={`Revisar e confirmar ${selectedCount} selecionadas`} disabled={busy || !selectedCount || !draft.currencyConfirmed || (draft.statement.format === "pdf" && !draft.extractionConfirmed)} onPress={askConfirmation} />
     </AppCard>}
   </View>;
 

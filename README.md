@@ -1,8 +1,8 @@
-# Wallet AI 2.1 — Etapa 2
+# Wallet AI 2.1 — Etapa 2.5
 
 Aplicativo de controle financeiro pessoal para Android, desenvolvido com **Expo, React Native e SQLite**. O objetivo é reunir contas, movimentações, metas e acompanhamento mensal em uma experiência simples, com dados armazenados localmente no dispositivo.
 
-> **Status: código da versão 2.1.0 (versionCode 5), Etapa 2; nenhum APK gerado nesta etapa.** A validação da atualização em Android real permanece pendente. Confira os lançamentos com o extrato oficial do banco.
+> **Status: código da versão 2.1.0 (versionCode 5), Etapa 2.5; nenhum APK gerado nesta etapa.** A validação da atualização em Android real permanece pendente. Confira os lançamentos com o extrato oficial do banco.
 
 ## Premium 2.0 — base preservada
 
@@ -12,7 +12,7 @@ O visual e os fluxos Premium 2.0 foram preservados. A captura bancária foi desc
 
 ## Importação local de extratos
 
-No dashboard, abra **Importar extrato**, selecione a conta/cartão e um arquivo OFX ou CSV. Confirme o mapeamento das colunas CSV, revise o período, as sugestões e duplicidades, edite as movimentações e confirme explicitamente o lote. Nenhuma prévia cria lançamentos.
+No dashboard, abra **Importar extrato**, selecione a conta/cartão e um arquivo OFX, CSV ou PDF textual Itaú. Confirme o mapeamento das colunas CSV, revise o período, as sugestões e duplicidades, edite as movimentações e confirme explicitamente o lote. Nenhuma prévia cria lançamentos.
 
 - OFX SGML e XML, incluindo namespace OFX padrão, conta bancária ou cartão; CSV com cabeçalho, delimitadores `;`, `,` ou tabulação, aspas e campos multilinha.
 - Valores brasileiros/decimais em centavos exatos, datas brasileiras/ISO; horários só quando fornecidos. UTF-8, UTF-16 com BOM e Windows-1252.
@@ -23,7 +23,9 @@ No dashboard, abra **Importar extrato**, selecione a conta/cartão e um arquivo 
 
 Extratos não são enviados a servidores. A cópia temporária de leitura é removida após o uso; somente lançamentos confirmados, metadados de deduplicação e regras autorizadas permanecem no SQLite. Os novos módulos Expo de seleção, leitura e SHA-256 precisam estar presentes na próxima distribuição nativa. Sem necessidade de reinstalar ou limpar dados.
 
-Formatos, arquitetura, recuperação e limitações em [Etapa 2](docs/FINANCIAL_V2_STAGE2.md).
+PDF Itaú: extração local por módulo Expo Android, até 30 páginas, com separação por coordenadas entre valor e saldo. A prévia mostra período, entradas/saídas, linhas ignoradas e possíveis falhas. Exige conferir a extração e confirmar o lote; Pix e transferências ambíguas continuam pendentes. Sem OCR, PDFs protegidos ou suporte a outros layouts nesta etapa. O módulo requer uma **nova development build Android**; Expo Go e builds antigos continuam somente com OFX/CSV. Não basta atualizar JavaScript via OTA.
+
+Formatos, arquitetura, recuperação e limitações em [Etapa 2](docs/FINANCIAL_V2_STAGE2.md) e [PDF — Etapa 2.5](docs/FINANCIAL_V2_STAGE2_5.md).
 
 ## Contabilização financeira
 
@@ -39,7 +41,7 @@ Veja [migração e descontinuação](docs/FINANCIAL_V2_STAGE1.md). Não limpe da
 
 - **Contas e cartões:** cadastro de contas, cartões e limites de crédito.
 - **Movimentações:** registro, consulta, edição e exclusão de entradas e despesas.
-- **Extratos:** importação local OFX/CSV com revisão, categorização e antiduplicação.
+- **Extratos:** importação local OFX/CSV/PDF Itaú com revisão, categorização e antiduplicação.
 - **Metas:** acompanhamento de objetivos e aportes.
 - **Dashboard:** resumo financeiro calculado a partir dos dados locais.
 - **Orçamentos:** limites mensais por categoria.

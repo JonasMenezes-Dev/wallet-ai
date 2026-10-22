@@ -29,13 +29,13 @@ export function identifyStatementRow(row: StatementRow, accountKind: StatementAc
   if (/\b(?:pagamento|pgto|pag)\b.*\b(?:fatura|cartao)\b|\bfatura\b.*\b(?:paga|pagamento|pgto)\b/.test(text)) {
     return result('card_payment', 'unresolved', 'Pagamento de fatura: confirme a conta e evite duplicar despesas.');
   }
-  if (/\b(?:estorno|reembolso|devolucao)\b/.test(text)) return outgoing ? unknown() : result('refund', 'refund', 'Estorno ou devolução com valor recebido.');
+  if (/\b(?:estorno|reembolso|devolucao)\b|\bpix\s+devol\b/.test(text)) return outgoing ? unknown() : result('refund', 'refund', 'Estorno ou devolução com valor recebido.');
   if (/\bpix\b/.test(text)) {
     if ((outgoing && /\b(?:recebid[oa]|entrada)\b/.test(text)) || (!outgoing && /\b(?:enviad[oa]|saida)\b/.test(text))) return unknown();
     return result(outgoing ? 'pix_sent' : 'pix_received', 'unresolved', 'Pix: confirme se é despesa, receita ou transferência própria.');
   }
   if (/\b(?:transferencia|ted|doc)\b/.test(text) || hint === 'xfer') return result('transfer', 'unresolved', 'Confirme se a transferência é entre contas próprias.');
-  if (/\b(?:rendimento|rendimentos|juros recebidos)\b/.test(text) || hint === 'int') return outgoing ? unknown() : result('yield', 'income', 'Rendimento com valor recebido.');
+  if (/\b(?:rendimento|rendimentos|juros recebidos)\b|\brend\s+pago\b/.test(text) || hint === 'int') return outgoing ? unknown() : result('yield', 'income', 'Rendimento com valor recebido.');
   if (/\b(?:aplicacao|aplicacoes|resgate|investimento|investimentos|cdb|rdb|lci|lca|saque|saldo inicial|ajuste|emprestimo|financiamento)\b/.test(text)) return unknown();
   if (/\b(?:tarifa|taxa bancaria|anuidade|iof)\b/.test(text) || hint === 'fee') return outgoing ? result('fee', 'expense', 'Tarifa explicitamente identificada.') : unknown();
   if (/\b(?:boleto|pagamento de conta|pagamento conta)\b/.test(text)) return outgoing ? result('bill_payment', 'expense', 'Pagamento de boleto ou conta.') : unknown();

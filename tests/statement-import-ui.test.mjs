@@ -14,7 +14,7 @@ async function screen(text='Data;Descrição;Valor\n22/10/2026;Compra débito su
  const ui=createStatementScreen({accounts:await getAllAccounts(),categories:await getAllCategories(),file:{format:'csv',text,hash:'a'.repeat(64),name:'sintetico.csv'},parsers,service});
  ui.nodes();await ui.settle();return ui;
 }
-async function preview(ui){ui.selector('Conta do extrato').props.onChange(1);await ui.press('Selecionar arquivo OFX/CSV');await ui.press('Confirmar conta/mapeamento e preparar prévia');}
+async function preview(ui){ui.selector('Conta do extrato').props.onChange(1);await ui.press('Selecionar arquivo OFX/CSV/PDF');await ui.press('Confirmar conta/mapeamento e preparar prévia');}
 test('CSV account/mapping/review requires currency and final confirmation before any write',async()=>{
  const ui=await screen();await preview(ui);
  assert.equal(database.native.prepare('SELECT COUNT(*) n FROM transactions').get().n,0);
@@ -42,4 +42,26 @@ test('duplicate appearing after preview returns to an editable review instead of
  await ui.press('Revisar e editar');
  assert.ok(ui.button('Confirmar que esta operação semelhante é distinta'));
  assert.equal(database.native.prepare('SELECT COUNT(*) n FROM transactions').get().n,1);
+});
+
+test('PDF review shows extraction summary and requires acknowledgement before final save',async()=>{
+ const {syntheticItauPdf}=await import('./fixtures/statements/synthetic-itau-pdf.mjs');
+ const ui=createStatementScreen({accounts:await getAllAccounts(),categories:await getAllCategories(),
+  file:{format:'pdf',pdf:syntheticItauPdf,hash:'b'.repeat(64),name:'sintetico.pdf'},parsers,service});
+ ui.nodes();await ui.settle();await preview(ui);
+ const text=ui.nodes().filter(node=>node.type==='AppText').map(node=>
+  Array.isArray(node.props.children)?node.props.children.join(''):String(node.props.children)).join('\n');
+ assert.match(text,/6 movimentações em 1 páginas/);
+ assert.match(text,/2026-03-01 a 2026-03-31/);
+ assert.match(text,/2 linhas de saldo ignoradas/);
+ const confirm=ui.nodes().find(node=>node.type==='AppButton'&&node.props.label.startsWith('Revisar e confirmar'));
+ assert.ok(confirm);assert.equal(confirm.props.disabled,true);
+ assert.equal(database.native.prepare('SELECT COUNT(*) n FROM transactions').get().n,0);
+ await ui.press('Conferi a extração e as linhas ignoradas do PDF');
+ assert.equal(ui.button(confirm.props.label).props.disabled,false);
+ await ui.press(confirm.props.label);
+ assert.equal(database.native.prepare('SELECT COUNT(*) n FROM transactions').get().n,0);
+ ui.alerts.at(-1)[2].find(button=>button.text==='Confirmar e salvar').onPress();await ui.settle();
+ assert.ok(database.native.prepare('SELECT COUNT(*) n FROM transactions').get().n>0);
+ assert.ok(ui.nodes().some(node=>node.props.children==='Importação concluída'));
 });

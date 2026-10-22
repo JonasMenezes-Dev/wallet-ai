@@ -1,0 +1,93 @@
+import javax.tools.ToolProvider
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
+
+tasks.register('verifyPdfPrivacyTransform') {
+  description = 'Checks PDFBox-only Log redirection using synthetic bytecode, without PDF documents.'
+  doLast {
+    File fixtureRoot = layout.buildDirectory.dir('pdf-privacy-synthetic-test').get().asFile
+    fixtureRoot.mkdirs()
+    def sources = [
+      'android/util/Log.java': '''package android.util;
+public final class Log {
+  public static int e(String tag, String message) { throw new AssertionError("must be silent"); }
+  public static int w(String tag, Throwable cause) { throw new AssertionError("must be silent"); }
+  public static boolean isLoggable(String tag, int priority) { throw new AssertionError("must be silent"); }
+  public static String getStackTraceString(Throwable cause) { throw new AssertionError("must be silent"); }
+  public static int unexpected(String tag) { return 1; }
+}''',
+      'com/tom_roush/Synthetic.java': '''package com.tom_roush;
+public final class Synthetic {
+  public static int run() {
+    String literal = "android/util/Log";
+    android.util.Log.e("synthetic", "SYNTHETIC_ONLY");
+    android.util.Log.w("synthetic", new Exception("SYNTHETIC_ONLY"));
+    if (android.util.Log.isLoggable("synthetic", 3)) throw new AssertionError();
+    if (!android.util.Log.getStackTraceString(new Exception()).isEmpty()) throw new AssertionError();
+    return literal.equals("android/util/Log") ? 42 : 0;
+  }
+}''',
+      'com/tom_roush/Unexpected.java': '''package com.tom_roush;
+public final class Unexpected { public static int run() { return android.util.Log.unexpected("synthetic"); } }'''
+    ]
+    def files = sources.collect { path, source ->
+      File file = new File(fixtureRoot, path)
+      file.parentFile.mkdirs(); file.text = source; file.absolutePath
+    }
+    files.add(new File(project.projectDir, 'src/main/java/expo/modules/statementpdf/PrivatePdfLog.java').absolutePath)
+    def compiler = ToolProvider.systemJavaCompiler
+    if (compiler == null) throw new GradleException('JDK compiler is required for the synthetic privacy check')
+    int result = compiler.run(null, null, null, (['-d', fixtureRoot.absolutePath] + files) as String[])
+    if (result != 0) throw new GradleException('Synthetic privacy fixture compilation failed')
+    File sample = new File(fixtureRoot, 'com/tom_roush/Synthetic.class')
+    byte[] original = sample.bytes
+    byte[] sanitized = privatePdfBytecodeTransformer.sanitize(original)
+    if (Arrays.equals(original, sanitized)) throw new GradleException('Privacy transform did not change logging references')
+    if (!Arrays.equals(sanitized, privatePdfBytecodeTransformer.sanitize(sanitized))) {
+      throw new GradleException('Privacy transform is not idempotent')
+    }
+    sample.bytes = sanitized
+    new URLClassLoader([fixtureRoot.toURI().toURL()] as URL[], (ClassLoader) null).withCloseable { loader ->
+      if (loader.loadClass('com.tom_roush.Synthetic').getMethod('run').invoke(null) != 42) {
+        throw new GradleException('Privacy transform changed unrelated instructions or strings')
+      }
+    }
+    boolean rejected = false
+    try { privatePdfBytecodeTransformer.sanitize(new File(fixtureRoot, 'com/tom_roush/Unexpected.class').bytes) }
+    catch (GradleException expected) { rejected = true }
+    if (!rejected) throw new GradleException('Unknown logging descriptor did not fail closed')
+    logger.lifecycle('PDF privacy transform: synthetic logging, unchanged behavior, idempotence and unknown-method checks passed')
+  }
+}
+
+tasks.register('verifyPdfPrivacyRuntimeArtifact') {
+  description = 'Inspects the actual app runtime PDFBox AAR without assembling an APK.'
+  doLast {
+    def app = rootProject.findProject(':app')
+    if (app == null) throw new GradleException('App consumer is required for the runtime privacy check')
+    def artifacts = app.configurations.getByName('debugRuntimeClasspath').incoming.artifactView {
+      componentFilter { id -> id instanceof ModuleComponentIdentifier && id.group == 'com.tom-roush' && id.module == 'pdfbox-android' }
+    }.artifacts.artifacts
+    if (artifacts.size() != 1) throw new GradleException('Expected exactly one PDFBox runtime artifact')
+    int classes = 0, redirected = 0
+    new ZipFile(artifacts.first().file).withCloseable { aar ->
+      def jar = aar.getEntry('classes.jar')
+      if (jar == null) throw new GradleException('Runtime PDFBox classes are missing')
+      new ZipInputStream(aar.getInputStream(jar)).withCloseable { input ->
+        def entry
+        while ((entry = input.nextEntry) != null) {
+          if (!entry.name.startsWith('com/tom_roush/') || !entry.name.endsWith('.class')) continue
+          byte[] original = input.readAllBytes()
+          classes++
+          if (!Arrays.equals(original, privatePdfBytecodeTransformer.sanitize(original))) {
+            throw new GradleException('App runtime still contains Android PDFBox logging references')
+          }
+          if (new String(original, java.nio.charset.StandardCharsets.ISO_8859_1).contains('expo/modules/statementpdf/PrivatePdfLog')) redirected++
+        }
+      }
+    }
+    if (classes == 0 || redirected == 0) throw new GradleException('App runtime did not receive the privacy-transformed PDFBox artifact')
+    logger.lifecycle("App runtime PDF privacy: ${classes} library classes checked, ${redirected} silent references, zero Android Log class references")
+  }
+}

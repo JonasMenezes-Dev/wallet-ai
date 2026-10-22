@@ -1,0 +1,152 @@
+import org.gradle.api.artifacts.transform.TransformAction
+import org.gradle.api.artifacts.transform.TransformOutputs
+import org.gradle.api.artifacts.transform.TransformParameters
+import org.gradle.api.artifacts.transform.InputArtifact
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+
+/** Changes only class references to Log inside the pinned PDFBox AAR, preserving instructions. */
+class PdfBoxPrivateBytecode {
+  static final String LOG = 'android/util/Log'
+  static final String SILENT = 'expo/modules/statementpdf/PrivatePdfLog'
+  static final Set<String> METHODS = (['v', 'd', 'i', 'w', 'e', 'wtf'].collectMany { name ->
+    [name + '(Ljava/lang/String;Ljava/lang/String;)I', name + '(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I']
+  } + ['w(Ljava/lang/String;Ljava/lang/Throwable;)I', 'wtf(Ljava/lang/String;Ljava/lang/Throwable;)I',
+       'println(ILjava/lang/String;Ljava/lang/String;)I', 'isLoggable(Ljava/lang/String;I)Z',
+       'getStackTraceString(Ljava/lang/Throwable;)Ljava/lang/String;']).toSet()
+
+  static byte[] sanitize(byte[] original) {
+    def input = new DataInputStream(new ByteArrayInputStream(original))
+    if (input.readInt() != (0xCAFEBABE as int)) throw new GradleException('Invalid PDF library class')
+    int minor = input.readUnsignedShort(), major = input.readUnsignedShort(), count = input.readUnsignedShort()
+    def entries = new Object[count]
+    for (int index = 1; index < count; index++) {
+      int tag = input.readUnsignedByte()
+      def raw = new ByteArrayOutputStream()
+      def output = new DataOutputStream(raw)
+      output.writeByte(tag)
+      def entry = [tag: tag]
+      switch (tag) {
+        case 1: entry.text = input.readUTF(); output.writeUTF(entry.text); break
+        case 3: case 4: output.writeInt(input.readInt()); break
+        case 5: case 6: output.writeLong(input.readLong()); break
+        case 7: case 8: case 16: case 19: case 20:
+          entry.a = input.readUnsignedShort(); output.writeShort(entry.a); break
+        case 9: case 10: case 11: case 12: case 17: case 18:
+          entry.a = input.readUnsignedShort(); entry.b = input.readUnsignedShort()
+          output.writeShort(entry.a); output.writeShort(entry.b); break
+        case 15: output.writeByte(input.readUnsignedByte()); output.writeShort(input.readUnsignedShort()); break
+        default: throw new GradleException('Unsupported PDF library bytecode constant')
+      }
+      entry.raw = raw.toByteArray()
+      entries[index] = entry
+      if (tag == 5 || tag == 6) index++
+    }
+    def logClasses = (1..<count).findAll { entries[it]?.tag == 7 && entries[entries[it].a]?.text == LOG }.toSet()
+    if (logClasses.isEmpty()) return original
+    for (def entry : entries) {
+      if (entry?.tag in [9, 10, 11] && logClasses.contains(entry.a)) {
+        def signature = entries[entry.b]
+        String method = entries[signature.a].text + entries[signature.b].text
+        if (entry.tag != 10 || !METHODS.contains(method)) {
+          throw new GradleException('Unsupported PDF library logging method; privacy transform must be reviewed')
+        }
+      }
+    }
+    if (count == 65535) throw new GradleException('PDF library constant pool is full')
+    def bytes = new ByteArrayOutputStream()
+    def output = new DataOutputStream(bytes)
+    output.writeInt(0xCAFEBABE as int); output.writeShort(minor); output.writeShort(major); output.writeShort(count + 1)
+    for (int index = 1; index < count; index++) {
+      def entry = entries[index]
+      if (entry == null) continue
+      if (logClasses.contains(index)) { output.writeByte(7); output.writeShort(count) }
+      else output.write((byte[]) entry.raw)
+    }
+    output.writeByte(1); output.writeUTF(SILENT)
+    input.transferTo(output)
+    byte[] result = bytes.toByteArray()
+    // A second pass must find no Log class references and therefore make no changes.
+    if (!Arrays.equals(result, sanitize(result))) throw new GradleException('PDF library logging was not fully removed')
+    return result
+  }
+
+  static byte[] rewriteJar(byte[] jar) {
+    def bytes = new ByteArrayOutputStream()
+    new ZipOutputStream(bytes).withCloseable { output ->
+      new ZipInputStream(new ByteArrayInputStream(jar)).withCloseable { input ->
+        ZipEntry entry
+        while ((entry = input.nextEntry) != null) {
+          output.putNextEntry(new ZipEntry(entry.name))
+          byte[] payload = input.readAllBytes()
+          if (entry.name.startsWith('com/tom_roush/') && entry.name.endsWith('.class')) payload = sanitize(payload)
+          output.write(payload); output.closeEntry()
+        }
+      }
+    }
+    return bytes.toByteArray()
+  }
+}
+
+abstract class PrivatePdfBoxTransform implements TransformAction<TransformParameters.None> {
+  @InputArtifact
+  @PathSensitive(PathSensitivity.NAME_ONLY)
+  abstract Provider<FileSystemLocation> getInputArtifact()
+
+  @Override
+  void transform(TransformOutputs outputs) {
+    File source = inputArtifact.get().asFile
+    if (source.name != 'pdfbox-android-2.0.27.0.aar') {
+      throw new GradleException('Privacy transform is restricted to the pinned PDFBox AAR')
+    }
+    File destination = outputs.file('pdfbox-android-private.aar')
+    boolean classesSeen = false
+    new ZipOutputStream(new FileOutputStream(destination)).withCloseable { output ->
+      new ZipInputStream(new FileInputStream(source)).withCloseable { input ->
+        ZipEntry entry
+        while ((entry = input.nextEntry) != null) {
+          output.putNextEntry(new ZipEntry(entry.name))
+          byte[] payload = input.readAllBytes()
+          if (entry.name == 'classes.jar') {
+            classesSeen = true
+            payload = PdfBoxPrivateBytecode.rewriteJar(payload)
+          } else if (entry.name.endsWith('.jar')) {
+            throw new GradleException('Unexpected embedded PDF library; privacy review required')
+          }
+          output.write(payload); output.closeEntry()
+        }
+      }
+    }
+    if (!classesSeen) throw new GradleException('PDF library classes missing')
+  }
+}
+
+def pdfPrivacy = Attribute.of('wallet.statement.pdf.privacy', String)
+def artifactType = Attribute.of('artifactType', String)
+// Register in consuming projects as well: the application packages the module's runtime
+// dependency independently of this library's compile classpath.
+rootProject.allprojects { target -> target.dependencies {
+  // Artifact-only attribute: attaching this to component variants prevents Gradle variant
+  // selection before artifact transforms can run. Only the PDFBox dependency requests silent.
+  artifactTypes.maybeCreate('aar').attributes.attribute(pdfPrivacy, 'raw')
+  registerTransform(PrivatePdfBoxTransform) {
+    from.attribute(artifactType, 'aar').attribute(pdfPrivacy, 'raw')
+    to.attribute(artifactType, 'aar').attribute(pdfPrivacy, 'silent')
+  }
+} }
+dependencies {
+  implementation('com.tom-roush:pdfbox-android:2.0.27.0') {
+    attributes { attribute(pdfPrivacy, 'silent') }
+  }
+}
+
+// Exposed only to the synthetic standalone test script, never to application JS.
+ext.privatePdfBytecodeTransformer = PdfBoxPrivateBytecode
+
+apply from: '../tests/privacy-transform-test.gradle'

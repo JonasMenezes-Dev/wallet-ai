@@ -384,7 +384,7 @@ export default function HomeScreen() {
               <AnimatedPressable style={styles.quickAction} pressedScale={0.98} onPress={() => router.push("/statement-import")}>
                 <View style={styles.quickIcon}><WalletSymbol name="receipt" color={colors.primary} size={20} /></View>
                 <Text style={styles.quickTitle}>Importar extrato</Text>
-                <Text style={styles.quickDescription}>Arquivo OFX ou CSV</Text>
+                <Text style={styles.quickDescription}>OFX, CSV ou PDF Itaú</Text>
               </AnimatedPressable>
             </View>
             <AnimatedPressable style={styles.alertShortcut} pressedScale={0.99} onPress={() => router.push("/alerts")}>

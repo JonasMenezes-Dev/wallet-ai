@@ -53,3 +53,8 @@ example
 /tools/notification-fixture/build/
 /tools/notification-fixture/.gradle/
 
+# Never upload the private PDF used as a local reference.
+/itau_extrato_072025.pdf
+
+/modules/statement-pdf/android/build/
+/modules/statement-pdf/android/.gradle/

@@ -1,0 +1,22 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.statementpdf'
+version = '1.0.0'
+
+android {
+  namespace 'expo.modules.statementpdf'
+  defaultConfig {
+    minSdkVersion 24
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+apply from: 'privacy-transform.gradle'
